@@ -531,7 +531,7 @@ int reverse_mode_edge_t::operator() (const vector<edge_bool_t>& ev1,
   ev2.push_back (ev1[0]);
 
   for (size_t c= 1; c < ev1.size(); c++) {
-    throw_debug_exception (rme_obj (ev1[c], cg) > rme_obj (ev2[0], cg) != lex_greater (ev1[c], ev2[0], cg),
+    throw_debug_exception ((rme_obj (ev1[c], cg) > rme_obj (ev2[0], cg)) != lex_greater (ev1[c], ev2[0], cg),
 			   consistency_exception, "objective function and comparator does not match");
     if (lex_greater (ev1[c], ev2[0], cg)) ev2[0]= ev1[c]; }
     set_objective (rme_obj (ev2[0], cg));
