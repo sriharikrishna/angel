@@ -184,9 +184,10 @@ inline void write_graph (const string& file_name,
     \param write_transposed Write transposed matrix, if ommited false assumed
     \note Transposed form is quite memory expensive
 */
-template <typename Ad_graph_t> 
-void write_graph_as_bool_matrix (const string& file_name, const Ad_graph_t& adg,
-				 bool write_transposed= false);
+// JU: this does not compile with newer boost/gcc versions
+// template <typename Ad_graph_t> 
+// void write_graph_as_bool_matrix (const string& file_name, const Ad_graph_t& adg,
+// 				 bool write_transposed= false);
 
 // -----------------------------------------------------
 // write graph like EliAD tools does
@@ -315,51 +316,51 @@ inline void write_vector (ostream& stream, const string& s,
   stream << '}' << endl;
 }
 
-template <typename Ad_graph_t> 
-void write_graph_as_bool_matrix (const string& file_name, const Ad_graph_t& adg,
-				 bool write_transposed) {
-  // typedef typename Ad_graph_t::pure_graph_t                         pure_graph_t;
-  typedef typename graph_traits<Ad_graph_t>::vertex_iterator      vi_t;
-  typedef typename graph_traits<Ad_graph_t>::edge_iterator        ei_t;
-  typedef typename graph_traits<Ad_graph_t>::adjacency_iterator   ai_t;
-  typedef typename property_map<Ad_graph_t, boost::vertex_index_t>::type id_t;
-  // typedef typename pure_graph_t::edge_type                          ed_t;
+// template <typename Ad_graph_t> 
+// void write_graph_as_bool_matrix (const string& file_name, const Ad_graph_t& adg,
+// 				 bool write_transposed) {
+//   // typedef typename Ad_graph_t::pure_graph_t                         pure_graph_t;
+//   typedef typename graph_traits<Ad_graph_t>::vertex_iterator      vi_t;
+//   typedef typename graph_traits<Ad_graph_t>::edge_iterator        ei_t;
+//   typedef typename graph_traits<Ad_graph_t>::adjacency_iterator   ai_t;
+//   typedef typename property_map<Ad_graph_t, boost::vertex_index_t>::type id_t;
+//   // typedef typename pure_graph_t::edge_type                          ed_t;
 
-  // const pure_graph_t& g (adg.pure_graph);
-  vi_t i, end;
-  id_t id = get(vertex_index, adg);
+//   // const pure_graph_t& g (adg.pure_graph);
+//   vi_t i, end;
+//   id_t id = get(vertex_index, adg);
 
-  // tie(i, end) = vertices(g);
-  int gsize= num_vertices (adg);
+//   // tie(i, end) = vertices(g);
+//   int gsize= num_vertices (adg);
 
-  ofstream fout (file_name.c_str());
-  fout << adg.x() << endl << adg.z() << endl << adg.y() << endl;
+//   ofstream fout (file_name.c_str());
+//   fout << adg.x() << endl << adg.z() << endl << adg.y() << endl;
 
-  if (write_transposed) {
-    vector<bool> bool_line (gsize, false);
-    vector<vector<bool> > bool_matrix (gsize, bool_line);
-    for (tie(i, end) = vertices(adg); i != end; ++i) {
-      ai_t ai, a_end;
-      for (tie(ai, a_end) = adjacent_vertices(*i, adg); ai != a_end; ++ai)
-	bool_matrix[get(id, *ai)][get(id, *i)]= true;
-    }
-    for (tie(i, end) = vertices(adg); i != end; ++i) {
-      const vector<bool>& line_ref (bool_matrix[get(id, *i)]);
-      for (int j= 0; j < gsize; j++)
-	fout << (line_ref[j] ? 1 : 0);
-      fout << endl;
-    }
-  } else 
-    for (tie(i, end) = vertices(adg); i != end; ++i) {
-      vector<int> bool_line (gsize, 0);
-      ai_t ai, a_end;
-      for (tie(ai, a_end) = adjacent_vertices(*i, adg); ai != a_end; ++ai)
-	  bool_line[get(id, *ai)]= 1;
-      for (int j= 0; j < gsize; j++)
-	fout << bool_line[j];
-      fout << endl;
-    }
-}
+//   if (write_transposed) {
+//     vector<bool> bool_line (gsize, false);
+//     vector<vector<bool> > bool_matrix (gsize, bool_line);
+//     for (tie(i, end) = vertices(adg); i != end; ++i) {
+//       ai_t ai, a_end;
+//       for (tie(ai, a_end) = adjacent_vertices(*i, adg); ai != a_end; ++ai)
+// 	bool_matrix[get(id, *ai)][get(id, *i)]= true;
+//     }
+//     for (tie(i, end) = vertices(adg); i != end; ++i) {
+//       const vector<bool>& line_ref (bool_matrix[get(id, *i)]);
+//       for (int j= 0; j < gsize; j++)
+// 	fout << (line_ref[j] ? 1 : 0);
+//       fout << endl;
+//     }
+//   } else 
+//     for (tie(i, end) = vertices(adg); i != end; ++i) {
+//       vector<int> bool_line (gsize, 0);
+//       ai_t ai, a_end;
+//       for (tie(ai, a_end) = adjacent_vertices(*i, adg); ai != a_end; ++ai)
+// 	  bool_line[get(id, *ai)]= 1;
+//       for (int j= 0; j < gsize; j++)
+// 	fout << bool_line[j];
+//       fout << endl;
+//     }
+// }
 
 template <typename Ad_graph_t> 
 void write_graph (ostream& stream, const string& s, const Ad_graph_t& adg,

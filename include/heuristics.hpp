@@ -1020,7 +1020,7 @@ public:
     for (size_t c= 0; c < eev1.size(); c++) {
       c_graph_t::edge_t edge; bool found;
       tie (edge, found)= angel::edge (eev1[c].i, eev1[c].j, cg);
-      if (found) ebv1.push_back (make_pair (edge, eev1[c].front)); }
+      if (found) ebv1.push_back (std::make_pair (edge, eev1[c].front)); }
     h (ebv1, cg, ebv2);
     eev2.resize (0);
     for (size_t c= 0; c < ebv2.size(); c++) {
