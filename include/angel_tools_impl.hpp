@@ -1,5 +1,8 @@
-// $Id: angel_tools_impl.hpp,v 1.4 2003/06/11 16:28:53 gottschling Exp $
-// long template definitions from angel_tools.hpp
+// To be included in angel_tools.hpp
+// Intended for lengthy template functions
+
+#include <deque>
+#include <vector>
 
 
 template <typename Neighbor_t>
@@ -16,7 +19,7 @@ bool search_path (const std::vector<c_graph_t::vertex_t>& from,
   vector<int>         dists (n.adg.v());  // distances: 0 means infinity, 1 means start
 
   for (size_t c= 0; c < from.size(); c++) {
-    trials.push_back (from[c]); dists[from[c]]= 1; }
+    trials.push (from[c]); dists[from[c]]= 1; }
   
   while (!path_found && !trials.empty()) {
     vertex_t       current_vertex= trials.front();
@@ -57,7 +60,7 @@ int maximal_paths (c_graph_t::vertex_t v, const Neighbor_t& nin,
   vector<c_graph_t::vertex_t>    from (1, v), to (n.last()), current_path;
 
   paths.resize (0);
-  while (search_path (from, to, n, current_path)) {
+  while (search_path (from, to, current_path)) {
     paths.push_back (current_path);
     // remove vertices on path except v
     current_path.erase (current_path.begin()); n.clear_vertices (current_path); } 
@@ -76,7 +79,7 @@ int smallest_separator_set (c_graph_t::vertex_t v, const Neighbor_t& nin,
   sep_set.resize (0);
   vv_t                 from (1, v), to (nin.last());
   vector<vv_t>         all_paths;
-  int                  num_paths= maximal_paths (v, nin, all_paths);
+  int                  num_paths= maximal_paths (from, to, all_paths);
   for (int c= 0; c < num_paths; c++) all_paths[c].erase (all_paths[c].begin()); // remove v from paths
 
   for (int c1= 0; c1 < num_paths; c1++) {
@@ -93,7 +96,7 @@ int smallest_separator_set (c_graph_t::vertex_t v, const Neighbor_t& nin,
       Neighbor_t n2 (n1);
       vv_t vec (1, current_vertex), new_path;
       n2.clear_vertices (vec);
-      if (!search_path (from, to, n2, new_path)) {
+      if (!search_path (from, to, new_path)) {
 	sep_set.push_back (current_vertex); break; } } }
 
 #ifndef NDEBUG
@@ -105,5 +108,3 @@ int smallest_separator_set (c_graph_t::vertex_t v, const Neighbor_t& nin,
 
   return sep_set.size();
 }
-
-

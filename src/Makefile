@@ -3,9 +3,8 @@
 # BOOST_DIR must be defined in the environment !
 
 # CXXFLAGS may be changed appropriately
-#CXXFLAGS+= -O3 
-CXXFLAGS+= -DNDEBUG
-CXXFLAGS+= -g
+CXXFLAGS+=  -O3 -DNDEBUG
+#CXXFLAGS+= -g
 
 #CPPFLAGS+= -DIGNORE_TRIVIAL_ELIMINATIONS
 #CPPFLAGS+= -DGNUPLOT # generate output for gnuplot (maybe part of output must be set as comment)

@@ -11,7 +11,7 @@ include specs/$(angel_config).conf
 # usage of other libraries (architecture (or compiler version) independent part of def)
 include specs/lib_usage.conf
 
-.PHONY:	it lib objects doc clean distclean dist
+.PHONY:	it lib objects doc clean distclean dist docdist
 
 it: 	lib 
 

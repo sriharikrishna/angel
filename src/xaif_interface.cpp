@@ -13,7 +13,7 @@ namespace angel {
 using namespace std;
 using namespace boost;
 using namespace xaifBoosterCrossCountryInterface;
-
+ 
 inline size_t which_index (const LinearizedComputationalGraphVertex * const add,
 			   const vector<const LinearizedComputationalGraphVertex*>& av) {
   for (size_t c= 0; c < av.size(); c++) if (add == av[c]) return c;
