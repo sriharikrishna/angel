@@ -17,47 +17,45 @@ OBJECTS	= heuristics.o sa.o angel_comm.o angel_types.o angel_tools.o angel_io.o 
 IDIR	= ../include
 CXXFLAGS+= -c
 
-.PHONY: it
 it:	all
 
-.PHONY: all
 all:	$(OBJECTS)
 
-.PHONY: clean
 clean: 
 	$(RM) $(RMFLAGS) *.o *~ 
 
-.PHONY: echo
 echo:
 	echo "$(CPPFLAGS) : $(angel_config)"
+
+.PHONY: it all clean echo
 
 angel_types.o: angel_types.cpp $(IDIR)/angel_types.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ angel_types.cpp
 
-angel_tools.o: angel_tools.cpp $(IDIR)/angel_tools.hpp $(IDIR)/angel_tools_impl.hpp \
+angel_tools.o: angel_tools.cpp $(IDIR)/angel_tools.hpp \
 		 $(IDIR)/angel_types.hpp \
 		$(IDIR)/angel_io.hpp $(IDIR)/eliminations.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ angel_tools.cpp
 
 angel_io.o: angel_io.cpp $(IDIR)/angel_io.hpp $(IDIR)/angel_types.hpp \
-		$(IDIR)/angel_tools.hpp $(IDIR)/angel_tools_impl.hpp
+		$(IDIR)/angel_tools.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ angel_io.cpp
 
 eliminations.o: eliminations.cpp $(IDIR)/eliminations.hpp $(IDIR)/angel_types.hpp \
-		$(IDIR)/angel_tools.hpp $(IDIR)/angel_tools_impl.hpp  $(IDIR)/angel_io.hpp
+		$(IDIR)/angel_tools.hpp $(IDIR)/angel_io.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ eliminations.cpp
 
 heuristics.o: heuristics.cpp $(IDIR)/heuristics.hpp $(IDIR)/angel_types.hpp \
-		$(IDIR)/angel_tools.hpp  $(IDIR)/angel_tools_impl.hpp \
+		$(IDIR)/angel_tools.hpp \
 		 $(IDIR)/angel_io.hpp $(IDIR)/eliminations.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ heuristics.cpp
 
 graph_generator.o: graph_generator.cpp $(IDIR)/graph_generator.hpp $(IDIR)/angel_types.hpp \
-		 $(IDIR)/angel_tools.hpp  $(IDIR)/angel_tools_impl.hpp
+		 $(IDIR)/angel_tools.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ graph_generator.cpp
 
 sa.o: sa.cpp $(IDIR)/sa.hpp $(IDIR)/sa_impl.hpp $(IDIR)/angel_types.hpp \
-		 $(IDIR)/angel_tools.hpp  $(IDIR)/angel_tools_impl.hpp \
+		 $(IDIR)/angel_tools.hpp \
 		 $(IDIR)/angel_io.hpp \
 		 $(IDIR)/eliminations.hpp $(IDIR)/heuristics.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ sa.cpp
