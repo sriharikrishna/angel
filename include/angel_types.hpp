@@ -1,5 +1,5 @@
 
-// $Id: angel_types.hpp,v 1.22 2003/11/10 16:55:27 uwe_naumann Exp $ 
+// $Id: angel_types.hpp,v 1.23 2004/03/23 03:41:20 gottschling Exp $ 
 
 #ifndef 	_angel_types_include_
 #define 	_angel_types_include_
@@ -50,7 +50,6 @@ typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS,
 class graph_package_t; 
 class accu_graph_t; 
 class edge_address_t; 
-// class xaifBooster::LinearizedComputationalGraph;
 
 /// C-graph type
 class c_graph_t: public pure_c_graph_t	{

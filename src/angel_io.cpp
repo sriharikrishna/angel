@@ -1,4 +1,4 @@
-// $Id: angel_io.cpp,v 1.3 2003/06/11 16:28:54 gottschling Exp $
+// $Id: angel_io.cpp,v 1.4 2004/02/22 18:44:46 gottschling Exp $
 
 #include "angel_io.hpp"
 
@@ -106,6 +106,21 @@ void write_face_vector (std::ostream& stream, const std::string& s,
 }
 
 ofstream log_file;
+
+string numbered_filename (const string& basename, const string& suffix, 
+			int number, int width) {
+  ostringstream ost;
+  ost << basename; 
+  ost.width(width); ost.fill('0'); ost << number;
+  ost << '.' << suffix;
+  return ost.str();
+}
+
+no_output_t no_output;
+
+string_stream_output_t cout_string_output (std::cout);
+
+vis_display_output_t cout_vis_display_output (std::cout);
 
 } // namespace angel
 

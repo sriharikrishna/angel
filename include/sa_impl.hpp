@@ -1,11 +1,11 @@
-// $Id: sa_impl.hpp,v 1.2 2003/06/11 16:28:54 gottschling Exp $
+// $Id: sa_impl.hpp,v 1.4 2004/04/23 12:59:11 gottschling Exp $
 
 #ifdef USE_MPI
 #include "angel_comm.hpp"
 #endif // USE_MPI
 
 namespace angel {
-  using namespace std;
+  using std::vector;
 
 template <class Object_t, class Neighbor_t, class Cost_t, class Temp_t>
 int SA (Object_t& object, Neighbor_t neighbor, Cost_t costs, Temp_t temp, int max_iter) {
@@ -14,7 +14,8 @@ int SA (Object_t& object, Neighbor_t neighbor, Cost_t costs, Temp_t temp, int ma
 
   for (int i= 0; i < max_iter; i++) {
     Object_t new_object (last_object);
-    neighbor (new_object);
+    if (!neighbor (new_object)) {
+      cout << "No neighbor found!"; return -1;}
     int new_costs= costs (new_object);
     // cout << "LSA costs: " << new_costs;
 #ifdef GNUPLOT
@@ -47,7 +48,8 @@ int ALSA (Object_t& object, Neighbor_t neighbor, Cost_t costs, Adaption_t adapti
 
   for (int i= 0; i < max_iter; i++) {
     Object_t new_object (last_object);
-    neighbor (new_object);
+    if (!neighbor (new_object)) {
+      cout << "No neighbor found!"; return -1;}
     int new_costs= costs (new_object);
     //cout << "LSA costs: " << new_costs << '\n';
 #ifdef GNUPLOT
@@ -79,8 +81,9 @@ int ALSA (Object_t& object, Neighbor_t neighbor, Cost_t costs, Adaption_t adapti
   bool neighbor_last_removable_t::operator() (elimination_history_t<Ad_graph_t, El_spec_t>& eh) {
     bool eliminate= eh.seq.size() == 0 || angel::random (1.0) < .5;
     if (eliminate) {
-      std::vector<El_spec_t>   el;
+      vector<El_spec_t>   el;
       eliminatable_objects (eh.cg, el);
+      if (el.empty() && eh.seq.empty()) return false; // graph was always bipartite
       if (el.size() > 0) {  // if nothing to eliminate -> re-insert
 	int nextn= angel::random (int (el.size()));
 	El_spec_t next= el[nextn];
@@ -97,8 +100,9 @@ int ALSA (Object_t& object, Neighbor_t neighbor, Cost_t costs, Adaption_t adapti
     int steps= angel::random (1, max_steps);
     if (eliminate) {
       for (int i= 0; i < steps; i++) {
-	std::vector<El_spec_t>   el;
+	vector<El_spec_t>   el;
 	eliminatable_objects (eh.cg, el);
+	if (el.empty() && eh.seq.empty()) return false; // graph was always bipartite
 	if (el.size() == 0) return true;
 	int nextn= angel::random (int (el.size()));
 	El_spec_t next= el[nextn];
@@ -116,8 +120,9 @@ int ALSA (Object_t& object, Neighbor_t neighbor, Cost_t costs, Adaption_t adapti
   bool neighbor_sequence_check_t::operator() (elimination_history_t<Ad_graph_t, El_spec_t>& eh) {
     bool eliminate= eh.seq.size() == 0 || angel::random (1.0) < .5;
     if (eliminate) {
-      std::vector<El_spec_t>   el;
+      vector<El_spec_t>   el;
       eliminatable_objects (eh.cg, el);
+      if (el.empty() && eh.seq.empty()) return false; // graph was always bipartite
       if (el.size() > 0) {  // if nothing to eliminate -> re-insert
 	int nextn= angel::random (int (el.size()));
 	El_spec_t next= el[nextn];
@@ -127,8 +132,8 @@ int ALSA (Object_t& object, Neighbor_t neighbor, Cost_t costs, Adaption_t adapti
     bool reinsertable= false;
     for (int c= 1; !reinsertable; c++) {
       next_re_ins= angel::random_high (int (eh.seq.size()), c);
-      std::vector<El_spec_t> seq_copy (eh.seq);
-      typename std::vector<El_spec_t>::iterator it= eh.seq.begin() + next_re_ins;
+      vector<El_spec_t> seq_copy (eh.seq);
+      typename vector<El_spec_t>::iterator it= eh.seq.begin() + next_re_ins;
       eh.seq.erase (it);
       reinsertable= eh.rebuild_graph ();
       // if reinsertion failed then restore old seq, cg is unchanged then
@@ -141,8 +146,9 @@ int ALSA (Object_t& object, Neighbor_t neighbor, Cost_t costs, Adaption_t adapti
   bool neighbor_check_meta_t::operator() (elimination_history_t<Ad_graph_t, El_spec_t>& eh) {
     bool eliminate= eh.seq.size() == 0 || angel::random (1.0) < .5;
     if (eliminate) {
-      std::vector<El_spec_t>   el;
+      vector<El_spec_t>   el;
       eliminatable_objects (eh.cg, el);
+      if (el.empty() && eh.seq.empty()) return false; // graph was always bipartite
       if (el.size() > 0) {  // if nothing to eliminate -> re-insert
 	int nextn= angel::random (int (el.size()));
 	El_spec_t next= el[nextn];
@@ -153,7 +159,7 @@ int ALSA (Object_t& object, Neighbor_t neighbor, Cost_t costs, Adaption_t adapti
     for (int c= 1; !reinsertable; c++) {
       next_re_ins= angel::random_high (int (eh.seq.size()), c);
       elimination_history_t<Ad_graph_t, El_spec_t> eh_copy (eh);
-      typename std::vector<El_spec_t>::iterator it= eh_copy.seq.begin() + next_re_ins;
+      typename vector<El_spec_t>::iterator it= eh_copy.seq.begin() + next_re_ins;
       El_spec_t re= *it;  // removed elimination
       eh_copy.seq.erase (it);
       reinsertable= eh_copy.rebuild_graph ();
@@ -241,7 +247,8 @@ int parallel_SA (Object_t& object, Neighbor_t neighbor, Cost_t costs,
     for (ii= 0, inner_completion= false; !inner_completion; ) {
 
       Object_t new_object (last_object);
-      neighbor (new_object);
+      if (!neighbor (new_object)) {
+        cout << "No neighbor found!"; return -1;}
       int new_costs= costs (new_object);
       // log_file << "LSA costs: " << new_costs;
 #ifdef GNUPLOT
@@ -277,7 +284,7 @@ int parallel_SA (Object_t& object, Neighbor_t neighbor, Cost_t costs,
 
   // now look for global minimum
   int me= comm.Get_rank(); 
-  pair<int,int> my_min_costs_rank (min_costs, me), min_costs_rank;
+  std::pair<int,int> my_min_costs_rank (min_costs, me), min_costs_rank;
   comm.Allreduce (&my_min_costs_rank, &min_costs_rank, 1, MPI::TWOINT, MPI::MINLOC); 
   int min_root= min_costs_rank.second;
   GMPI::comm_ref_t<int, Object_t> min_comm_ref (min_object); // reference to min

@@ -1,4 +1,4 @@
-// $Id: gmpi.hpp,v 1.3 2003/05/14 21:42:14 gottschling Exp $
+// $Id: gmpi.hpp,v 1.4 2004/02/22 18:44:46 gottschling Exp $
 
 #ifndef 	_gmpi_include_
 #define 	_gmpi_include_
@@ -14,7 +14,7 @@
 
 namespace GMPI {
 
-  using namespace std;
+  using std::pair; using std::vector; using std::list; using std::deque;
 
   /// Returns MPI data type for all available base types
   inline MPI::Datatype which_mpi_t (char) {return MPI::CHAR;}
@@ -50,16 +50,18 @@ namespace GMPI {
     MPI::Datatype        mpi_t;       ///< MPI data type used in operations
     const int            base_t_size; ///< Base type's size in byte
   private:
-    vector<base_t>       my_buffer;   // Vector, to use reallocation and copy
-    mutable size_t       write_pos,   // Written entries (of base_t)
-                         read_pos;    // Read entries (of base_t)
+    vector<Base_t>       my_buffer;   // Vector, to use reallocation and copy
+    mutable size_t       write_pos,   // Written entries (of Base_t)
+                         read_pos;    // Read entries (of Base_t)
     mutable bool         read_write;  // Either read or write, true == read
   public:
     /// Set an empty configuration
-    buffer_t () : mpi_t (which_mpi_t (base_t())), base_t_size (sizeof (base_t)),
+    buffer_t () :  mpi_t (which_mpi_t (Base_t())), 
+                base_t_size (sizeof (Base_t)),
 		write_pos (0), read_pos (0), read_write (false) {}
     /// Reserve \p n entries of base type at the beginning
-    buffer_t (size_t n) : mpi_t (which_mpi_t (base_t())), base_t_size (sizeof (base_t)),
+    buffer_t (size_t n) :  mpi_t (which_mpi_t (Base_t())), 
+                base_t_size (sizeof (Base_t)),
 		write_pos (0), read_pos (0), read_write (false) {reserve (n);}
 
     /// Reserve memory for another \p n entries of base type
@@ -77,7 +79,7 @@ namespace GMPI {
       return write_pos - read_pos; }
 
     /// Read one entry of base type from buffer
-    base_t read () const {
+    Base_t read () const {
       if (!read_write) { // change to read
 	read_pos= 0; read_write= true; }
       // if (read_pos >= write_pos) throw gmpi_exception ("Read past end");
@@ -90,7 +92,7 @@ namespace GMPI {
       read_pos--; }
       
     /// Write one entry of base type into buffer
-    void write (base_t output) {
+    void write (Base_t output) {
       if (read_write) { // change to write
 	write_pos= 0; my_buffer.resize (1); read_write= false; }
       // if (write_pos > my_buffer.size()) throw gmpi_exception ("Written past end");
@@ -98,7 +100,7 @@ namespace GMPI {
       my_buffer[write_pos++]= output; }
 
     /// Load \p n entries from the buffer into \p address
-    void load (base_t* address, size_t n) const {
+    void load (Base_t* address, size_t n) const {
       if (!read_write) { // change to read
 	read_pos= 0; read_write= true; }
       // if (read_pos+n > write_pos) throw gmpi_exception ("Read past end");
@@ -106,7 +108,7 @@ namespace GMPI {
       read_pos+= n; }
 
     /// Store \p n entries from \p address into the buffer
-    void store (base_t* address, size_t n) {
+    void store (Base_t* address, size_t n) {
       if (read_write) { // change to write
 	write_pos= 0; my_buffer.resize (n); read_write= false; }
       reserve (write_pos+n - my_buffer.size());
@@ -117,10 +119,10 @@ namespace GMPI {
     size_t size () const {return my_buffer.size(); }
 
     /// Buffer address (as non-const), e.g. to receive data
-    base_t* address () {return &my_buffer[0]; }
+    Base_t* address () {return &my_buffer[0]; }
 
     /// Buffer address (as const), e.g. to send data
-    const base_t* buffer_address () const {return &my_buffer[0]; }
+    const Base_t* buffer_address () const {return &my_buffer[0]; }
 
     /// Explicit memory release
     void free () {

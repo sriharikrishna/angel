@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.6 2003/10/11 15:09:51 gottschling Exp $
+# $Id: Makefile,v 1.8 2004/03/23 03:41:20 gottschling Exp $
 
 ifeq "$(strip $(config))" ""
 	angel_config:=gnu
@@ -11,7 +11,12 @@ include specs/$(angel_config).conf
 # usage of other libraries (architecture (or compiler version) independent part of def)
 include specs/lib_usage.conf
 
-.PHONY:	it lib objects doc clean distclean dist docdist
+ifeq "$(strip $(usexaif))" "yes"
+  CPPFLAGS	+= -DUSE_XAIF
+  CPPFLAGS	+= -I$(XAIF_DIR)
+endif
+
+.PHONY:	it lib objects doc clean distclean dist docdist echo
 
 it: 	lib 
 
@@ -36,6 +41,9 @@ clean:
 distclean:	clean
 	cd src && $(MAKE) distclean && cd ..
 	cd doc && $(MAKE) distclean && cd ..
+
+echo:
+	cd src && $(MAKE) echo && cd ..
 
 dist:
 	cd .. && tar -cf angel.tar --no-recursion angel/Makefile angel/*/Makefile angel/src/*.cpp \

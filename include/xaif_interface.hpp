@@ -1,4 +1,4 @@
-// $Id: xaif_interface.hpp,v 1.4 2003/11/10 16:55:27 uwe_naumann Exp $
+// $Id: xaif_interface.hpp,v 1.6 2004/04/23 12:59:11 gottschling Exp $
 
 #ifndef 	_xaif_interface_include_
 #define 	_xaif_interface_include_
@@ -14,12 +14,18 @@ namespace angel {
 
 void compute_elimination_sequence (const xaifBoosterCrossCountryInterface::LinearizedComputationalGraph& xgraph,
 				   int tasks, 
+				   double, // for interface unification
 				   xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& expression_list);
 
-/* internal function
-void read_graph_xaif_booster (const xaifBooster::LinearizedComputationalGraph& xg, c_graph_t& cg,
-			      vector<xaifBooster::LinearizedComputationalGraphVertex*>& av);
-*/
+void compute_elimination_sequence_lsa_vertex (const xaifBoosterCrossCountryInterface::LinearizedComputationalGraph& xgraph,
+					      int iterations, 
+					      double gamma,
+					      xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& expression_list);
+
+void compute_elimination_sequence_lsa_face (const xaifBoosterCrossCountryInterface::LinearizedComputationalGraph& xgraph,
+					    int iterations, 
+					    double gamma,
+					    xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& expression_list);
 
 } // namespace angel
 

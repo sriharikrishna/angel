@@ -1,4 +1,4 @@
-// $Id: heuristics.cpp,v 1.8 2003/07/04 11:35:52 gottschling Exp $
+// $Id: heuristics.cpp,v 1.9 2004/02/22 18:44:46 gottschling Exp $
 
 #include "heuristics.hpp"
 
@@ -917,7 +917,7 @@ int reverse_mode_face_whole_vertex_t::operator() (const vector<line_graph_t::fac
   fv2.resize (0);
   if (fv1.size() == 0) return 0;
   fv2.push_back (fv1[0]);
-  line_graph_t::const_evn_t evn= get(vertex_name, lg);
+  line_graph_t::const_evn_t evn= get(boost::vertex_name, lg);
 
   int maxv= evn[source(fv1[0], lg)].second;
 

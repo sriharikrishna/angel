@@ -1,4 +1,4 @@
-// $Id: angel_io.hpp,v 1.8 2003/06/11 16:28:53 gottschling Exp $
+// $Id: angel_io.hpp,v 1.10 2004/04/23 12:59:10 gottschling Exp $
 
 #ifndef 	_angel_io_include_
 #define 	_angel_io_include_
@@ -22,7 +22,10 @@
 
 namespace angel {
 
-  using namespace std;
+  using std::string; using std::vector; using std::ostream;
+  using std::ofstream; using std::cout; using std::endl;
+  using boost::tie; using boost::graph_traits;
+  using boost::property_map;
 
   /** \brief Read graph in EliAD graph format from file
       
@@ -67,7 +70,7 @@ inline void write_face_vector (const string& s,
 
 /// Write pair of arbitrary types to \p stream if their output operator is defined
 template <typename T1, typename T2>
-ostream& operator<< (ostream& stream, const pair<T1,T2>& p) {
+ostream& operator<< (ostream& stream, const std::pair<T1,T2>& p) {
   return stream << "(" << p.first << ", " << p.second << ")"; }
 
 /// Write STL vector \p v to \p stream with comment \p s if their output operator is defined
@@ -315,14 +318,11 @@ inline void write_vector (ostream& stream, const string& s,
 template <typename Ad_graph_t> 
 void write_graph_as_bool_matrix (const string& file_name, const Ad_graph_t& adg,
 				 bool write_transposed) {
-  using namespace boost;
-  using boost::tie;
-
   // typedef typename Ad_graph_t::pure_graph_t                         pure_graph_t;
   typedef typename graph_traits<Ad_graph_t>::vertex_iterator      vi_t;
   typedef typename graph_traits<Ad_graph_t>::edge_iterator        ei_t;
   typedef typename graph_traits<Ad_graph_t>::adjacency_iterator   ai_t;
-  typedef typename property_map<Ad_graph_t, vertex_index_t>::type id_t;
+  typedef typename property_map<Ad_graph_t, boost::vertex_index_t>::type id_t;
   // typedef typename pure_graph_t::edge_type                          ed_t;
 
   // const pure_graph_t& g (adg.pure_graph);
@@ -364,7 +364,6 @@ void write_graph_as_bool_matrix (const string& file_name, const Ad_graph_t& adg,
 template <typename Ad_graph_t> 
 void write_graph (ostream& stream, const string& s, const Ad_graph_t& adg,
 		  bool write_edge_weight) {	
-  using namespace boost;
   stream << s << " has " << num_vertices (adg) << " vertices: "
 	 << adg.x() << " independent, " << adg.z() << " intermediate and "
 	 << adg.y() << " dependent\n";
@@ -373,8 +372,8 @@ void write_graph (ostream& stream, const string& s, const Ad_graph_t& adg,
 
 
   if (write_edge_weight) {
-    typename property_map<Ad_graph_t, edge_weight_t>::const_type 
-             ew= get(edge_weight, adg);
+    typename property_map<Ad_graph_t, boost::edge_weight_t>::const_type 
+             ew= get(boost::edge_weight, adg);
     typename graph_traits<Ad_graph_t>::vertex_iterator  i, end;
     for (tie (i, end)= vertices (adg); i != end; ++i) {
       typename graph_traits<Ad_graph_t>::out_edge_iterator  ei, e_end;
@@ -405,7 +404,6 @@ void write_graph (ostream& stream, const string& s, const Ad_graph_t& adg,
 
 template <typename Ad_graph_t> 
 void write_graph (ostream& stream, const string& s, const Ad_graph_t& adg) {	
-  using namespace boost;
   stream << s << " has " << num_vertices (adg) << " vertices: "
 	 << adg.x() << " independent, " << adg.z() << " intermediate and "
 	 << adg.y() << " dependent\n";
@@ -441,7 +439,6 @@ void write_edge_property (ostream& stream, const string& s,
     stream << '(' << source (*ei, adg) << ", " << target (*ei, adg) 
 	   << ")=" << prop[*ei];
     ++ei;}
-
   for (; ei != eend; ++ei) 
     stream << ", (" << source (*ei, adg) << ", " << target (*ei, adg) 
 	   << ")=" << prop[*ei];
@@ -452,7 +449,7 @@ template <typename Ad_graph_t>
 void graphviz_display (const Ad_graph_t& adg) {
   string aFilename("/tmp/GraphVizDisplay.dot");
   ofstream anOutFileStream;
-  anOutFileStream.open(aFilename.c_str(),ios::out);
+  anOutFileStream.open(aFilename.c_str(),std::ios::out);
   boost::write_graphviz(anOutFileStream, adg); 
   anOutFileStream.close(); 
   string commandString("dot -Tgif " + aFilename + " > " + aFilename + ".gif ; xv " + aFilename + ".gif" ); 
@@ -461,22 +458,20 @@ void graphviz_display (const Ad_graph_t& adg) {
 
 extern ofstream log_file;
 
-#ifndef USE_MPI
-inline void open_log_file (int& argc, char**& argv) {
-  ostringstream log_file_name;
-  log_file_name << "log_file_" << time (0);
+#ifdef USE_MPI
+inline void open_log_file (int& argc, char**& argv, int proc) {
+  std::ostringstream log_file_name;
+  log_file_name << "log_file_proc_" << proc << "_" << time (0);
   log_file.open (log_file_name.str().c_str());
   log_file << "argv" << endl;
   for (int i= 0; i < argc; i++)
     log_file << argv[i] << endl;
   log_file << "----- end of argv -----" << endl;
 }
-#endif
-
-#ifdef USE_MPI
-inline void open_log_file (int& argc, char**& argv, int proc) {
-  ostringstream log_file_name;
-  log_file_name << "log_file_proc_" << proc << "_" << time (0);
+#else
+inline void open_log_file (int& argc, char**& argv) {
+  std::ostringstream log_file_name;
+  log_file_name << "log_file_" << time (0);
   log_file.open (log_file_name.str().c_str());
   log_file << "argv" << endl;
   for (int i= 0; i < argc; i++)
@@ -489,6 +484,75 @@ inline void close_log_file () {
   log_file.close();
 }   
       
+string numbered_filename (const string& basename, const string& suffix, 
+			int number, int width= 4);
+
+struct no_output_t {
+  void operator() (const std::string&) {}
+  void operator() (const std::ostringstream&) {}
+  template <class Ad_graph_t> 
+  void write_graph (const std::string&, const Ad_graph_t&) {}
+};
+extern no_output_t no_output;
+
+template <class Value_t>
+no_output_t& operator<< (no_output_t& out, const Value_t&) {
+  return out;}
+
+class string_stream_output_t : public no_output_t {
+protected:
+  ostream& mystream;
+public:
+  string_stream_output_t (std::ostream& s) : mystream (s) {}
+  void operator() (const std::string& str) {
+    mystream << str;}
+  void operator() (const std::ostringstream& sstr) {
+    mystream << sstr.str();}
+  template <class Value_t> 
+  friend string_stream_output_t& operator<< (string_stream_output_t&, const Value_t&);
+};
+extern string_stream_output_t cout_string_output;
+
+template <class Value_t>
+string_stream_output_t& operator<< (string_stream_output_t& out, const Value_t& value) {
+  out.mystream << value; return out;}
+
+struct stream_output_t : public string_stream_output_t {
+  stream_output_t (std::ostream& s) : string_stream_output_t (s) {}
+  template <class Ad_graph_t> 
+  void write_graph (const std::string& str, const Ad_graph_t& adg) {
+    angel::write_graph (mystream, str, adg);}
+};
+// stream_output_t cout_output (std::cout);
+
+struct vis_display_output_t : public string_stream_output_t {
+  vis_display_output_t (std::ostream& s) : string_stream_output_t (s) {}
+  template <class Ad_graph_t> 
+  void write_graph (const std::string& str, const Ad_graph_t& adg) {
+    mystream << str; graphviz_display (adg);}
+};
+extern vis_display_output_t cout_vis_display_output;
+
+
+struct vis_store_output_t : public no_output_t {
+  std::string filenamebase;
+  int         filecounter;
+public:
+  vis_store_output_t (const std::string& f) : filenamebase(f), filecounter(0) {}
+  template <class Ad_graph_t> 
+  void write_graph (const std::string& , const Ad_graph_t& adg) {
+    string dot_filename (numbered_filename (filenamebase, "dot", filecounter));
+    ofstream dot_file (dot_filename.c_str());
+    write_graphviz(dot_file, adg); 
+    dot_file.close();
+    string command ("dot -Tgif " + dot_filename + " > " 
+		    + numbered_filename (filenamebase, "gif", filecounter++)
+		    + "; rm " + dot_filename);
+    system (command.c_str());
+  }
+};
+
+
 } // namespace angel
 
 #endif // 	_angel_io_include_

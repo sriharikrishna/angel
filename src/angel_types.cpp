@@ -1,4 +1,4 @@
-// $Id: angel_types.cpp,v 1.11 2003/10/11 15:09:51 gottschling Exp $ 
+// $Id: angel_types.cpp,v 1.12 2004/03/23 03:41:20 gottschling Exp $ 
 
 #include "angel_types.hpp"
 
@@ -465,7 +465,7 @@ void accu_graph_t::set_jacobi_entries () {
 // =========================== doxygen input for whole lib
 
 /*! \mainpage ANGEL Reference Manual
-  \author Peter Gottschling and Uwe Naumann
+  \author Peter Gottschling
   \version 1.0
 
   \section intro Introduction

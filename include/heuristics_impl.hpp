@@ -1,4 +1,4 @@
-// $Id: heuristics_impl.hpp,v 1.4 2003/07/04 11:35:52 gottschling Exp $
+// $Id: heuristics_impl.hpp,v 1.5 2004/02/22 18:44:46 gottschling Exp $
 
 #include <set>
 // #include <limits>
@@ -6,12 +6,12 @@
 #include "angel_exceptions.hpp"
 
 namespace angel {
-  using namespace std;
+  using std::vector;
 
 template <typename Heuristic_t>
-int lowest_markowitz_face_complete_t<Heuristic_t>::operator() (const std::vector<line_graph_t::face_t>& fv1,
+int lowest_markowitz_face_complete_t<Heuristic_t>::operator() (const vector<line_graph_t::face_t>& fv1,
 							       const line_graph_t& lg,
-							       std::vector<line_graph_t::face_t>& fv2) {
+							       vector<line_graph_t::face_t>& fv2) {
     fv2.resize(0);
     line_graph_t::const_evn_t evn= get(boost::vertex_name, lg);
 
@@ -26,10 +26,10 @@ int lowest_markowitz_face_complete_t<Heuristic_t>::operator() (const std::vector
     }
 
     // otherwise search new vertex (vertices)
-    std::vector<int> mdegree;
+    vector<int> mdegree;
     markowitz_on_line_graph (lg, mdegree);
     
-    std::vector<face_t> fvlm; // faces via vertices with miminal Markowitz
+    vector<face_t> fvlm; // faces via vertices with miminal Markowitz
     fvlm.push_back (fv1[0]);
     int minm= mdegree[evn[source(fv1[0], lg)].second]; // minimal Markowitz
     
@@ -63,7 +63,7 @@ int emulated_vertex_heuristic_t<Vertex_heuristic_t>::operator() (const vector<ed
 
   // looking for egde eliminations belonging to last vertex elimination
   // and which other vertex eliminations could be performed
-  set<c_graph_t::vertex_t>   vs;
+  std::set<c_graph_t::vertex_t>   vs;
   for (size_t c= 0; c < eev1.size(); c++) {
     c_graph_t::vertex_t v= eev1[c].front ? eev1[c].j : eev1[c].i;
     if (v == last_vertex) eev2.push_back (eev1[c]); 
@@ -84,7 +84,7 @@ template <class Object_t, class Ad_graph_t, class Heuristic1_t, class Heuristic2
 inline int best_heuristic (const Ad_graph_t& adg, vector<Object_t>& el_seq,
 			   Heuristic1_t h1, Heuristic2_t h2, Heuristic3_t h3, 
 			   Heuristic4_t h4, Heuristic5_t h5) {
-  vector<pair<int, vector<Object_t> > > results (5);
+  vector<std::pair<int, vector<Object_t> > > results (5);
   results[0].first= use_heuristic (adg, results[0].second, h1);
   results[1].first= use_heuristic (adg, results[1].second, h2);
   results[2].first= use_heuristic (adg, results[2].second, h3);
@@ -138,7 +138,8 @@ template <class Object_t, class Ad_graph_t, class Op_t, class Objective_t>
 int standard_heuristic_op (const vector<Object_t>& v1, const Ad_graph_t& adg,
 			   vector<Object_t>& v2, Op_t op, base_heuristic_t<Objective_t>& h) {
   v2.resize (0);
-  Objective_t best= h.to_maximize() ? numeric_limits<Objective_t>::min() : numeric_limits<Objective_t>::max();
+  Objective_t best= h.to_maximize() ? std::numeric_limits<Objective_t>::min() : 
+                                      std::numeric_limits<Objective_t>::max();
 
   for (size_t c= 0; c < v1.size(); c++) {
     Object_t o= v1[c];

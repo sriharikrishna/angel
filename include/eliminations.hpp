@@ -1,4 +1,4 @@
-// $Id: eliminations.hpp,v 1.16 2003/06/11 16:28:53 gottschling Exp $
+// $Id: eliminations.hpp,v 1.18 2004/03/23 03:41:20 gottschling Exp $
 
 #ifndef 	_eliminations_include_
 #define 	_eliminations_include_
@@ -13,7 +13,9 @@
 
 namespace angel {
 
-	using namespace std;
+  using std::vector;
+  using std::cout;
+  using boost::tie;
 
 // =========================================================================
 // eliminations in c-graph
@@ -56,7 +58,7 @@ inline int front_edge_elimination (c_graph_t::vertex_t i,
 				   c_graph_t& cg) {
   bool                          found_ij;
   c_graph_t::edge_t   edge_ij;
-  boost::tie (edge_ij, found_ij)= edge (i, j, cg);
+  tie (edge_ij, found_ij)= edge (i, j, cg);
   return found_ij ? front_edge_elimination (edge_ij, cg) : 0;
 }
 
@@ -84,7 +86,7 @@ inline int back_edge_elimination (c_graph_t::vertex_t i,
 				  c_graph_t& cg) {
   bool                          found_ij;
   c_graph_t::edge_t   edge_ij;
-  boost::tie (edge_ij, found_ij)= edge (i, j, cg);
+  tie (edge_ij, found_ij)= edge (i, j, cg);
   return found_ij ? back_edge_elimination (edge_ij, cg) : 0;
 }
 
@@ -102,6 +104,14 @@ inline int edge_elimination (c_graph_t::edge_t e, bool front,
 			     c_graph_t& cg) {
   return front ? front_edge_elimination (e, cg)
                : back_edge_elimination (e, cg);
+}
+
+/** Front elimination of edge \p e.first from c-graph \p cg if \p e.second=true otherwise back eliminination
+    \return The costs (number of operation)
+*/ 
+inline int edge_elimination (edge_bool_t e, c_graph_t& cg) {
+  return e.second ? front_edge_elimination (e.first, cg)
+                  : back_edge_elimination (e.first, cg);
 }
 
 /** Front elimination of edge from vertex  \p i to vertex 
@@ -136,7 +146,7 @@ inline int edge_elimination (edge_ij_elim_t ee, c_graph_t& cg) {
     Elimination of vertices in sequence \p seq from c-graph \p cg
     \return The costs (number of operation)
 */
-int vertex_elimination (const std::vector<int>& seq, c_graph_t& cg);
+int vertex_elimination (const vector<int>& seq, c_graph_t& cg);
 
 
 /** Eliminate sequence \p seq of edges from c-graph \p cg
@@ -245,7 +255,7 @@ struct edge_vertex_elim_t {
 };
 
 /// sequences of edges as nodes from line graph
-typedef std::vector<edge_vertex_elim_t>       edge_vertex_elim_seq_t;
+typedef vector<edge_vertex_elim_t>       edge_vertex_elim_seq_t;
 
 /// Eliminate sequence \p seq of edges from line graph \p lg
 inline int edge_elimination (const edge_vertex_elim_seq_t& seq, line_graph_t& lg) {
@@ -261,16 +271,15 @@ inline int edge_elimination (const edge_vertex_elim_seq_t& seq, line_graph_t& lg
 
 /** Eliminate face \p f from line graph \p lg
     \param f the face
-    \param kr is a request for the number of a new node or the number of the node 
-    \param ac is a container for graphs representing the accumulation code
-
-    Absorbing the face, i.e. if face elimination inserts a new node
+    \param kr is a request for the number of a new node or the number of the 
+    absorbing the face, i.e. if face elimination inserts a new node
     into \p lg it should be number with \p kr and
     if a new node is immediately absorbed by some node \c k then it should be 
     \c k = \p kr.
     If the request cannot be satisfied the face is not eliminated.
     \p kr = -1 means no request.
     \param lg the line graph
+    \param ac is a container for graphs representing the accumulation code
     \return The number of node inserted or where the absorption took place.
  */
 int face_elimination (line_graph_t::face_t f, int kr, line_graph_t& lg, accu_graph_t& ac);
@@ -305,7 +314,7 @@ inline int face_elimination (line_graph_t::face_t f, line_graph_t& lg) {
  */
 inline int face_elimination (int i, int j, line_graph_t& lg) {
   line_graph_t::face_t f; bool found;
-  boost::tie (f, found)= edge (i, j, lg);
+  tie (f, found)= edge (i, j, lg);
   return found ? face_elimination (f, lg) : -1;
 }
 
@@ -324,13 +333,13 @@ inline int face_elimination (int i, int j, line_graph_t& lg) {
  */
 inline int face_elimination (int i, int j, int kr, line_graph_t& lg) {
   line_graph_t::face_t f; bool found;
-  boost::tie (f, found)= edge (i, j, lg);
+  tie (f, found)= edge (i, j, lg);
   return found ? face_elimination (f, kr, lg) : -1;
 }
 
 inline int face_elimination (int i, int j, int kr, line_graph_t& lg, accu_graph_t& ac) {
   line_graph_t::face_t f; bool found;
-  boost::tie (f, found)= edge (i, j, lg);
+  tie (f, found)= edge (i, j, lg);
   return found ? face_elimination (f, kr, lg, ac) : -1;
 }
 
@@ -342,13 +351,24 @@ inline int face_elimination (int i, int j, int kr, line_graph_t& lg, accu_graph_
 
     The third parameter of \p t is overwritten if the elimination was successful.
     So the information on both the resulting node and the elimination costs are provided.
-    We recommend this version because it is well suited for general-purpose usage.
  */
 inline int face_elimination (triplet_t& t, line_graph_t& lg) {
   int k= face_elimination (t.i, t.j, t.k, lg);
   if (k != -1) t.k= k; return k != -1;
 }
 
+/** Eliminate face from line graph
+    \param t a triplet of node number (i, j, kr), for meaning of kr see parameter lists 
+    of other face elimination functions 
+    \param lg the line graph
+    \param ac is a container for graphs representing the accumulation code
+    \return Whether a face was eliminated, i.e. the elimination costs.
+
+    The third parameter of \p t is overwritten if the elimination was successful.
+    So the information on both the resulting node and the elimination costs are provided.
+    We found that this version is the most convenient
+    for general-purpose usage, e.g. stochastic algorithms.
+ */
 inline int face_elimination (triplet_t& t, line_graph_t& lg, accu_graph_t& ac) {
   int k= face_elimination (t.i, t.j, t.k, lg, ac);
   if (k != -1) t.k= k; return k != -1;
@@ -407,8 +427,7 @@ inline int eliminate (int j, line_graph_t& lg) {
 
 /// Overloaded elimination for templates, here vertex elimination in c-graph
 inline int eliminate (edge_bool_t e, c_graph_t& cg) {
-  return e.second ? front_edge_elimination (e.first, cg)
-                  : back_edge_elimination (e.first, cg);
+  return edge_elimination (e, cg);
 }
 
 /// Overloaded elimination for templates, here vertex elimination in c-graph
@@ -443,7 +462,7 @@ inline int eliminate (triplet_t& t, line_graph_t& lg) {
 
 /// Returns a set of vertices that can be eliminated from c-graph \p cg
 int eliminatable_vertices (const c_graph_t& cg, 
-			   std::vector<c_graph_t::vertex_t>& vv);
+			   vector<c_graph_t::vertex_t>& vv);
 
 /** \brief Returns a set of vertices that can be eliminated from c-graph \p cg by edge elimination
 
@@ -456,15 +475,15 @@ int semi_eliminatable_vertices (const c_graph_t& cg, vector<c_graph_t::vertex_t>
     In fact it only copies the edges into a vector for better treatment.
 */
 int eliminatable_edges (const c_graph_t& cg, 
-			std::vector<c_graph_t::edge_t>& ev);
+			vector<c_graph_t::edge_t>& ev);
 
 /// Returns a set of edges that can be front eliminated from c-graph \p cg
 int front_eliminatable_edges (const c_graph_t& cg, 
-			      std::vector<c_graph_t::edge_t>& ev);
+			      vector<c_graph_t::edge_t>& ev);
 
 /// Returns a set of edges that can be back eliminated from c-graph \p cg
 int back_eliminatable_edges (const c_graph_t& cg, 
-			     std::vector<c_graph_t::edge_t>& ev);
+			     vector<c_graph_t::edge_t>& ev);
 
 /** \brief Returns a set of edges that can be eliminated from c-graph \p cg and how
 
@@ -473,7 +492,7 @@ int back_eliminatable_edges (const c_graph_t& cg,
     Edges can appear twice in the vector.
 */
 int eliminatable_edges (const c_graph_t& cg,
-			std::vector<edge_bool_t>& ev);
+			vector<edge_bool_t>& ev);
 
 /** \brief Returns a set of edges that can be eliminated from c-graph \p cg and how
 
@@ -482,11 +501,11 @@ int eliminatable_edges (const c_graph_t& cg,
     Edges can appear twice in the vector.
 */
 int eliminatable_edges (const c_graph_t& cg,
-			std::vector<edge_ij_elim_t>& ev);
+			vector<edge_ij_elim_t>& ev);
 
 /// Returns a set of faces that can be eliminated from line graph \p lg
 int eliminatable_faces (const line_graph_t& lg, 
-			std::vector<line_graph_t::face_t>& fv);
+			vector<line_graph_t::face_t>& fv);
 
 /** \brief Returns a set of eliminatable faces as triplets \p tv from line graph \p lg
 
@@ -494,8 +513,8 @@ int eliminatable_faces (const line_graph_t& lg,
     Thus there is no more information than eliminatable_faces 
     but vectors of triplets can be used in situations where vectors of faces cannot.
 */
-inline int eliminatable_triplets (const line_graph_t& lg, std::vector<triplet_t>& tv) {
-  std::vector<line_graph_t::face_t> fv;
+inline int eliminatable_triplets (const line_graph_t& lg, vector<triplet_t>& tv) {
+  vector<line_graph_t::face_t> fv;
   eliminatable_faces (lg, fv);
   tv.resize (0);
   for (size_t c= 0; c < fv.size(); c++) {
@@ -510,37 +529,37 @@ inline int eliminatable_triplets (const line_graph_t& lg, std::vector<triplet_t>
 
 /// Synonym of eliminatable_vertices for usage in templates \sa use_heuristics
 inline int eliminatable_objects (const c_graph_t& cg, 
-				 std::vector<c_graph_t::vertex_t>& vv) {
+				 vector<c_graph_t::vertex_t>& vv) {
   return eliminatable_vertices (cg, vv);
 }
 
 /// Synonym of eliminatable_edges for usage in templates \sa use_heuristics
 inline int eliminatable_objects (const c_graph_t& cg, 
-				 std::vector<c_graph_t::edge_t>& ev) {
+				 vector<c_graph_t::edge_t>& ev) {
   return eliminatable_edges (cg, ev);
 }
 
 /// Synonym of eliminatable_edges for usage in templates \sa use_heuristics
 inline int eliminatable_objects (const c_graph_t& cg,
-				 std::vector<edge_bool_t>& ev) {
+				 vector<edge_bool_t>& ev) {
   return eliminatable_edges (cg, ev);
 }
 
 /// Synonym of eliminatable_edges for usage in templates \sa use_heuristics
 inline int eliminatable_objects (const c_graph_t& cg,
-				 std::vector<edge_ij_elim_t>& ev) {
+				 vector<edge_ij_elim_t>& ev) {
   return eliminatable_edges (cg, ev);
 }
 
 /// Synonym of eliminatable_faces for usage in templates \sa use_heuristics
 inline int eliminatable_objects (const line_graph_t& lg, 
-				 std::vector<line_graph_t::face_t>& fv) {
+				 vector<line_graph_t::face_t>& fv) {
   return eliminatable_faces (lg, fv);
 }
 
 /// Synonym of eliminatable_triplets for usage in templates \sa use_heuristics
 inline int eliminatable_objects (const line_graph_t& lg, 
-				 std::vector<triplet_t>& tv) {
+				 vector<triplet_t>& tv) {
   return eliminatable_triplets (lg, tv);
 }
 
@@ -561,7 +580,7 @@ private:
 
 public:
   const Ad_graph_t             og;     ///< The original graph
-  std::vector<El_spec_t>       seq;    ///< Elimination sequence
+  vector<El_spec_t>       seq;    ///< Elimination sequence
   Ad_graph_t                   cg;     ///< Current graph
   int                          ccosts; ///< Current costs (og -> cg)
 
@@ -588,7 +607,7 @@ public:
 
       In debug mode it is checked if application of \p _seq to \p _og yields \p _cg
   */
-  elimination_history_t (const Ad_graph_t& _og, const std::vector<El_spec_t>& _seq,
+  elimination_history_t (const Ad_graph_t& _og, const vector<El_spec_t>& _seq,
 			 const Ad_graph_t& _cg, int _ccosts= 0) :
     og (_og), seq (_seq), cg (_cg), ccosts (_ccosts) {
     throw_exception (!check (), consistency_exception, "Inconsistent input graphs");}
@@ -599,7 +618,7 @@ public:
 
       Current line graph \p _cg is built by application of \p _seq to \p _og 
   */
-  elimination_history_t (const Ad_graph_t& _og, const std::vector<El_spec_t>& _seq) :
+  elimination_history_t (const Ad_graph_t& _og, const vector<El_spec_t>& _seq) :
     og (_og), seq (_seq) {
     throw_exception (!og.check (), consistency_exception, "Inconsistent input graph");
     bool seq_ok= rebuild_graph (); 
@@ -650,25 +669,25 @@ public:
       El_spec_t el= seq[c]; // copied from seq because some eliminations change el
       int el_costs= eliminate (el, og_copy); 
       if (el_costs == 0) {      
-	std::cout << "check_sequence failed";
+	cout << "check_sequence failed";
 	write_vector (" with elimination sequence", seq);
-	std::cout << " at " << c << "th entry, which is " << seq[c] << std::endl;
+	cout << " at " << c << "th entry, which is " << seq[c] << std::endl;
 	write_graph ("at this moment the graph is", og_copy);
-	std::cout << "it is " << (og_copy.check() ? "" : "not ") << "consistent\n";
+	cout << "it is " << (og_copy.check() ? "" : "not ") << "consistent\n";
 	write_vector ("complete elimination sequence is", seq);
 	return false; }
       else costs+= el_costs; }
     if (cg != og_copy) {
-      std::cout << "check_sequence failed because of different resulting graphs.\n";
+      cout << "check_sequence failed because of different resulting graphs.\n";
       write_graph ("current graph is", cg);
       write_graph ("seq applied to og results in", og_copy); 
       write_graph ("original graph was", og);
       write_vector ("elimination sequence is", seq);
       return false; }
     if (ccosts != costs) {
-      std::cout << "check_sequence failed because of different elimination costs.\n";
-      std::cout << "current costs are " << ccosts << std::endl;
-      std::cout << "seq applied to og requires " << costs << std::endl;
+      cout << "check_sequence failed because of different elimination costs.\n";
+      cout << "current costs are " << ccosts << std::endl;
+      cout << "seq applied to og requires " << costs << std::endl;
       write_graph ("original graph was", og);
       write_vector ("elimination sequence is", seq);
       write_graph ("current graph is", cg);
@@ -698,7 +717,7 @@ public:
   */
   template <typename Heuristic_t>
   void complete_sequence (Heuristic_t h) {
-    std::vector<El_spec_t>    v1, v2;
+    vector<El_spec_t>    v1, v2;
     for (eliminatable_objects (cg, v1); v1.size() > 0; eliminatable_objects (cg, v1)) {
       v2.resize (0); h (v1, cg, v2); elimination (v2[0]); }}
 };
@@ -717,14 +736,14 @@ typedef elimination_history_t<c_graph_t, edge_ij_elim_t>      edge_elimination_h
 typedef elimination_history_t<line_graph_t, triplet_t>        face_elimination_history_t;
 
 /// Converts vertex elimination sequence into (mixed) edge elimination sequence
-bool convert_elimination_sequence (const std::vector<c_graph_t::vertex_t>& vv, 
+bool convert_elimination_sequence (const vector<c_graph_t::vertex_t>& vv, 
 				   const c_graph_t& cg,
-				   std::vector<edge_ij_elim_t>& ev);
+				   vector<edge_ij_elim_t>& ev);
 
 /// Converts (mixed) edge elimination sequence into face elimination sequence
-bool convert_elimination_sequence (const std::vector<edge_ij_elim_t>& ev,
+bool convert_elimination_sequence (const vector<edge_ij_elim_t>& ev,
 				   const line_graph_t& lg,
-				   std::vector<triplet_t>& tv);
+				   vector<triplet_t>& tv);
 
 
 } // namespace angel

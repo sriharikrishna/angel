@@ -1,11 +1,11 @@
-# $Id: Makefile,v 1.19 2003/11/10 16:55:27 uwe_naumann Exp $
+# $Id: Makefile,v 1.20 2004/02/22 18:44:46 gottschling Exp $
 
 # BOOST_DIR must be defined in the environment !
 
 # CXXFLAGS may be changed appropriately
 #CXXFLAGS+= -O3 
 CXXFLAGS+= -DNDEBUG
-CXXFLAGS+= -g
+#CXXFLAGS+= -g
 
 #CPPFLAGS+= -DIGNORE_TRIVIAL_ELIMINATIONS
 #CPPFLAGS+= -DGNUPLOT # generate output for gnuplot (maybe part of output must be set as comment)
@@ -27,9 +27,9 @@ all:	$(OBJECTS)
 clean: 
 	$(RM) $(RMFLAGS) *.o *~ 
 
-#.PHONY: echo
-#echo:
-#	echo "$(CPPFLAGS) : $(angel_config)"
+.PHONY: echo
+echo:
+	echo "$(CPPFLAGS) : $(angel_config)"
 
 angel_types.o: angel_types.cpp $(IDIR)/angel_types.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ angel_types.cpp

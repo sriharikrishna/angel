@@ -1,4 +1,4 @@
-// $Id: angel_tools.hpp,v 1.9 2003/06/13 22:35:10 gottschling Exp $
+// $Id: angel_tools.hpp,v 1.10 2004/02/22 18:44:46 gottschling Exp $
 
 #ifndef 	_angel_tools_include_
 #define 	_angel_tools_include_
@@ -22,6 +22,11 @@
 #include "angel_types.hpp"
 
 namespace angel {
+
+  using std::vector;
+  using boost::tie;
+  using boost::get;
+  using boost::graph_traits;
 
 //                       some Operators
 // ===========================================================
@@ -104,7 +109,7 @@ public:
 /// Applies \p op to all edges of \p adg, graph can be changed 
 template <typename Ad_graph_t, typename Op_t>
 inline void for_all_edges (Ad_graph_t& adg, const Op_t& op) {
-  typename boost::graph_traits<Ad_graph_t>::edge_iterator  ei, e_end;
+  typename graph_traits<Ad_graph_t>::edge_iterator  ei, e_end;
   for (tie (ei, e_end)= edges (adg); ei != e_end; ++ei)
     op (*ei, adg);
 }
@@ -112,7 +117,7 @@ inline void for_all_edges (Ad_graph_t& adg, const Op_t& op) {
 /// Applies \p op to all edges of \p adg, op can be changed, e.g. for outputs
 template <typename Ad_graph_t, typename Op_t>
 inline void for_all_edges (const Ad_graph_t& adg, Op_t& op) {
-  typename boost::graph_traits<Ad_graph_t>::edge_iterator  ei, e_end;
+  typename graph_traits<Ad_graph_t>::edge_iterator  ei, e_end;
   for (tie (ei, e_end)= edges (adg); ei != e_end; ++ei)
     op (*ei, adg);
 }
@@ -121,7 +126,7 @@ inline void for_all_edges (const Ad_graph_t& adg, Op_t& op) {
 template <typename Ad_graph_t, typename Op_t>
 inline void for_all_in_edges (typename Ad_graph_t::vertex_descriptor v, 
 			      Ad_graph_t& adg, const Op_t& op) {
-  typename boost::graph_traits<Ad_graph_t>::in_edge_iterator  iei, ie_end;
+  typename graph_traits<Ad_graph_t>::in_edge_iterator  iei, ie_end;
   for (tie (iei, ie_end)= in_edges (v, adg); iei != ie_end; ++iei)
     op (*iei, adg);
 }
@@ -130,7 +135,7 @@ inline void for_all_in_edges (typename Ad_graph_t::vertex_descriptor v,
 template <typename Ad_graph_t, typename Op_t>
 inline void for_all_out_edges (typename Ad_graph_t::vertex_descriptor v, 
 			       Ad_graph_t& adg, const Op_t& op) {
-  typename boost::graph_traits<Ad_graph_t>::out_edge_iterator  oei, oe_end;
+  typename graph_traits<Ad_graph_t>::out_edge_iterator  oei, oe_end;
   for (tie (oei, oe_end)= out_edges (v, adg); oei != oe_end; ++oei)
     op (*oei, adg);
 }
@@ -140,7 +145,7 @@ template <typename Ad_graph_t, typename Op_t>
 inline int sum_over_all_in_edges (typename Ad_graph_t::vertex_descriptor v, 
 				  Ad_graph_t& adg, const Op_t& op) {
   int value= 0;
-  typename boost::graph_traits<Ad_graph_t>::in_edge_iterator  iei, ie_end;
+  typename graph_traits<Ad_graph_t>::in_edge_iterator  iei, ie_end;
   for (tie (iei, ie_end)= in_edges (v, adg); iei != ie_end; ++iei)
     value+= op (*iei, adg);
   return value;
@@ -151,7 +156,7 @@ template <typename Ad_graph_t, typename Op_t>
 inline int sum_over_all_out_edges (typename Ad_graph_t::vertex_descriptor v, 
 				   const Ad_graph_t& adg, const Op_t& op) {
   int value= 0;
-  typename boost::graph_traits<Ad_graph_t>::out_edge_iterator  oei, oe_end;
+  typename graph_traits<Ad_graph_t>::out_edge_iterator  oei, oe_end;
   for (tie (oei, oe_end)= out_edges (v, adg); oei != oe_end; ++oei)
     value+= op (*oei, adg);
   return value;
@@ -163,7 +168,7 @@ inline void successor_set (typename Ad_graph_t::vertex_descriptor v,
 			   const Ad_graph_t& adg, 
 			   typename std::vector<typename Ad_graph_t::vertex_descriptor>& vec) {
   vec.resize (0); vec.reserve (out_degree (v, adg));
-  typename boost::graph_traits<Ad_graph_t>::out_edge_iterator  oei, oe_end;
+  typename graph_traits<Ad_graph_t>::out_edge_iterator  oei, oe_end;
   for (tie (oei, oe_end)= out_edges (v, adg); oei != oe_end; ++oei)
     vec.push_back (target (*oei, adg));
 }
@@ -183,7 +188,7 @@ inline void predecessor_set (typename Ad_graph_t::vertex_descriptor v,
 			     const Ad_graph_t& adg, 
 			     typename std::vector<typename Ad_graph_t::vertex_descriptor>& vec) {
   vec.resize (0); vec.reserve (out_degree (v, adg));
-  typename boost::graph_traits<Ad_graph_t>::in_edge_iterator  iei, ie_end;
+  typename graph_traits<Ad_graph_t>::in_edge_iterator  iei, ie_end;
   for (tie (iei, ie_end)= in_edges (v, adg); iei != ie_end; ++iei)
     vec.push_back (source (*iei, adg));
 }
@@ -200,8 +205,7 @@ inline void sorted_predecessor_set (typename Ad_graph_t::vertex_descriptor v,
 /// Sorts arbitrary vector and removes double elements
 template <typename El_t>
 void unique_vector (std::vector<El_t>& v) {
-  using namespace std;
-  sort (v.begin(), v.end());
+  std::sort (v.begin(), v.end());
   typename vector<El_t>::iterator it= unique (v.begin(), v.end());
   v.resize (it-v.begin());
 }
@@ -212,7 +216,6 @@ template <typename Ad_graph_t>
 inline void common_successors (typename Ad_graph_t::vertex_descriptor v, 
 			       const Ad_graph_t& adg, 
 			       typename std::vector<typename Ad_graph_t::vertex_descriptor>& vec) {
-  using namespace boost;
   typename graph_traits<Ad_graph_t>::out_edge_iterator  oei, oe_end;
   typename graph_traits<Ad_graph_t>::in_edge_iterator   iei, ie_end;
   for (tie (oei, oe_end)= out_edges (v, adg); oei != oe_end; ++oei)
@@ -227,9 +230,8 @@ template <typename Ad_graph_t>
 inline void same_successors (typename Ad_graph_t::vertex_descriptor v, 
 			     const Ad_graph_t& adg, 
 			     typename std::vector<typename Ad_graph_t::vertex_descriptor>& vec) {
-  using namespace boost;
-  typename graph_traits<Ad_graph_t>::out_edge_iterator  oei, oe_end;
-  typename graph_traits<Ad_graph_t>::in_edge_iterator   iei, ie_end;
+  typename graph_traits<Ad_graph_t>::out_edge_iterator      oei, oe_end;
+  typename graph_traits<Ad_graph_t>::in_edge_iterator       iei, ie_end;
   typename std::vector<typename Ad_graph_t::vertex_descriptor>   sv, s;
  
   sorted_successor_set (v, adg, sv);
@@ -246,7 +248,6 @@ template <typename Ad_graph_t>
 inline void common_predecessor (typename Ad_graph_t::vertex_descriptor v, 
 				const Ad_graph_t& adg, 
 				typename std::vector<typename Ad_graph_t::vertex_descriptor>& vec) {
-  using namespace boost;
   typename graph_traits<Ad_graph_t>::out_edge_iterator  oei, oe_end;
   typename graph_traits<Ad_graph_t>::in_edge_iterator   iei, ie_end;
   for (tie (iei, ie_end)= in_edges (v, adg); iei != ie_end; ++iei)
@@ -261,9 +262,8 @@ template <typename Ad_graph_t>
 inline void same_predecessors (typename Ad_graph_t::vertex_descriptor v, 
 			       const Ad_graph_t& adg, 
 			       typename std::vector<typename Ad_graph_t::vertex_descriptor>& vec) {
-  using namespace boost;
-  typename graph_traits<Ad_graph_t>::out_edge_iterator  oei, oe_end;
-  typename graph_traits<Ad_graph_t>::in_edge_iterator   iei, ie_end;
+  typename graph_traits<Ad_graph_t>::out_edge_iterator      oei, oe_end;
+  typename graph_traits<Ad_graph_t>::in_edge_iterator       iei, ie_end;
   typename std::vector<typename Ad_graph_t::vertex_descriptor>   pv, p;
  
   sorted_predecessor_set (v, adg, pv);
@@ -314,15 +314,13 @@ std::ostream& write_iterators (std::ostream& stream, const std::string& s,
     the same edge (equal source and equal target) in \p g2 (or e_end if not found)
 */
 template <typename Ad_graph_t>
-inline typename boost::graph_traits<Ad_graph_t>::edge_iterator
+inline typename graph_traits<Ad_graph_t>::edge_iterator
 same_edge (typename Ad_graph_t::edge_descriptor e,
 	   const Ad_graph_t& g1, const Ad_graph_t& g2) {
-
-  using namespace boost;
   typename graph_traits<Ad_graph_t>::edge_iterator ei, e_end;
   typename Ad_graph_t::vertex_descriptor s= source (e, g1), 
                                          t= target (e, g1);
-  for (boost::tie (ei, e_end)= edges (g2); ei != e_end; ++ei)
+  for (tie (ei, e_end)= edges (g2); ei != e_end; ++ei)
     if (source (*ei, g2) == s && target (*ei, g2) == t)
       return ei;
   return e_end; // not found
@@ -372,9 +370,9 @@ template <typename Ad_graph_t>
 inline int count_parallel_edges (typename Ad_graph_t::edge_descriptor e, 
 				 const Ad_graph_t& g) {
   typename Ad_graph_t::vertex_descriptor s= source (e, g), t= target (e, g);
-  typename boost::graph_traits<Ad_graph_t>::out_edge_iterator oei, oe_end;
+  typename graph_traits<Ad_graph_t>::out_edge_iterator oei, oe_end;
   int pe= 0;
-  for (boost::tie (oei, oe_end)= out_edges (s, g); oei != oe_end; oei++)
+  for (tie (oei, oe_end)= out_edges (s, g); oei != oe_end; oei++)
     if (target (*oei, g) == t) pe++;
   return pe;
 }
@@ -558,9 +556,8 @@ void in_out_path_lengths (const c_graph_t& cg,
 /// Searches an edge in line graph that corresponds to (s,t)
 inline bool find_edge (int s, int t, const line_graph_t& lg, 
 		       std::vector<line_graph_t::edge_t>& ev) {
-  using namespace boost;
   ev.resize (0);
-  line_graph_t::const_evn_t evn= get(vertex_name, lg);
+  line_graph_t::const_evn_t evn= get(boost::vertex_name, lg);
   line_graph_t::ei_t        ei, eend;
   for (tie (ei, eend)= vertices (lg); ei != eend; ++ei) 
     if (evn[*ei].first == s && evn[*ei].second == t) ev.push_back (*ei);
@@ -609,8 +606,7 @@ void number_independent_vertices (const c_graph_t& cg, std::vector<int>& v);
 template <typename Ad_graph_t> 
 void reachable_vertices (const Ad_graph_t& adg, std::vector<bool>& rv) {
 
-  using namespace boost;
-  typedef typename Ad_graph_t::vertex_descriptor                  vertex_t;
+  typedef typename Ad_graph_t::vertex_descriptor                         vertex_t;
   typedef typename graph_traits<Ad_graph_t>::vertex_iterator      vi_t;
   typedef typename graph_traits<Ad_graph_t>::adjacency_iterator   ai_t;
 
@@ -642,10 +638,9 @@ void reachable_vertices (const Ad_graph_t& adg, std::vector<bool>& rv) {
 template <typename Ad_graph_t> 
 void relevant_vertices (const Ad_graph_t& adg, std::vector<bool>& rv) {
 
-  using namespace boost;
-  typedef typename Ad_graph_t::vertex_descriptor                  vertex_t;
-  typedef typename graph_traits<Ad_graph_t>::vertex_iterator      vi_t;
-  typedef typename graph_traits<Ad_graph_t>::in_edge_iterator     ie_t;
+  typedef typename Ad_graph_t::vertex_descriptor               vertex_t;
+  typedef typename graph_traits<Ad_graph_t>::vertex_iterator   vi_t;
+  typedef typename graph_traits<Ad_graph_t>::in_edge_iterator  ie_t;
 
   rv.resize (num_vertices (adg));
   std::fill (rv.begin(), rv.end(), false);
@@ -688,7 +683,7 @@ inline void minimal_markowitz_degree (const c_graph_t& cg, std::vector<int>& v) 
   v.resize (cg.v());
   predecessor_t<c_graph_t> pred (cg);
   successor_t<c_graph_t>   succ (cg);
-  c_graph_t::vi_t    vi, v_end;
+  c_graph_t::vi_t          vi, v_end;
   for (tie (vi, v_end)= vertices (cg); vi != v_end; ++vi) {
     if (vertex_type (*vi, cg) == intermediate)
       v[*vi]= minimal_in_out_degree (*vi, pred) * minimal_in_out_degree (*vi, succ); }
@@ -766,9 +761,8 @@ void take_over_successors (c_graph_t::vertex_t v1, c_graph_t::vertex_t v2,
 template <typename Ad_graph_t>
 int remove_irrelevant_edges (typename Ad_graph_t::vertex_descriptor i, 
 			     Ad_graph_t& adg, bool fast= false) {
-  using namespace boost;
-  typedef typename Ad_graph_t::vertex_descriptor                  vertex_t;
-  typedef typename graph_traits<Ad_graph_t>::in_edge_iterator     iei_t;
+  typedef typename Ad_graph_t::vertex_descriptor               vertex_t;
+  typedef typename graph_traits<Ad_graph_t>::in_edge_iterator  iei_t;
 
   if (fast) {
     int e= in_degree (i, adg);
@@ -804,7 +798,6 @@ int remove_irrelevant_edges (typename Ad_graph_t::vertex_descriptor i,
 template <typename Ad_graph_t>
 int remove_unreachable_edges (typename Ad_graph_t::vertex_descriptor i, 
 			      Ad_graph_t& adg, bool fast= false) {
-  using namespace boost;
   typedef typename Ad_graph_t::vertex_descriptor                  vertex_t;
   typedef typename graph_traits<Ad_graph_t>::out_edge_iterator    oei_t;
 

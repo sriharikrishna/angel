@@ -1,4 +1,4 @@
-// $Id: xaif_interface.cpp,v 1.10 2003/11/10 16:55:27 uwe_naumann Exp $
+// $Id: xaif_interface.cpp,v 1.13 2004/05/19 14:15:49 gottschling Exp $
 
 #ifdef USE_XAIF
 
@@ -7,13 +7,14 @@
 #include "heuristics.hpp"
 
 #include "angel_io.hpp"
+#include "sa.hpp"
 
 namespace angel {
 
 using namespace std;
 using namespace boost;
 using namespace xaifBoosterCrossCountryInterface;
- 
+
 inline size_t which_index (const LinearizedComputationalGraphVertex * const add,
 			   const vector<const LinearizedComputationalGraphVertex*>& av) {
   for (size_t c= 0; c < av.size(); c++) if (add == av[c]) return c;
@@ -66,7 +67,7 @@ void read_graph_xaif_booster (const LinearizedComputationalGraph& xg, c_graph_t&
   vector<vertex_t> indeps;
   for (bi= indeps_list.begin(); bi != be; bi++) indeps.push_back (which_index (*bi, av));
 
-  // test wheather indeps in the beginning
+  // test whether indeps in the beginning
   for (size_t c= 0; c < indeps.size(); c++)
     // assert (indeps[c] < indeps.size());
     throw_exception (indeps[c] >= indeps.size(), consistency_exception,
@@ -153,37 +154,12 @@ void write_graph_xaif_booster (const accu_graph_t& ag,
   
 void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
 				   int task,
+				   double, // for interface unification
 				   JacobianAccumulationExpressionList& elist) {
   c_graph_t cg;
   vector<const LinearizedComputationalGraphVertex*> av;
   vector<edge_address_t> ae;
   read_graph_xaif_booster (xgraph, cg, av, ae);
-
-  /* reverse_mode_vertex_t               rmv;
-  lowest_markowitz_vertex_t           lmv;
-  heuristic_pair_t<lowest_markowitz_vertex_t, reverse_mode_vertex_t> lm_rm_v (lmv, rmv);
-
-  momr_vertex_t                       momrv;
-  heuristic_triplet_t<momr_vertex_t, lowest_markowitz_vertex_t, reverse_mode_vertex_t>
-      momr_lm_rm_v (momrv, lmv, rmv);
-
-  typedef heuristic_pair_t<lmmd_vertex_t, reverse_mode_vertex_t> lmmd_rm_vertex_t;
-  lmmd_rm_vertex_t                    lmmd_rm_v (lmmd_vertex, rmv);
-
-  vector<pair<int, vector<c_graph_t::vertex_t> > > results (3);
-
-  results[0].first= use_heuristic (cg, results[0].second, lm_rm_v);
-  results[1].first= use_heuristic (cg, results[1].second, momr_lm_rm_v);
-  results[2].first= use_heuristic (cg, results[2].second, lmmd_rm_v);
-
-  int index_best= 0, lcosts= results[0].first, c= 1;
-  for (; c < 3; c++) if (results[c].first < lcosts) index_best= c;
-  vector<c_graph_t::vertex_t> best_seq (results[index_best].second);
-
-  write_vector ("Best elimination sequence", best_seq); 
-  
-  vector<edge_ij_elim_t> eev;
-  convert_elimination_sequence (best_seq, cg, eev); */
 
   typedef heuristic_pair_t<lowest_markowitz_vertex_t, reverse_mode_vertex_t>                   lm_rm_t;
   typedef heuristic_pair_t<lmmd_vertex_t, reverse_mode_vertex_t>                               lmmd_rm_t;
@@ -263,6 +239,76 @@ void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
   write_graph_xaif_booster (ac, av, ae, elist);
 }
 
+void compute_elimination_sequence_lsa_face (const LinearizedComputationalGraph& xgraph,
+					    int iterations, 
+					    double gamma,
+					    JacobianAccumulationExpressionList& expression_list) {
+  c_graph_t                                            cg;
+  vector<const LinearizedComputationalGraphVertex*>    av;
+  vector<edge_address_t>                               ae;
+  read_graph_xaif_booster (xgraph, cg, av, ae);
+  line_graph_t                                         lg (cg);
+
+  face_elimination_history_t                           feh (lg);
+  typedef triplet_heuristic_t<reverse_mode_face_t>     rm_t;
+  rm_t                                                 rm (reverse_mode_face);
+  SA_elimination_cost_t<rm_t>                          cost (rm);
+  neighbor_sequence_check_t                            neighbor;
+  
+  // int elim_costs= 
+    LSA (feh, neighbor, cost, gamma, iterations);
+  feh.complete_sequence (rm);
+
+  accu_graph_t ac (cg, lg);
+  for (size_t c= 0; c < feh.seq.size(); c++) 
+    face_elimination (feh.seq[c], lg, ac);
+  ac.set_jacobi_entries ();
+
+  write_graph_xaif_booster (ac, av, ae, expression_list);
+}
+
+void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph& xgraph,
+					      int iterations, 
+					      double gamma,
+					      JacobianAccumulationExpressionList& expression_list) {
+
+  c_graph_t                                            cg;
+  vector<const LinearizedComputationalGraphVertex*>    av;
+  vector<edge_address_t>                               ae;
+  read_graph_xaif_booster (xgraph, cg, av, ae);
+
+  // Check if vertex elimination works
+  for (size_t i= 0; i != cg.dependents.size(); i++)
+    // version 1
+    if (out_degree (cg.dependents[i], cg) > 0) {
+      cerr << "Warning! Vertex elimination not possible with these graph.\n"
+	   << "Call LSA for face elimination with same parameters (may take longer).\n";
+      return compute_elimination_sequence_lsa_face (xgraph, iterations, gamma, expression_list);}
+    // version 2
+    // throw_exception (out_degree (cg.dependents[i], cg) > 0, consistency_exception, 
+    //                  "Vertex elimination not possible with these graph.");
+      
+  vertex_elimination_history_t                         veh (cg);
+  SA_elimination_cost_t<reverse_mode_vertex_t>         cost (reverse_mode_vertex);
+  neighbor_sequence_check_t                            neighbor;
+
+  // int elim_costs= 
+    LSA (veh, neighbor, cost, gamma, iterations);
+  veh.complete_sequence (reverse_mode_vertex);
+
+  vector<edge_ij_elim_t>                              eseq; 
+  vector<triplet_t>                                   tv;
+  line_graph_t                                        lg (cg);
+  convert_elimination_sequence (veh.seq, cg, eseq);
+  convert_elimination_sequence (eseq, lg, tv);
+
+  accu_graph_t ac (cg, lg);
+  for (size_t c= 0; c < tv.size(); c++) 
+    face_elimination (tv[c], lg, ac);
+  ac.set_jacobi_entries ();
+
+  write_graph_xaif_booster (ac, av, ae, expression_list);
+}
 
 } // namespace angel
 

@@ -1,4 +1,4 @@
-// $Id: sa.hpp,v 1.11 2003/06/11 16:28:54 gottschling Exp $
+// $Id: sa.hpp,v 1.12 2004/03/23 03:41:20 gottschling Exp $
 
 #ifndef 	_sa_include_
 #define 	_sa_include_
@@ -201,7 +201,7 @@ public:
     \param eh 
     \return If it was successful
 
-    Some element is removed from the elimination sequence and then it is check if the 
+    Some element is removed from the elimination sequence and then it is checked if the 
     remaining sequence can be applied to the original graph \c eh.og. 
     In case of failure the elimination sequence is restored and another element is tried
     until some shortened sequence is applicable.

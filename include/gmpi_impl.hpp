@@ -1,8 +1,6 @@
-// $Id: gmpi_impl.hpp,v 1.2 2003/05/14 21:42:14 gottschling Exp $
+// $Id: gmpi_impl.hpp,v 1.3 2004/02/22 18:44:46 gottschling Exp $
 
 namespace GMPI {
-
-  using namespace std;
 
   template <class Comm_ref_t>
   void Comm::Send (const Comm_ref_t& data, int dest, int tag) const {

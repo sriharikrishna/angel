@@ -1,4 +1,4 @@
-// $Id: heuristics.hpp,v 1.16 2003/07/04 11:35:52 gottschling Exp $
+// $Id: heuristics.hpp,v 1.18 2004/03/23 03:41:20 gottschling Exp $
 
 #ifndef 	_heuristics_include_
 #define 	_heuristics_include_
@@ -21,7 +21,7 @@
 
 namespace angel {
 
-  using namespace std;
+  using std::vector;
   
 // =====================================================
 // Basic class for heuristics
@@ -42,7 +42,8 @@ public:
     is_set= true; my_objective= o; }
   void set_empty_objective () {
     is_set= true; 
-    my_objective= my_maximize ? numeric_limits<Objective_t>::min() : numeric_limits<Objective_t>::max(); }
+    my_objective= my_maximize ? std::numeric_limits<Objective_t>::min() 
+                              : std::numeric_limits<Objective_t>::max(); }
   bool to_maximize() const {return my_maximize;}
 };
 
@@ -915,7 +916,7 @@ extern lowest_markowitz_face_t lowest_markowitz_face;
 // when no faces are found anymore then a new vertex is searched
 //
 
-// declaration neede in next function
+// declaration needed in next function
 void markowitz_on_line_graph (const line_graph_t& lg, vector<int>& mdegree);
 
 /** \brief Lowest Markowitz for face elimination with completion of vertex elimination
@@ -1276,6 +1277,44 @@ inline int use_heuristic_trace (const Ad_graph_t& adg, vector<Object_t>& el_seq,
     costs+= ocosts;
     output (cout, o); 
     cout << " costs " << ocosts << " --> overall " << costs << endl;
+    el_seq.push_back (o);
+    eliminatable_objects (adg_copy, v1);
+  }
+  return costs;
+}
+
+/** \brief Applies heuristic and uses output visitor write costs and graphs for every elimination.
+    \param adg c-graph or line graph
+    \param el_seq Obtained elimination sequence
+    \param h Heuristic or combination of heuristics
+    \param output Visitor to where written is
+    \return Elimination costs
+    \sa use_heuristic
+    \sa eliminatable_objects
+    \sa eliminate
+    \sa heuristic_pair_t
+    \sa no_output_t
+    \sa string_stream_output_t
+*/
+template <class Object_t, class Ad_graph_t, class Heuristic_t, class Output_t>
+inline int apply_heuristic (const Ad_graph_t& adg, vector<Object_t>& el_seq,
+			    Heuristic_t h, Output_t output) {
+  Ad_graph_t adg_copy (adg);
+  vector<Object_t> v1;
+  eliminatable_objects (adg_copy, v1);
+  output.write_graph ("Original graph", adg_copy);
+  int costs= 0, iteration= 0;
+  el_seq.resize (0); // clean elimination sequence
+
+  while (!v1.empty()) {
+    vector<Object_t> v2;
+    h (v1, adg_copy, v2);
+    Object_t o= v2[0];
+    int ocosts= eliminate (o, adg_copy);
+    costs+= ocosts;
+    output << "Elimination of " << o << " costs " << ocosts << " --> overall " << costs << '\n';
+    std::ostringstream gtext; gtext << "Graph after " << ++iteration << "iterations\n";
+    output.write_graph (gtext.str(), adg_copy);
     el_seq.push_back (o);
     eliminatable_objects (adg_copy, v1);
   }
