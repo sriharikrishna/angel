@@ -89,33 +89,33 @@ public:
     pure_c_graph_t (), X (0), next_edge_number (0) {}
 
   /** \brief Constructor with vertex specification
-      \param _V number of all vertices
-      \param _X number of independent vertices
+      \param V_ number of all vertices
+      \param X_ number of independent vertices
       \param deps set of dependent vertices
   */
-  c_graph_t (int _V, int _X, const std::vector<vertex_t>& deps) :
-      pure_c_graph_t (_V), X (_X), next_edge_number (0), dependents (deps) {
+  c_graph_t (int V_, int X_, const std::vector<vertex_t>& deps) :
+      pure_c_graph_t (V_), X (X_), next_edge_number (0), dependents (deps) {
     // rem. in basic blocks vertex may be both dependent and independent
     #ifndef NDEBUG
-      // assert (X >= 0 && X < _V); // X==0 is usefull in graph construction
-      throw_exception (X < 0 && X > _V, consistency_exception, "X inconsistent");
+      // assert (X >= 0 && X < V_); // X==0 is usefull in graph construction
+      throw_exception (X < 0 && X > V_, consistency_exception, "X inconsistent");
       for (size_t c= 0; c < dependents.size(); c++)
-	// assert (dependents[c] < (vertex_t) _V);
-	throw_exception (dependents[c] >= (vertex_t) _V, consistency_exception, "dependents inconsistent");
+	// assert (dependents[c] < (vertex_t) V_);
+	throw_exception (dependents[c] >= (vertex_t) V_, consistency_exception, "dependents inconsistent");
     #endif
   }
 
   /** \brief Constructor with vertex specification
-      \param _X number of independent vertices
-      \param _Z number of intermediated vertices
-      \param _Y number of dependent vertices, will be located at the end
+      \param X_ number of independent vertices
+      \param Z_ number of intermediated vertices
+      \param Y_ number of dependent vertices, will be located at the end
   */
-  c_graph_t (int _X, int _Z, int _Y) : 
-       pure_c_graph_t (_X+_Y+_Z), X (_X), next_edge_number (0) {
+  c_graph_t (int X_, int Z_, int Y_) : 
+       pure_c_graph_t (X_+Y_+Z_), X (X_), next_edge_number (0) {
     // last Y vertices are dependent if nothing else is specified
     vi_t      vi, v_end;
     tie(vi, v_end)= vertices(*this);
-    for (int c= 0; c < _X+_Z; c++, ++vi);
+    for (int c= 0; c < X_+Z_; c++, ++vi);
     for (; vi != v_end; ++vi)
       dependents.push_back (*vi);
   }
@@ -274,19 +274,19 @@ public:
   line_graph_t () : X (0), cons_ok (false), cgp (0) {}
 
   /** \brief Constructor with vertex specification
-      \param _V number of all vertices
-      \param _X number of independent vertices
+      \param V_ number of all vertices
+      \param X_ number of independent vertices
       \param deps set of dependent vertices
   */
-  line_graph_t (int _V, int _X, const std::vector<edge_t>& deps) :
-      pure_line_graph_t (_V), X (_X), cons_ok (false), dependents (deps), cgp (0) {
+  line_graph_t (int V_, int X_, const std::vector<edge_t>& deps) :
+      pure_line_graph_t (V_), X (X_), cons_ok (false), dependents (deps), cgp (0) {
     // rem. in basic blocks vertex may be both dependent and independent
     #ifndef NDEBUG
-      // assert (X >= 0 && X < _V); // X==0 is usefull in graph construction
-      throw_exception (X < 0 && X > _V, consistency_exception, "X inconsistent");
+      // assert (X >= 0 && X < V_); // X==0 is usefull in graph construction
+      throw_exception (X < 0 && X > V_, consistency_exception, "X inconsistent");
       for (size_t c= 0; c < dependents.size(); c++)
-	// assert (dependents[c] < (edge_t) _V);
-	throw_exception (dependents[c] >= (edge_t) _V, consistency_exception, "dependents inconsistent");
+	// assert (dependents[c] < (edge_t) V_);
+	throw_exception (dependents[c] >= (edge_t) V_, consistency_exception, "dependents inconsistent");
     #endif
   }
 
