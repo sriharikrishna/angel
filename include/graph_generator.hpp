@@ -54,7 +54,7 @@ void stats2block (int inputs, int outputs, const std::vector<c_graph_t>& stats,
     \param inputs The number of the block's inputs
     \param outputs The number of the block's outputs
     \param stats The number of statements
-    \param max_expr The maximal number of expressions in each statement
+    \param max_exp The maximal number of expressions in each statement
     \param unary The portion of unary expressions, the remainder are binary.
     \param block The resulting block
 */
@@ -64,7 +64,7 @@ void random_block (int inputs, int outputs, int stats, int max_exp, double unary
 /** \brief Generates a DAG that represents a loop over the block
     \param block The used block
     \param loops The number of loops
-    \param block The resulting loop DAG
+    \param loop The resulting loop DAG
 */
 void block2loop (const c_graph_t& block, int loops,
 		 c_graph_t& loop);

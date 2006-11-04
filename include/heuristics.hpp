@@ -762,6 +762,7 @@ public:
 
 /** \brief Maximal overall path length reduction in mixed edge elimination 
     \param ev1 Set of edges that can be eliminated and how
+    \param front indicates if the edge is to be front eliminated 
     \param cg c-graph
     \param ev2 Result vector of edges with maximal path length reduction
     \return Size of ev2
@@ -1254,6 +1255,7 @@ inline int use_heuristic_debug (const Ad_graph_t& adg, vector<Object_t>& el_seq,
     \param adg c-graph or line graph
     \param el_seq Obtained elimination sequence
     \param h Heuristic or combination of heuristics
+    \param output 
     \return Elimination costs
     \sa use_heuristic
     \sa eliminatable_objects

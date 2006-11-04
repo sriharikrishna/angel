@@ -95,7 +95,7 @@ inline void write_vector (ostream& stream, const string& s,
 			  const vector<Scalar_t>& v, Op_t op);
 
 /** \brief Write STL vector to standard output
-    \param stream
+    \param s string
     \param v Vector
     \param op Output operator, op (s, v[i]) must write element v[i] to \p s
 */
