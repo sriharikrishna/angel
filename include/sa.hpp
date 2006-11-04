@@ -1,4 +1,4 @@
-// $Id: sa.hpp,v 1.12 2004/03/23 03:41:20 gottschling Exp $
+// $Id: sa.hpp,v 1.13 2005/04/12 04:22:57 jean_utke Exp $
 
 #ifndef 	_sa_include_
 #define 	_sa_include_
@@ -34,7 +34,7 @@ class LOG_temperature_t {
   double   gamma;
 public:
   /// Set Gamma in constructor
-  LOG_temperature_t (double _gamma) : gamma (_gamma) {}
+  LOG_temperature_t (double p_gamma) : gamma (p_gamma) {}
   /// LOG temperature in iteration \p it
   double operator() (int it) const {
     return gamma / log (double (it+2)); }
@@ -45,7 +45,7 @@ class fixed_temperature_t {
   double   t;
 public:
   /// Set t in constructor
-  fixed_temperature_t (double _t) : t (_t) {}
+  fixed_temperature_t (double p_t) : t (p_t) {}
   /// Fixed temperature in iteration \p it
   double operator() (int it) const {
     return t; }
@@ -156,7 +156,7 @@ class SA_elimination_cost_t {
   Heuristic_t  h;
 public:
   /// Constructor defining the heuristic \c h
-  SA_elimination_cost_t (Heuristic_t _h) : h (_h) {}
+  SA_elimination_cost_t (Heuristic_t p_h) : h (p_h) {}
 
   /// Operator() computes the costs of \c eh
   template <class Ad_graph_t, class El_spec_t>
@@ -259,11 +259,11 @@ class gamma_adaption_max_t {
   double scaling;
 public:
   /** \brief  Constructor 
-      \param _D The number of improvement before \f$\Gamma\f$ is changed
-      \param _scaling Scaling factor for \f$\Gamma\f$, if omitted 1.0 is taken (no scaling)
+      \param p_D The number of improvement before \f$\Gamma\f$ is changed
+      \param p_scaling Scaling factor for \f$\Gamma\f$, if omitted 1.0 is taken (no scaling)
   */
-  gamma_adaption_max_t (int _D, double _scaling= 1.0) : 
-    D (_D), diff (0), max_diff (0), last_min (0), imp (0), scaling (_scaling) {
+  gamma_adaption_max_t (int p_D, double p_scaling= 1.0) : 
+    D (p_D), diff (0), max_diff (0), last_min (0), imp (0), scaling (p_scaling) {
     throw_debug_exception (D <= 0 && scaling <= 0.0, consistency_exception, 
 			   "D and scaling must be greater 0"); }
 
@@ -289,11 +289,11 @@ class gamma_adaption_average_t {
   double scaling;
 public:
   /** \brief  Constructor 
-      \param _D The number of improvement before \f$\Gamma\f$ is changed
-      \param _scaling Scaling factor for \f$\Gamma\f$, if omitted 1.0 is taken (no scaling)
+      \param p_D The number of improvement before \f$\Gamma\f$ is changed
+      \param p_scaling Scaling factor for \f$\Gamma\f$, if omitted 1.0 is taken (no scaling)
   */
-  gamma_adaption_average_t (int _D, double _scaling= 1.0) : 
-    D (_D), sum_diff (0), last_min (0), imp (0), scaling (_scaling) {
+  gamma_adaption_average_t (int p_D, double p_scaling= 1.0) : 
+    D (p_D), sum_diff (0), last_min (0), imp (0), scaling (p_scaling) {
     throw_debug_exception (D <= 0 && scaling <= 0.0, consistency_exception, 
 			   "D and scaling must be greater 0"); }
 

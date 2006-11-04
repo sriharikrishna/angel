@@ -1,4 +1,4 @@
-// $Id: heuristics.cpp,v 1.9 2004/02/22 18:44:46 gottschling Exp $
+// $Id: heuristics.cpp,v 1.10 2005/03/22 05:08:40 jean_utke Exp $
 
 #include "heuristics.hpp"
 

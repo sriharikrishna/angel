@@ -1,4 +1,4 @@
-// $Id: heuristics.hpp,v 1.18 2004/03/23 03:41:20 gottschling Exp $
+// $Id: heuristics.hpp,v 1.19 2005/03/22 05:08:40 jean_utke Exp $
 
 #ifndef 	_heuristics_include_
 #define 	_heuristics_include_

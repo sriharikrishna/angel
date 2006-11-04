@@ -1,5 +1,5 @@
 
-// $Id: angel_types.hpp,v 1.23 2004/03/23 03:41:20 gottschling Exp $ 
+// $Id: angel_types.hpp,v 1.24 2004/10/16 04:18:17 jean_utke Exp $ 
 
 #ifndef 	_angel_types_include_
 #define 	_angel_types_include_

@@ -1,4 +1,4 @@
-// $Id: angel_io.hpp,v 1.10 2004/04/23 12:59:10 gottschling Exp $
+// $Id: angel_io.hpp,v 1.12 2005/03/22 21:48:49 jean_utke Exp $
 
 #ifndef 	_angel_io_include_
 #define 	_angel_io_include_
@@ -8,7 +8,7 @@
 //
 //
 
-#include "boost/graph/graphviz.hpp"
+// #include "boost/graph/graphviz.hpp"
 
 #include <vector>
 #include <iostream>
@@ -446,16 +446,16 @@ void write_edge_property (ostream& stream, const string& s,
   stream << '}' << endl;
 }
 
-template <typename Ad_graph_t> 
-void graphviz_display (const Ad_graph_t& adg) {
-  string aFilename("/tmp/GraphVizDisplay.dot");
-  ofstream anOutFileStream;
-  anOutFileStream.open(aFilename.c_str(),std::ios::out);
-  boost::write_graphviz(anOutFileStream, adg); 
-  anOutFileStream.close(); 
-  string commandString("dot -Tgif " + aFilename + " > " + aFilename + ".gif ; xv " + aFilename + ".gif" ); 
-  system(commandString.c_str()); 
-}
+// template <typename Ad_graph_t> 
+// void graphviz_display (const Ad_graph_t& adg) {
+//   string aFilename("/tmp/GraphVizDisplay.dot");
+//   ofstream anOutFileStream;
+//   anOutFileStream.open(aFilename.c_str(),std::ios::out);
+//   boost::write_graphviz(anOutFileStream, adg); 
+//   anOutFileStream.close(); 
+//   string commandString("dot -Tgif " + aFilename + " > " + aFilename + ".gif ; xv " + aFilename + ".gif" ); 
+//   system(commandString.c_str()); 
+// }
 
 extern ofstream log_file;
 
@@ -535,23 +535,23 @@ struct vis_display_output_t : public string_stream_output_t {
 extern vis_display_output_t cout_vis_display_output;
 
 
-struct vis_store_output_t : public no_output_t {
-  std::string filenamebase;
-  int         filecounter;
-public:
-  vis_store_output_t (const std::string& f) : filenamebase(f), filecounter(0) {}
-  template <class Ad_graph_t> 
-  void write_graph (const std::string& , const Ad_graph_t& adg) {
-    string dot_filename (numbered_filename (filenamebase, "dot", filecounter));
-    ofstream dot_file (dot_filename.c_str());
-    write_graphviz(dot_file, adg); 
-    dot_file.close();
-    string command ("dot -Tgif " + dot_filename + " > " 
-		    + numbered_filename (filenamebase, "gif", filecounter++)
-		    + "; rm " + dot_filename);
-    system (command.c_str());
-  }
-};
+// struct vis_store_output_t : public no_output_t {
+//   std::string filenamebase;
+//   int         filecounter;
+// public:
+//   vis_store_output_t (const std::string& f) : filenamebase(f), filecounter(0) {}
+//   template <class Ad_graph_t> 
+//   void write_graph (const std::string& , const Ad_graph_t& adg) {
+//     string dot_filename (numbered_filename (filenamebase, "dot", filecounter));
+//     ofstream dot_file (dot_filename.c_str());
+//     write_graphviz(dot_file, adg); 
+//     dot_file.close();
+//     string command ("dot -Tgif " + dot_filename + " > " 
+// 		    + numbered_filename (filenamebase, "gif", filecounter++)
+// 		    + "; rm " + dot_filename);
+//     system (command.c_str());
+//   }
+// };
 
 
 } // namespace angel

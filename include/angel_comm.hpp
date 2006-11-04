@@ -1,4 +1,4 @@
-// $Id: angel_comm.hpp,v 1.8 2003/06/11 16:28:52 gottschling Exp $
+// $Id: angel_comm.hpp,v 1.10 2004/10/16 04:18:17 jean_utke Exp $
 
 #ifndef 	_angel_comm_include_
 #define 	_angel_comm_include_

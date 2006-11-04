@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.8 2004/03/23 03:41:20 gottschling Exp $
+# $Id: Makefile,v 1.9 2004/10/16 04:18:17 jean_utke Exp $
 
 ifeq "$(strip $(config))" ""
 	angel_config:=gnu

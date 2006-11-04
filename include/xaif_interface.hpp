@@ -1,4 +1,4 @@
-// $Id: xaif_interface.hpp,v 1.6 2004/04/23 12:59:11 gottschling Exp $
+// $Id: xaif_interface.hpp,v 1.7 2004/10/16 04:18:17 jean_utke Exp $
 
 #ifndef 	_xaif_interface_include_
 #define 	_xaif_interface_include_

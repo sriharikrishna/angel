@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.20 2004/02/22 18:44:46 gottschling Exp $
+# $Id: Makefile,v 1.21 2004/10/16 04:18:17 jean_utke Exp $
 
 # BOOST_DIR must be defined in the environment !
 
