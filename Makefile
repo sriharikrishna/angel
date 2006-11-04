@@ -47,8 +47,8 @@ echo:
 
 dist:
 	cd .. && tar -cf angel.tar --no-recursion angel/Makefile angel/*/Makefile angel/src/*.cpp \
-		angel/include/*.hpp angel/lib angel/doc/html angel/doc/latex \
-		angel/doc/man angel/Doxyfile angel/specs/*.conf \
+		angel/include/*.hpp angel/lib angel/doc/html \
+		angel/Doxyfile angel/specs/*.conf \
 	&& gzip angel.tar && cd angel
 
 docdist:

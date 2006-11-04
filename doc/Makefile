@@ -5,7 +5,7 @@ include ../specs/$(angel_config).conf
 .PHONY:	doc clean distclean
 
 doc:
-	cd latex && $(MAKE) && cd .. # use Makefile from doxygen
+	#cd latex && $(MAKE) && cd .. # use Makefile from doxygen
 
 clean:
 	cd latex && $(RM) $(RMFLAGS) *~ *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out && cd ..
