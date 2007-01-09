@@ -1112,6 +1112,40 @@ int minimal_distance_face_t::operator() (const vector<line_graph_t::face_t>& fv1
   return standard_heuristic_op (fv1, lg, fv2, distf_op_t(), *this);
 }
 
+// -------------------------------------------------------------------------
+// Scarcity preserving edge eliminations
+// -------------------------------------------------------------------------
+int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
+                                   const c_graph_t& cg,
+                                   vector<edge_bool_t>& bev2) {
+  bev2.resize (0);
+  if (bev1.size() == 0) return 0;
+
+  for (size_t c = 1; c < bev1.size(); c++) {
+    c_graph_t::edge_t e = bev1[c].first;
+    vector<c_graph_t::vertex_t> v_v;
+
+    // select edge elimination objects that would isolate the target vertex
+    // (for forward eliminations) or source vertex (for back eliminations)
+    if (bev1[c].second) {
+      predecessor_set (target (e, cg), cg, v_v);
+      if (v_v.size() == 1) bev2.push_back (bev1[c]);
+      break;
+    }
+    else {
+      successor_set (source (e, cg), cg, v_v);
+      if (v_v.size() == 1) bev2.push_back (bev1[c]);
+      break;
+    }
+
+    // select eliminations that create a one or fewer fill-ins
+    int fill = bev1[c].second ? new_out_edges (e,cg)
+                              : new_in_edges (e,cg);
+    if (fill < 2) bev2.push_back (bev1[c]);
+  }
+  return bev2.size();
+}
+
 } // namespace angel
 
 // to do: some names are confusing, e.g. ev for a face vector

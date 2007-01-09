@@ -152,6 +152,68 @@ void write_graph_xaif_booster (const accu_graph_t& ag,
   } // end expression
 }
   
+void compute_partial_elimination_sequence (const LinearizedComputationalGraph& xgraph,
+					   int tasks,
+					   double, // for interface unification
+					   JacobianAccumulationExpressionList& elist,
+					   LinearizedComputationalGraph& rgraph,
+					   vertexCorrelationList& v_cor_list,
+                                           edgeCorrelationList& e_cor_list) {
+  c_graph_t cg;
+  vector<const LinearizedComputationalGraphVertex*> av;
+  vector<edge_address_t> ae;
+  vector<edge_bool_t> bev1, bev2;
+  vector<edge_ij_elim_t> eseq; 
+  int cost = 0;
+
+  read_graph_xaif_booster (xgraph, cg, av, ae);
+  eliminatable_objects (cg, bev1);
+  scarce_pres_edge_eliminations (bev1, cg, bev2);
+
+  while(!bev2.empty()) {
+    cost += eliminate (bev2[1], cg);
+    eliminatable_objects (cg, bev1);
+    scarce_pres_edge_eliminations (bev1, cg, bev2);
+  }
+ 
+  line_graph_t lg (cg);
+  vector<triplet_t>               tv;
+  convert_elimination_sequence (eseq, lg, tv);
+
+#ifndef NDEBUG
+  write_vector("Same elimination sequence as face eliminations", tv);  
+#endif
+
+  accu_graph_t ac (cg, lg);
+  for (size_t c= 0; c < tv.size(); c++) 
+    face_elimination (tv[c], lg, ac);
+
+#ifndef NDEBUG
+  write_graph ("Empty line graph", lg);
+  line_graph_t::evn_t            evn= get(vertex_name, lg);
+  write_vertex_property (cout, "vertices of this edge graph", evn, lg);
+#endif
+  
+  ac.set_jacobi_entries ();
+
+#ifndef NDEBUG
+  for (size_t c= 0; c < ac.accu_exp.size(); c++) {
+    write_graph ("Accumulation graph", ac.accu_exp[c]);
+    property_map<pure_accu_exp_graph_t, vertex_name_t>::type vprop= 
+      get (vertex_name, ac.accu_exp[c]);
+    write_vertex_property (cout, "Vertex props", vprop, ac.accu_exp[c]); 
+    ad_edge_t my_jacobi= ac.jacobi_entries[c];
+    if (my_jacobi.second == 0) cout << "isn't Jacobian entry\n";
+    else cout << "is Jacoby entry: " << my_jacobi << std::endl; }
+#endif
+
+  write_graph_xaif_booster (ac, av, ae, elist);
+
+  // construct remainder graph to be returned
+  rgraph.clear();
+
+}
+
 void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
 				   int task,
 				   double, // for interface unification
