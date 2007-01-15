@@ -221,7 +221,7 @@ void build_remainder_graph (const c_graph_t& cgp,
   c_graph_t::vi_t vi, v_end;
   for (tie(vi, v_end)= vertices(cgp); vi != v_end; ++vi) {
     LinearizedComputationalGraphVertex& rvert = rg.addVertex();
-    vertex_correlation_entry rvert_cor;
+    VertexCorrelationEntry rvert_cor;
     rvert_cor.lcgVert = av[*vi];
     rvert_cor.rv = &rvert;
     v_cor_list.push_back(rvert_cor);
@@ -245,7 +245,7 @@ void build_remainder_graph (const c_graph_t& cgp,
 				"Vertex in remainder graph could not be correlated"); 
 
     LinearizedComputationalGraphEdge& redge = rg.addEdge(*r_src_p, *r_tgt_p);
-    edge_correlation_entry redge_cor_ent;
+    EdgeCorrelationEntry redge_cor_ent;
     redge_cor_ent.re = &redge;
     e_cor_list.push_back(redge_cor_ent);
  } // end all edges
