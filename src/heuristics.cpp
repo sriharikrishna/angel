@@ -1123,11 +1123,12 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
 
   for (size_t c = 1; c < bev1.size(); c++) {
     c_graph_t::edge_t e = bev1[c].first;
+    bool isFront = bev1[c].second;
     vector<c_graph_t::vertex_t> v_v;
 
     // select edge elimination objects that would isolate the target vertex
     // (for forward eliminations) or source vertex (for back eliminations)
-    if (bev1[c].second) {
+    if (isFront) {
       predecessor_set (target (e, cg), cg, v_v);
       if (v_v.size() == 1) bev2.push_back (bev1[c]);
       break;
@@ -1139,8 +1140,8 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
     }
 
     // select eliminations that create a one or fewer fill-ins
-    int fill = bev1[c].second ? new_out_edges (e,cg)
-                              : new_in_edges (e,cg);
+    int fill = isFront ? new_out_edges (e,cg)
+                       : new_in_edges (e,cg);
     if (fill < 2) bev2.push_back (bev1[c]);
   }
   return bev2.size();

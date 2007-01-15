@@ -151,39 +151,138 @@ void write_graph_xaif_booster (const accu_graph_t& ag,
       new_exp.setJacobianEntry (*av[my_jacobi.second], *av[my_jacobi.first]);
   } // end expression
 }
+
+void write_jaelist_and_rgraph (const accu_graph_t& ag,
+			       const vector<const LinearizedComputationalGraphVertex*>& av,
+			       const vector<edge_address_t>& ae,
+			       JacobianAccumulationExpressionList& elist,
+			       LinearizedComputationalGraph& rgraph,
+			       vertexCorrelationList& v_cor_list,
+			       edgeCorrelationList& e_cor_list) {
+
+  typedef LinearizedComputationalGraphVertex      xlvertex_t;
+  typedef JacobianAccumulationExpressionVertex    xavertex_t;
   
+  // build Jacobian Accumulation Expressions one at a time
+  vector<xavertex_t*> exp_output_pr; // pointer to output vertex of expression
+  for (size_t c= 0; c < ag.accu_exp.size(); c++) {
+    const accu_exp_graph_t& my_exp= ag.accu_exp[c];
+    property_map<pure_accu_exp_graph_t, vertex_name_t>::const_type vpr= get (vertex_name, my_exp);
+
+    JacobianAccumulationExpression& new_exp= elist.addExpression();
+    vector<xavertex_t*>  vp (my_exp.v());
+    // for all vertices in my_exp
+    for (size_t vc= 0; vc < (size_t) my_exp.v(); vc++) {      
+      const accu_exp_t& prop= vpr[vc];
+
+      // create a new JAE vertex
+      xavertex_t& new_vertex= new_exp.addVertex();
+      vp[vc]= &new_vertex;
+
+      // if it's the last vertex, save its address in exp_output_pr
+      if (vc+1 == (size_t) my_exp.v()) exp_output_pr.push_back(&new_vertex);
+
+      // set reference (for leaves) or set operation (non-leaves)
+      switch (prop.ref_kind) { 
+	case accu_exp_t::nothing:
+	  throw_exception (true, consistency_exception, "Unset vertex"); break;
+	case accu_exp_t::exp:    
+	  throw_debug_exception (prop.ref.exp_nr >= int (c), consistency_exception, "Expression number too large")
+	  new_vertex.setInternalReference (*exp_output_pr[prop.ref.exp_nr]); break;
+	case accu_exp_t::lgn: {    
+	  const LinearizedComputationalGraphEdge* ptr= xaif_edge_pr (prop.ref.node, ag, ae); 
+	  throw_debug_exception (ptr == NULL, consistency_exception, "Unset reference");
+	  new_vertex.setExternalReference (*ptr); } break;
+	case accu_exp_t::isop:    
+	  new_vertex.setOperation (prop.ref.op == accu_exp_t::add ? xavertex_t::ADD_OP : xavertex_t::MULT_OP);
+      } // switch ref_kind
+
+      // go through all edges in 
+
+
+
+    } // for all vertices in expression
+    
+    // add edges to new Jacobian Accumulation Expression
+    graph_traits<pure_accu_exp_graph_t>::edge_iterator ei, e_end;   // set edges
+    for (tie (ei, e_end)= edges (my_exp); ei != e_end; ei++)
+      new_exp.addEdge (*vp[source (*ei, my_exp)], *vp[target (*ei, my_exp)]);
+
+  } // for all expressions
+}
+
+void build_remainder_graph (const c_graph_t& cgp,
+			    const vector<const LinearizedComputationalGraphVertex*> av,
+			    const vector<edge_address_t> ae,
+			    LinearizedComputationalGraph& rg,
+			    vertexCorrelationList& v_cor_list,
+			    edgeCorrelationList& e_cor_list){ 
+  rg.clear();
+  v_cor_list.resize(0);
+  e_cor_list.resize(0);
+
+  // first copy all vertices
+  c_graph_t::vi_t vi, v_end;
+  for (tie(vi, v_end)= vertices(cgp); vi != v_end; ++vi) {
+    LinearizedComputationalGraphVertex& rvert = rg.addVertex();
+    vertex_correlation_entry rvert_cor;
+    rvert_cor.lcgVert = av[*vi];
+    rvert_cor.rv = &rvert;
+    v_cor_list.push_back(rvert_cor);
+  } // end all vertices
+
+  // add outedges from each vertex
+  for (tie(vi, v_end)= vertices(cgp); vi != v_end; ++vi) {
+    c_graph_t::oei_t oei, oe_end;
+    for (tie(oei, oe_end)= out_edges (*vi, cgp); oei != oe_end; ++oei) {
+      //LinearizedComputationalGraphEdge& redge = rg.addEdge();
+      edge_correlation_entry redge_cor;
+      //redge_cor.re = &redge;
+      e_cor_list.push_back(redge_cor);
+    } // end all outedges
+  } // end all vertices
+
+} // end build_remainder_graph()
+
 void compute_partial_elimination_sequence (const LinearizedComputationalGraph& xgraph,
 					   int tasks,
 					   double, // for interface unification
 					   JacobianAccumulationExpressionList& elist,
-					   LinearizedComputationalGraph& rgraph,
+					   LinearizedComputationalGraph& rg,
 					   vertexCorrelationList& v_cor_list,
                                            edgeCorrelationList& e_cor_list) {
   c_graph_t cg;
   vector<const LinearizedComputationalGraphVertex*> av;
   vector<edge_address_t> ae;
   vector<edge_bool_t> bev1, bev2;
-  vector<edge_ij_elim_t> eseq; 
+  vector<edge_ij_elim_t> eseq;
   int cost = 0;
 
   read_graph_xaif_booster (xgraph, cg, av, ae);
-  eliminatable_objects (cg, bev1);
-  scarce_pres_edge_eliminations (bev1, cg, bev2);
+  // a partial elimination sequence will reduce cgp to "cg prime"
+  c_graph_t cgp (cg);
 
+  // perform partial elimination sequence on cgc
+  eliminatable_objects (cgp, bev1);
+  scarce_pres_edge_eliminations (bev1, cgp, bev2);
   while(!bev2.empty()) {
-    cost += eliminate (bev2[1], cg);
-    eliminatable_objects (cg, bev1);
-    scarce_pres_edge_eliminations (bev1, cg, bev2);
+    edge_ij_elim_t elim (target (bev2[0].first, cgp), source (bev2[0].first, cgp), bev2[0].second);
+    eseq.push_back(elim);
+    cost += eliminate (bev2[0], cgp);
+    eliminatable_objects (cgp, bev1);
+    scarce_pres_edge_eliminations (bev1, cgp, bev2);
   }
- 
+
+  // transform the partial elimination sequence into face eliminations
   line_graph_t lg (cg);
-  vector<triplet_t>               tv;
+  vector<triplet_t> tv;
   convert_elimination_sequence (eseq, lg, tv);
 
 #ifndef NDEBUG
   write_vector("Same elimination sequence as face eliminations", tv);  
 #endif
 
+  // build accumulation graph
   accu_graph_t ac (cg, lg);
   for (size_t c= 0; c < tv.size(); c++) 
     face_elimination (tv[c], lg, ac);
@@ -192,11 +291,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
   write_graph ("Empty line graph", lg);
   line_graph_t::evn_t            evn= get(vertex_name, lg);
   write_vertex_property (cout, "vertices of this edge graph", evn, lg);
-#endif
   
-  ac.set_jacobi_entries ();
-
-#ifndef NDEBUG
   for (size_t c= 0; c < ac.accu_exp.size(); c++) {
     write_graph ("Accumulation graph", ac.accu_exp[c]);
     property_map<pure_accu_exp_graph_t, vertex_name_t>::type vprop= 
@@ -207,10 +302,8 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
     else cout << "is Jacoby entry: " << my_jacobi << std::endl; }
 #endif
 
-  write_graph_xaif_booster (ac, av, ae, elist);
-
-  // construct remainder graph to be returned
-  rgraph.clear();
+  build_remainder_graph (cgp, av, ae, rg, v_cor_list, e_cor_list);
+  write_jaelist_and_rgraph (ac, av, ae, elist, rg, v_cor_list, e_cor_list);
 
 }
 

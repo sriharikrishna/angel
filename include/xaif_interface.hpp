@@ -13,14 +13,14 @@
 namespace angel {
 
 struct vertex_correlation_entry {
-  xaifBoosterCrossCountryInterface::LinearizedComputationalGraphVertex* lcgVert;
+  const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphVertex* lcgVert;
   xaifBoosterCrossCountryInterface::LinearizedComputationalGraphVertex* rv;
 };
 
 enum RemainderEdgeType {LCG_EDGE, JAE_VERT};
 
 union edge_correlation_entry {
-  xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* lcgEdge;
+  const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* lcgEdge;
   xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* jaeVert;
   RemainderEdgeType type;
   xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* re;
