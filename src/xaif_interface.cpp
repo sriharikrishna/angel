@@ -157,8 +157,8 @@ void write_jaelist_and_rgraph (const accu_graph_t& ag,
 			       const vector<edge_address_t>& ae,
 			       JacobianAccumulationExpressionList& elist,
 			       LinearizedComputationalGraph& rgraph,
-			       vertexCorrelationList& v_cor_list,
-			       edgeCorrelationList& e_cor_list) {
+			       VertexCorrelationList& v_cor_list,
+			       EdgeCorrelationList& e_cor_list) {
 
   typedef LinearizedComputationalGraphVertex      xlvertex_t;
   typedef JacobianAccumulationExpressionVertex    xavertex_t;
@@ -197,10 +197,6 @@ void write_jaelist_and_rgraph (const accu_graph_t& ag,
 	  new_vertex.setOperation (prop.ref.op == accu_exp_t::add ? xavertex_t::ADD_OP : xavertex_t::MULT_OP);
       } // switch ref_kind
 
-      // go through all edges in 
-
-
-
     } // for all vertices in expression
     
     // add edges to new Jacobian Accumulation Expression
@@ -215,13 +211,13 @@ void build_remainder_graph (const c_graph_t& cgp,
 			    const vector<const LinearizedComputationalGraphVertex*> av,
 			    const vector<edge_address_t> ae,
 			    LinearizedComputationalGraph& rg,
-			    vertexCorrelationList& v_cor_list,
-			    edgeCorrelationList& e_cor_list){ 
+			    VertexCorrelationList& v_cor_list,
+			    EdgeCorrelationList& e_cor_list){ 
   rg.clear();
   v_cor_list.resize(0);
   e_cor_list.resize(0);
 
-  // first copy all vertices
+  // copy vertices
   c_graph_t::vi_t vi, v_end;
   for (tie(vi, v_end)= vertices(cgp); vi != v_end; ++vi) {
     LinearizedComputationalGraphVertex& rvert = rg.addVertex();
@@ -231,16 +227,28 @@ void build_remainder_graph (const c_graph_t& cgp,
     v_cor_list.push_back(rvert_cor);
   } // end all vertices
 
-  // add outedges from each vertex
-  for (tie(vi, v_end)= vertices(cgp); vi != v_end; ++vi) {
-    c_graph_t::oei_t oei, oe_end;
-    for (tie(oei, oe_end)= out_edges (*vi, cgp); oei != oe_end; ++oei) {
-      //LinearizedComputationalGraphEdge& redge = rg.addEdge();
-      edge_correlation_entry redge_cor;
-      //redge_cor.re = &redge;
-      e_cor_list.push_back(redge_cor);
-    } // end all outedges
-  } // end all vertices
+  // copy edges
+  c_graph_t::ei_t ei, e_end;
+  for (tie(ei, e_end) = edges(cgp); ei != e_end; ++ei) {
+    const LinearizedComputationalGraphVertex* o_src_p = av[source(*ei, cgp)];
+    const LinearizedComputationalGraphVertex* o_tgt_p = av[target(*ei, cgp)];
+    LinearizedComputationalGraphVertex* r_src_p = NULL;
+    LinearizedComputationalGraphVertex* r_tgt_p = NULL;
+
+    // correlate source and target with vertices in the remainder graph
+    VertexCorrelationList::iterator vcori;
+    for (vcori = v_cor_list.begin(); vcori != v_cor_list.end(); vcori++) {
+      if (vcori->lcgVert == o_src_p) r_src_p = vcori->rv;
+      else if (vcori->lcgVert == o_tgt_p) r_tgt_p = vcori->rv;
+    } // end all vertex correlation entries
+    throw_debug_exception (r_src_p == NULL || r_tgt_p == NULL, consistency_exception,
+				"Vertex in remainder graph could not be correlated"); 
+
+    LinearizedComputationalGraphEdge& redge = rg.addEdge(*r_src_p, *r_tgt_p);
+    edge_correlation_entry redge_cor_ent;
+    redge_cor_ent.re = &redge;
+    e_cor_list.push_back(redge_cor_ent);
+ } // end all edges
 
 } // end build_remainder_graph()
 
@@ -249,8 +257,8 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
 					   double, // for interface unification
 					   JacobianAccumulationExpressionList& elist,
 					   LinearizedComputationalGraph& rg,
-					   vertexCorrelationList& v_cor_list,
-                                           edgeCorrelationList& e_cor_list) {
+					   VertexCorrelationList& v_cor_list,
+                                           EdgeCorrelationList& e_cor_list) {
   c_graph_t cg;
   vector<const LinearizedComputationalGraphVertex*> av;
   vector<edge_address_t> ae;
@@ -259,10 +267,9 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
   int cost = 0;
 
   read_graph_xaif_booster (xgraph, cg, av, ae);
-  // a partial elimination sequence will reduce cgp to "cg prime"
-  c_graph_t cgp (cg);
 
-  // perform partial elimination sequence on cgc
+  // a partial elimination sequence reduces cgp to "cg prime"
+  c_graph_t cgp (cg);
   eliminatable_objects (cgp, bev1);
   scarce_pres_edge_eliminations (bev1, cgp, bev2);
   while(!bev2.empty()) {

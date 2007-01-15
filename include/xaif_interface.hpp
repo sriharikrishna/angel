@@ -12,30 +12,13 @@
 
 namespace angel {
 
-struct vertex_correlation_entry {
-  const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphVertex* lcgVert;
-  xaifBoosterCrossCountryInterface::LinearizedComputationalGraphVertex* rv;
-};
-
-enum RemainderEdgeType {LCG_EDGE, JAE_VERT};
-
-union edge_correlation_entry {
-  const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* lcgEdge;
-  xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* jaeVert;
-  RemainderEdgeType type;
-  xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* re;
-};
-
-typedef std::list<vertex_correlation_entry> VertexCorrelationList;
-typedef std::list<edge_correlation_entry> EdgeCorrelationList;
-
 void compute_partial_elimination_sequence (const xaifBoosterCrossCountryInterface::LinearizedComputationalGraph& xgraph,
 				           int tasks, 
 				           double, // for interface unification
 				           xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& expression_list,
 					   xaifBoosterCrossCountryInterface::LinearizedComputationalGraph& rgraph,
-					   vertexCorrelationList& v_cor_list,
-					   edgeCorrelationList& e_cor_list);
+					   xaifBoosterCrossCountryInterface::VertexCorrelationList& v_cor_list,
+					   xaifBoosterCrossCountryInterface::EdgeCorrelationList& e_cor_list);
 
 void compute_elimination_sequence (const xaifBoosterCrossCountryInterface::LinearizedComputationalGraph& xgraph,
 				   int tasks, 
