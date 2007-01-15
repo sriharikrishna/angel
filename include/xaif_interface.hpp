@@ -26,8 +26,8 @@ union edge_correlation_entry {
   xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* re;
 };
 
-typedef std::list<vertex_correlation_entry> vertexCorrelationList;
-typedef std::list<edge_correlation_entry> edgeCorrelationList;
+typedef std::list<vertex_correlation_entry> VertexCorrelationList;
+typedef std::list<edge_correlation_entry> EdgeCorrelationList;
 
 void compute_partial_elimination_sequence (const xaifBoosterCrossCountryInterface::LinearizedComputationalGraph& xgraph,
 				           int tasks, 
