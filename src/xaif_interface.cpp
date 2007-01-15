@@ -9,6 +9,8 @@
 #include "angel_io.hpp"
 #include "sa.hpp"
 
+#include "xaifBooster/system/inc/GraphVizDisplay.hpp"
+
 namespace angel {
 
 using namespace std;
@@ -152,13 +154,13 @@ void write_graph_xaif_booster (const accu_graph_t& ag,
   } // end expression
 }
 
-void write_jaelist_and_rgraph (const accu_graph_t& ag,
-			       const vector<const LinearizedComputationalGraphVertex*>& av,
-			       const vector<edge_address_t>& ae,
-			       JacobianAccumulationExpressionList& elist,
-			       LinearizedComputationalGraph& rgraph,
-			       VertexCorrelationList& v_cor_list,
-			       EdgeCorrelationList& e_cor_list) {
+void build_jae_list_and_correlate_rg (const accu_graph_t& ag,
+				      const vector<const LinearizedComputationalGraphVertex*>& av,
+				      const vector<edge_address_t>& ae,
+				      JacobianAccumulationExpressionList& jae_list,
+				      LinearizedComputationalGraph& rg,
+				      VertexCorrelationList& v_cor_list,
+				      EdgeCorrelationList& e_cor_list) {
 
   typedef LinearizedComputationalGraphVertex      xlvertex_t;
   typedef JacobianAccumulationExpressionVertex    xavertex_t;
@@ -167,9 +169,9 @@ void write_jaelist_and_rgraph (const accu_graph_t& ag,
   vector<xavertex_t*> exp_output_pr; // pointer to output vertex of expression
   for (size_t c= 0; c < ag.accu_exp.size(); c++) {
     const accu_exp_graph_t& my_exp= ag.accu_exp[c];
-    property_map<pure_accu_exp_graph_t, vertex_name_t>::const_type vpr= get (vertex_name, my_exp);
+    property_map<pure_accu_exp_graph_t, vertex_name_t>::const_type vpr = get(vertex_name, my_exp);
 
-    JacobianAccumulationExpression& new_exp= elist.addExpression();
+    JacobianAccumulationExpression& new_exp= jae_list.addExpression();
     vector<xavertex_t*>  vp (my_exp.v());
     // for all vertices in my_exp
     for (size_t vc= 0; vc < (size_t) my_exp.v(); vc++) {      
@@ -209,7 +211,6 @@ void write_jaelist_and_rgraph (const accu_graph_t& ag,
 
 void build_remainder_graph (const c_graph_t& cgp,
 			    const vector<const LinearizedComputationalGraphVertex*> av,
-			    const vector<edge_address_t> ae,
 			    LinearizedComputationalGraph& rg,
 			    VertexCorrelationList& v_cor_list,
 			    EdgeCorrelationList& e_cor_list){ 
@@ -255,7 +256,7 @@ void build_remainder_graph (const c_graph_t& cgp,
 void compute_partial_elimination_sequence (const LinearizedComputationalGraph& xgraph,
 					   int tasks,
 					   double, // for interface unification
-					   JacobianAccumulationExpressionList& elist,
+					   JacobianAccumulationExpressionList& jae_list,
 					   LinearizedComputationalGraph& rg,
 					   VertexCorrelationList& v_cor_list,
                                            EdgeCorrelationList& e_cor_list) {
@@ -280,7 +281,11 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
     scarce_pres_edge_eliminations (bev1, cgp, bev2);
   }
 
-  // transform the partial elimination sequence into face eliminations
+  //GraphVizDisplay::show(cgp,"cg prime");
+  build_remainder_graph(cgp, av, rg, v_cor_list, e_cor_list);
+  GraphVizDisplay::show(rg, "remainder graph");
+
+  // transform the partial elimination sequence into a sequence of face eliminations
   line_graph_t lg (cg);
   vector<triplet_t> tv;
   convert_elimination_sequence (eseq, lg, tv);
@@ -309,8 +314,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
     else cout << "is Jacoby entry: " << my_jacobi << std::endl; }
 #endif
 
-  build_remainder_graph (cgp, av, ae, rg, v_cor_list, e_cor_list);
-  write_jaelist_and_rgraph (ac, av, ae, elist, rg, v_cor_list, e_cor_list);
+  build_jae_list_and_correlate_rg(ac, av, ae, jae_list, rg, v_cor_list, e_cor_list);
 
 }
 
