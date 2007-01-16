@@ -221,15 +221,23 @@ void build_remainder_graph (const c_graph_t& cgp,
   // copy vertices
   c_graph_t::vi_t vi, v_end;
   for (tie(vi, v_end) = vertices(cgp); vi != v_end; ++vi) {
+
+#ifndef NDEBUG
     if (in_degree(*vi, cgp) > 0 || out_degree(*vi, cgp) > 0) {
       cout << "adding vertex " << *vi << " to the remainder graph\n";
+#endif
+
       LinearizedComputationalGraphVertex& rvert = rg.addVertex();
       VertexCorrelationEntry rvert_cor;
       rvert_cor.lcgVert = av[*vi];
       rvert_cor.rv = &rvert;
       v_cor_list.push_back(rvert_cor);
+
+#ifndef NDEBUG
     }
     else cout << "vertex " << *vi << " is isolated, it is not added to the remainder graph\n";
+#endif
+
   } // end all vertices
 
   // copy edges
@@ -248,7 +256,10 @@ void build_remainder_graph (const c_graph_t& cgp,
     throw_debug_exception (r_src_p == NULL || r_tgt_p == NULL, consistency_exception,
 				"Vertex in remainder graph could not be correlated"); 
 
+#ifndef NDEBUG
     cout << "Adding edge from " << source(*ei, cgp) << " to " << target(*ei, cgp) << " in remainder graph\n";
+#endif
+
     LinearizedComputationalGraphEdge& redge = rg.addEdge(*r_src_p, *r_tgt_p);
     EdgeCorrelationEntry redge_cor_ent;
     redge_cor_ent.re = &redge;
@@ -271,11 +282,17 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
   //vector<edge_ij_elim_t> ev1, ev2, eseq;
   int cost = 0;
 
+#ifndef NDEBUG
   cout << "\nBuilding cg, the internal LCG...\n";
-  read_graph_xaif_booster (xgraph, cg, av, ae);
-  write_graph ("cg ", cg);
+#endif
 
+  read_graph_xaif_booster (xgraph, cg, av, ae);
+
+#ifndef NDEBUG
+  write_graph ("cg ", cg);
   cout << "\nPerforming partial edge elimination sequence on cgp (copy of cg)...\n";
+#endif
+
   c_graph_t cgp (cg); // a partial elimination sequence will reduce cgp to "cg prime"
   eliminatable_objects (cgp, bev1);
   scarce_pres_edge_eliminations (bev1, cgp, bev2);
@@ -285,9 +302,11 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
     eseq.push_back(elim);
     //eseq.push_back(ev2[0];
 
+#ifndef NDEBUG
     cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " are scarcity preserving\n";
     if (bev2[0].second) { cout << "Front-eliminating edge from " << elim.j << " to " << elim.i << "...\n"; }
     else { cout << "Back-eliminating edge from " << elim.j << " to " << elim.i << "...\n"; }
+#endif
 
     cost += eliminate (bev2[0], cgp);
     eliminatable_objects (cgp, bev1);
@@ -295,25 +314,29 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
   }
  
   //cgp.clear_graph(); // clears isolated intermediate vertices (and also renumbers vertices!)
-  write_graph ("cgp ", cgp);
-  //GraphVizDisplay::show(cgp,"cg prime");
 
+#ifndef NDEBUG
+  write_graph ("cgp ", cgp);
   cout << "\nBuilding remainder graph rg...\n";
+#endif
+
   build_remainder_graph(cgp, av, rg, v_cor_list, e_cor_list);
-  //GraphVizDisplay::show(rg, "remainder graph");
+
+#ifndef NDEBUG
+  cout << "\nConverting edge elimination sequence in cg into face elimination sequence in lg...\n";
+#endif
 
   // transform the partial elimination sequence into a sequence of face eliminations
-  cout << "\nConverting edge elimination sequence in cg into face elimination sequence in lg...\n";
   line_graph_t lg (cg);
   vector<triplet_t> tv;
   convert_elimination_sequence (eseq, lg, tv);
 
 #ifndef NDEBUG
   write_vector("Same elimination sequence as face eliminations", tv);  
+  cout << "\nPerforming face elimination seq. on lg and generating accumulation graph...\n";
 #endif
 
   // build accumulation graph
-  cout << "\nPerforming face elimination seq. on lg and generating accumulation graph...\n";
   accu_graph_t ac (cg, lg);
   for (size_t c= 0; c < tv.size(); c++) 
     face_elimination (tv[c], lg, ac);
@@ -331,9 +354,9 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
     ad_edge_t my_jacobi= ac.jacobi_entries[c];
     if (my_jacobi.second == 0) cout << "isn't Jacobian entry\n";
     else cout << "is Jacoby entry: " << my_jacobi << std::endl; }
+  cout << "\nBuilding JAE list...\n";
 #endif
 
-  cout << "\nBuilding JAE list...\n";
   build_jae_list_and_correlate_rg(ac, av, ae, jae_list, rg, v_cor_list, e_cor_list);
 
 }
