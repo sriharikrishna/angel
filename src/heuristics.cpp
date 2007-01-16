@@ -1173,7 +1173,7 @@ int scarce_pres_edge_eliminations (vector<edge_ij_elim_t>& ev1,
     else {
       successor_set (ev1[c].i, cg, v_v);
       if (v_v.size() == 1) { ev2.push_back (ev1[c]); continue; }
-      //if (new_in_edges(ev1[c], cg) < 2) { ev2.push_back (ev1[c]); continue; }
+      //if (new_in_edges(edge(ev1[c]., cg) < 2) { ev2.push_back (ev1[c]); continue; }
     }
   } // for all elims in ev1
   return ev2.size();

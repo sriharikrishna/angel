@@ -204,7 +204,7 @@ void build_jae_list_and_correlate_rg (const accu_graph_t& ag,
     // add edges to new Jacobian Accumulation Expression
     graph_traits<pure_accu_exp_graph_t>::edge_iterator ei, e_end;   // set edges
     for (tie (ei, e_end)= edges (my_exp); ei != e_end; ei++)
-      new_exp.addEdge (*vp[source (*ei, my_exp)], *vp[target (*ei, my_exp)]);
+      new_exp.addEdge(*vp[source (*ei, my_exp)], *vp[target (*ei, my_exp)]);
 
   } // for all expressions
 }
@@ -221,12 +221,15 @@ void build_remainder_graph (const c_graph_t& cgp,
   // copy vertices
   c_graph_t::vi_t vi, v_end;
   for (tie(vi, v_end) = vertices(cgp); vi != v_end; ++vi) {
-    cout << "adding vertex " << *vi << " to the remainder graph\n";
-    LinearizedComputationalGraphVertex& rvert = rg.addVertex();
-    VertexCorrelationEntry rvert_cor;
-    rvert_cor.lcgVert = av[*vi];
-    rvert_cor.rv = &rvert;
-    v_cor_list.push_back(rvert_cor);
+    if (in_degree(*vi, cgp) > 0 || out_degree(*vi, cgp) > 0) {
+      cout << "adding vertex " << *vi << " to the remainder graph\n";
+      LinearizedComputationalGraphVertex& rvert = rg.addVertex();
+      VertexCorrelationEntry rvert_cor;
+      rvert_cor.lcgVert = av[*vi];
+      rvert_cor.rv = &rvert;
+      v_cor_list.push_back(rvert_cor);
+    }
+    else cout << "vertex " << *vi << " is isolated, it is not added to the remainder graph\n";
   } // end all vertices
 
   // copy edges
@@ -238,21 +241,19 @@ void build_remainder_graph (const c_graph_t& cgp,
     LinearizedComputationalGraphVertex* r_tgt_p = NULL;
 
     // correlate source and target with vertices in the remainder graph
-    VertexCorrelationList::iterator vcori;
-    for (vcori = v_cor_list.begin(); vcori != v_cor_list.end(); vcori++) {
+    for (VertexCorrelationList::iterator vcori = v_cor_list.begin(); vcori != v_cor_list.end(); vcori++) {
       if (vcori->lcgVert == o_src_p) r_src_p = vcori->rv;
       else if (vcori->lcgVert == o_tgt_p) r_tgt_p = vcori->rv;
     } // end all vertex correlation entries
     throw_debug_exception (r_src_p == NULL || r_tgt_p == NULL, consistency_exception,
 				"Vertex in remainder graph could not be correlated"); 
 
-    cout << "adding edge from " << source(*ei, cgp) << " to " << target(*ei, cgp) << " in remainder graph\n";
+    cout << "Adding edge from " << source(*ei, cgp) << " to " << target(*ei, cgp) << " in remainder graph\n";
     LinearizedComputationalGraphEdge& redge = rg.addEdge(*r_src_p, *r_tgt_p);
     EdgeCorrelationEntry redge_cor_ent;
     redge_cor_ent.re = &redge;
     e_cor_list.push_back(redge_cor_ent);
- } // end all edges
-
+  } // end all edges
 } // end build_remainder_graph()
 
 void compute_partial_elimination_sequence (const LinearizedComputationalGraph& xgraph,
@@ -270,13 +271,12 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
   //vector<edge_ij_elim_t> ev1, ev2, eseq;
   int cost = 0;
 
-  cout << "Building cg, the internal LCG...\n";
+  cout << "\nBuilding cg, the internal LCG...\n";
   read_graph_xaif_booster (xgraph, cg, av, ae);
-  write_graph ("cg:", cg);
+  write_graph ("cg ", cg);
 
   cout << "\nPerforming partial edge elimination sequence on cgp (copy of cg)...\n";
-  // a partial elimination sequence reduces cgp to "cg prime"
-  c_graph_t cgp (cg);
+  c_graph_t cgp (cg); // a partial elimination sequence will reduce cgp to "cg prime"
   eliminatable_objects (cgp, bev1);
   scarce_pres_edge_eliminations (bev1, cgp, bev2);
 
@@ -293,10 +293,12 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
     eliminatable_objects (cgp, bev1);
     scarce_pres_edge_eliminations (bev1, cgp, bev2);
   }
+ 
+  //cgp.clear_graph(); // clears isolated intermediate vertices (and also renumbers vertices!)
+  write_graph ("cgp ", cgp);
+  //GraphVizDisplay::show(cgp,"cg prime");
 
   cout << "\nBuilding remainder graph rg...\n";
-
-  //GraphVizDisplay::show(cgp,"cg prime");
   build_remainder_graph(cgp, av, rg, v_cor_list, e_cor_list);
   //GraphVizDisplay::show(rg, "remainder graph");
 
