@@ -1374,6 +1374,10 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
 				   const c_graph_t& cg,
 				   vector<edge_bool_t>& bev2);
 
+int scarce_pres_edge_eliminations (vector<edge_ij_elim_t>& ev1,
+				   const c_graph_t& cg,
+				   vector<edge_ij_elim_t>& ev2);
+
 
 #ifdef USE_MPI
 /// Build a parallel heuristic out of a sequential 

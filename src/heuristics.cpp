@@ -1121,7 +1121,7 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
   bev2.resize (0);
   if (bev1.size() == 0) return 0;
 
-  for (size_t c = 1; c < bev1.size(); c++) {
+  for (size_t c = 0; c < bev1.size(); c++) {
     c_graph_t::edge_t e = bev1[c].first;
     bool isFront = bev1[c].second;
     vector<c_graph_t::vertex_t> v_v;
@@ -1130,13 +1130,17 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
     // (for forward eliminations) or source vertex (for back eliminations)
     if (isFront) {
       predecessor_set (target (e, cg), cg, v_v);
-      if (v_v.size() == 1) bev2.push_back (bev1[c]);
-      break;
+      if (v_v.size() == 1) {
+	bev2.push_back (bev1[c]);
+	continue;
+      }
     }
     else {
       successor_set (source (e, cg), cg, v_v);
-      if (v_v.size() == 1) bev2.push_back (bev1[c]);
-      break;
+      if (v_v.size() == 1) {
+	bev2.push_back (bev1[c]);
+	continue;
+      }
     }
 
     // select eliminations that create a one or fewer fill-ins
@@ -1145,6 +1149,34 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
     if (fill < 2) bev2.push_back (bev1[c]);
   }
   return bev2.size();
+}
+
+// -------------------------------------------------------------------------
+// Scarcity preserving edge eliminations
+// -------------------------------------------------------------------------
+int scarce_pres_edge_eliminations (vector<edge_ij_elim_t>& ev1,
+                                   const c_graph_t& cg,
+                                   vector<edge_ij_elim_t>& ev2) {
+  ev2.resize (0);
+  if (ev1.size() == 0) return 0;
+
+  for (size_t c = 0; c < ev1.size(); c++) {
+    // select edge elimination objects that would isolate the target vertex
+    // (for forward eliminations) or source vertex (for back eliminations),
+    // and eliminations that create a one or fewer fill-ins
+    vector<c_graph_t::vertex_t> v_v;
+    if (ev1[c].front) {
+      predecessor_set (ev1[c].j, cg, v_v);
+      if (v_v.size() == 1) { ev2.push_back(ev1[c]); continue; }
+      //if (new_out_edges(ev1[c], cg) < 2) { ev2.push_back (ev1[c]); continue; }
+    }
+    else {
+      successor_set (ev1[c].i, cg, v_v);
+      if (v_v.size() == 1) { ev2.push_back (ev1[c]); continue; }
+      //if (new_in_edges(ev1[c], cg) < 2) { ev2.push_back (ev1[c]); continue; }
+    }
+  } // for all elims in ev1
+  return ev2.size();
 }
 
 } // namespace angel
