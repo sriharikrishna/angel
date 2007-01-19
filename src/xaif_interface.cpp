@@ -218,12 +218,12 @@ void build_remainder_graph (const c_graph_t& cgp,
   v_cor_list.resize(0);
   e_cor_list.resize(0);
 
-  // copy vertices
+  // copy (non-isolated) vertices
   c_graph_t::vi_t vi, v_end;
   for (tie(vi, v_end) = vertices(cgp); vi != v_end; ++vi) {
+    if (in_degree(*vi, cgp) > 0 || out_degree(*vi, cgp) > 0) {
 
 #ifndef NDEBUG
-    if (in_degree(*vi, cgp) > 0 || out_degree(*vi, cgp) > 0) {
       cout << "adding vertex " << *vi << " to the remainder graph\n";
 #endif
 
@@ -232,9 +232,9 @@ void build_remainder_graph (const c_graph_t& cgp,
       rvert_cor.lcgVert = av[*vi];
       rvert_cor.rv = &rvert;
       v_cor_list.push_back(rvert_cor);
+    }
 
 #ifndef NDEBUG
-    }
     else cout << "vertex " << *vi << " is isolated, it is not added to the remainder graph\n";
 #endif
 
