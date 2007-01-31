@@ -298,7 +298,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
   scarce_pres_edge_eliminations (bev1, cgp, bev2);
 
   while(!bev2.empty()) {
-    edge_ij_elim_t elim (target (bev2[0].first, cgp), source (bev2[0].first, cgp), bev2[0].second);
+    edge_ij_elim_t elim (source (bev2[0].first, cgp), target (bev2[0].first, cgp), bev2[0].second);
     eseq.push_back(elim);
     //eseq.push_back(ev2[0];
 
