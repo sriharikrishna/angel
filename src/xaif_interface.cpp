@@ -229,8 +229,8 @@ void build_remainder_graph (const c_graph_t& cgp,
 
       LinearizedComputationalGraphVertex& rvert = rg.addVertex();
       VertexCorrelationEntry rvert_cor;
-      rvert_cor.lcgVert = av[*vi];
-      rvert_cor.rv = &rvert;
+      rvert_cor.myOriginalVertex_p = av[*vi];
+      rvert_cor.myRemainderVertex_p = &rvert;
       v_cor_list.push_back(rvert_cor);
     }
 
@@ -250,8 +250,8 @@ void build_remainder_graph (const c_graph_t& cgp,
 
     // correlate source and target with vertices in the remainder graph
     for (VertexCorrelationList::iterator vcori = v_cor_list.begin(); vcori != v_cor_list.end(); vcori++) {
-      if (vcori->lcgVert == o_src_p) r_src_p = vcori->rv;
-      else if (vcori->lcgVert == o_tgt_p) r_tgt_p = vcori->rv;
+      if (vcori->myOriginalVertex_p == o_src_p) r_src_p = vcori->myRemainderVertex_p;
+      else if (vcori->myOriginalVertex_p == o_tgt_p) r_tgt_p = vcori->myRemainderVertex_p;
     } // end all vertex correlation entries
     throw_debug_exception (r_src_p == NULL || r_tgt_p == NULL, consistency_exception,
 				"Vertex in remainder graph could not be correlated"); 
@@ -262,7 +262,7 @@ void build_remainder_graph (const c_graph_t& cgp,
 
     LinearizedComputationalGraphEdge& redge = rg.addEdge(*r_src_p, *r_tgt_p);
     EdgeCorrelationEntry redge_cor_ent;
-    redge_cor_ent.re = &redge;
+    redge_cor_ent.myRemainderGraphEdge_p = &redge;
     e_cor_list.push_back(redge_cor_ent);
   } // end all edges
 } // end build_remainder_graph()
