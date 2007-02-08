@@ -9,8 +9,6 @@
 #include "angel_io.hpp"
 #include "sa.hpp"
 
-#include "xaifBooster/system/inc/GraphVizDisplay.hpp"
-
 namespace angel {
 
 using namespace std;
@@ -274,24 +272,23 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
 					   LinearizedComputationalGraph& rg,
 					   VertexCorrelationList& v_cor_list,
                                            EdgeCorrelationList& e_cor_list) {
+  cout << "\n<++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>";
+  cout << "\n<+++++++++++++++++++Entering compute_partial_elimination_sequence()++++++++++++++>";
+  cout << "\n<++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>";
+
   c_graph_t cg;
   vector<const LinearizedComputationalGraphVertex*> av;
   vector<edge_address_t> ae;
   vector<edge_bool_t> bev1, bev2;
-  vector<edge_ij_elim_t> eseq;
-  //vector<edge_ij_elim_t> ev1, ev2, eseq;
+  vector<edge_ij_elim_t> eij_elim_seq;
+  //vector<edge_ij_elim_t> ev1, ev2, eij_elim_seq;
   int cost = 0;
 
-#ifndef NDEBUG
-  cout << "\nBuilding cg, the internal LCG...\n";
-#endif
-
+  cout << "\n\n############################## Building cg, the internal LCG...\n";
   read_graph_xaif_booster (xgraph, cg, av, ae);
+  write_graph ("resulting cg: ", cg);
 
-#ifndef NDEBUG
-  write_graph ("cg ", cg);
-  cout << "\nPerforming partial edge elimination sequence on cgp (copy of cg)...\n";
-#endif
+  cout << "\n############################## Performing partial edge elimination sequence on cgp (copy of cg)...\n";
 
   c_graph_t cgp (cg); // a partial elimination sequence will reduce cgp to "cg prime"
   eliminatable_objects (cgp, bev1);
@@ -299,66 +296,108 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
 
   while(!bev2.empty()) {
     edge_ij_elim_t elim (source (bev2[0].first, cgp), target (bev2[0].first, cgp), bev2[0].second);
-    eseq.push_back(elim);
-    //eseq.push_back(ev2[0];
+    eij_elim_seq.push_back(elim);
+    //eij_elim_seq.push_back(ev2[0];
 
-#ifndef NDEBUG
     cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " are scarcity preserving\n";
-    if (bev2[0].second) { cout << "Front-eliminating edge from " << elim.j << " to " << elim.i << "...\n"; }
-    else { cout << "Back-eliminating edge from " << elim.j << " to " << elim.i << "...\n"; }
-#endif
+    if (bev2[0].second) { cout << "Front-eliminating edge from " << elim.i << " to " << elim.j << "...\n"; }
+    else { cout << "Back-eliminating edge from " << elim.i << " to " << elim.j << "...\n"; }
 
     cost += eliminate (bev2[0], cgp);
     eliminatable_objects (cgp, bev1);
     scarce_pres_edge_eliminations (bev1, cgp, bev2);
   }
- 
   //cgp.clear_graph(); // clears isolated intermediate vertices (and also renumbers vertices!)
 
-#ifndef NDEBUG
-  write_graph ("cgp ", cgp);
-  cout << "\nBuilding remainder graph rg...\n";
-#endif
-
-  build_remainder_graph(cgp, av, rg, v_cor_list, e_cor_list);
-
-#ifndef NDEBUG
-  cout << "\nConverting edge elimination sequence in cg into face elimination sequence in lg...\n";
-#endif
+  write_graph ("resulting cgp: ", cgp);
+  write_vector("Generated edge elimination sequence: ", eij_elim_seq);  
+  cout << "\n############################## Converting edge elimination sequence in cg into face elimination sequence in lg\n";
 
   // transform the partial elimination sequence into a sequence of face eliminations
   line_graph_t lg (cg);
   vector<triplet_t> tv;
-  convert_elimination_sequence (eseq, lg, tv);
+  convert_elimination_sequence (eij_elim_seq, lg, tv);
 
-#ifndef NDEBUG
-  write_vector("Same elimination sequence as face eliminations", tv);  
-  cout << "\nPerforming face elimination seq. on lg and generating accumulation graph...\n";
-#endif
+  write_vector("Same elimination sequence as face eliminations: ", tv);  
+  cout << "\n############################## Performing face elimination seq. on lg and generating accumulation graph ac\n";
 
   // build accumulation graph
-  accu_graph_t ac (cg, lg);
+  accu_graph_t ag (cg, lg);
   for (size_t c= 0; c < tv.size(); c++) 
-    face_elimination (tv[c], lg, ac);
+    face_elimination (tv[c], lg, ag);
 
-#ifndef NDEBUG
+//#ifndef NDEBUG
   write_graph ("Empty line graph", lg);
-  line_graph_t::evn_t            evn= get(vertex_name, lg);
+  line_graph_t::evn_t evn = get(vertex_name, lg);
   write_vertex_property (cout, "vertices of this edge graph", evn, lg);
   
-  for (size_t c= 0; c < ac.accu_exp.size(); c++) {
-    write_graph ("Accumulation graph", ac.accu_exp[c]);
-    property_map<pure_accu_exp_graph_t, vertex_name_t>::type vprop= 
-      get (vertex_name, ac.accu_exp[c]);
-    write_vertex_property (cout, "Vertex props", vprop, ac.accu_exp[c]); 
-    ad_edge_t my_jacobi= ac.jacobi_entries[c];
-    if (my_jacobi.second == 0) cout << "isn't Jacobian entry\n";
-    else cout << "is Jacoby entry: " << my_jacobi << std::endl; }
-  cout << "\nBuilding JAE list...\n";
-#endif
+  for (size_t c= 0; c < ag.accu_exp.size(); c++) {
+    write_graph ("\n-------------------------------------------------Accumulation graph:\n", ag.accu_exp[c]);
+    property_map<pure_accu_exp_graph_t, vertex_name_t>::type vprop = get (vertex_name, ag.accu_exp[c]);
+    write_vertex_property (cout, "Vertex props", vprop, ag.accu_exp[c]); 
+    //ad_edge_t my_jacobi = ag.jacobi_entries[c];
+    //if (my_jacobi.second == 0) cout << "isn't Jacobian entry\n";
+    //else cout << "is Jacoby entry: " << my_jacobi << std::endl;
+  }
+//#endif
 
-  build_jae_list_and_correlate_rg(ac, av, ae, jae_list, rg, v_cor_list, e_cor_list);
+  cout << "\n\n############################## Building remainder graph rg from cgp\n";
+  build_remainder_graph(cgp, av, rg, v_cor_list, e_cor_list);
 
+  size_t numOrigEdges = ae.size() + lg.x() + lg.y();
+  size_t i;
+  line_graph_t::ei_t ei, e_end;
+  for (tie(ei, e_end) = vertices(lg), i = 0; ei != e_end; ++ei, i++) {
+    if (i == numOrigEdges) break; 
+    cout << "Line graph vertex " << *ei << " has markowitz degree " << in_degree (*ei, lg)*out_degree(*ei, lg) << "\n";
+    // isolated vertices are kept around.  we want to disregard them...
+    if (in_degree (*ei, lg)*out_degree(*ei, lg) > 0) {
+      cout << "-> Line graph vertex corresponds to original LCG edge...setting correlation entry\n";    
+
+      const LinearizedComputationalGraphEdge* xg_edge_p = xaif_edge_pr (*ei, ag, ae);
+      throw_debug_exception (xg_edge_p == NULL, consistency_exception, "Unset reference");
+
+      // find the source and target in rgraph of the edge 
+      const LinearizedComputationalGraphVertex* xg_src_p = &xgraph.getSourceOf(*xg_edge_p);
+      const LinearizedComputationalGraphVertex* xg_tgt_p = &xgraph.getTargetOf(*xg_edge_p);
+      LinearizedComputationalGraphVertex* rg_src_p = NULL;
+      LinearizedComputationalGraphVertex* rg_tgt_p = NULL;
+      for (VertexCorrelationList::iterator vcori = v_cor_list.begin(); vcori != v_cor_list.end(); vcori++) {
+        if (vcori->myOriginalVertex_p == xg_src_p) rg_src_p = vcori->myRemainderVertex_p;
+        else if (vcori->myOriginalVertex_p == xg_tgt_p) rg_tgt_p = vcori->myRemainderVertex_p;
+      } throw_debug_exception (rg_src_p == NULL || rg_tgt_p == NULL, consistency_exception, "Couldnt find vertices in v_cor_list");
+
+      cout << "-> Found the source and target of the edge in the remainder graph\n";
+
+      // locate the edge in rgraph that goes from rg_src to rg_tgt
+      LinearizedComputationalGraph::OutEdgeIteratorPair outedges (rg.getOutEdgesOf (*rg_src_p));
+      LinearizedComputationalGraph::OutEdgeIterator oei = outedges.first, oeend= outedges.second;
+      for (; oei != oeend; ++oei) {
+	if (&rg.getTargetOf(*oei) == rg_tgt_p) break;
+      } throw_debug_exception (oei == oeend, consistency_exception, "Couldnt find edge in rgraph");
+
+      cout << "-> Found the edge in the remainder graph\n";
+
+      // find the edge correlation entry for the edge in rg, and set its pointer
+      for (EdgeCorrelationList::iterator ecori = e_cor_list.begin(); ecori != e_cor_list.end(); ecori++) {
+	if (ecori->myRemainderGraphEdge_p == &*oei) {
+	  ecori->myType = EdgeCorrelationEntry::LCG_EDGE;
+	  ecori->myEliminationReference.myOriginalEdge_p = xg_edge_p;
+	  break;
+	}
+      } // end all edge correlations
+
+      cout << "-> Found the correlation entry and set as LCG_EDGE\n\n";
+
+    }
+  }
+
+  cout << "\n\n############################## Building JAE list and correlation lists\n";
+  build_jae_list_and_correlate_rg(ag, av, ae, jae_list, rg, v_cor_list, e_cor_list);
+
+  cout << "\n>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++<";
+  cout << "\n>+++++++++++++++++++Leaving compute_partial_elimination_sequence()+++++++++++++++<";
+  cout << "\n>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++<\n\n";
 }
 
 void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
