@@ -465,21 +465,19 @@ void accu_graph_t::set_jacobi_entries () {
 // =========================== doxygen input for whole lib
 
 /*! \mainpage ANGEL Reference Manual
-  \author Peter Gottschling
-  \version 1.0
+  \author Peter Gottschling et.al.
+  \version current snapshot
 
   \section intro Introduction
 
-ANGEL-Automatic differentiation Nested Graph Elimination Library-is 
+ANGEL-Automatic differentiation Nested Graph Elimination Library is 
 a template library using the Boost Graph Library and the
-Standard Template Library.
-It provides at the moment a sparse representation of c-graphs
+Standard C++ Library.
+It provides a sparse representation of c-graphs
 and their dual line graphs,
- all known elimination techniques,
+ vertex, edge and face elimination,
 a wide range of heuristics, 
-simulated annealing implementation, and
-many useful utility functions.
-ANGEL is programmed in generic in order to ease extension. 
-
+simulated annealing, and
+a set of utility functions.
 */
 

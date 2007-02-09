@@ -604,7 +604,7 @@ public:
       \param _og Original line graph
       \param _seq Elimination sequence
       \param _cg Current line graph
-
+      \param _ccosts Current costs
       In debug mode it is checked if application of \p _seq to \p _og yields \p _cg
   */
   elimination_history_t (const Ad_graph_t& _og, const vector<El_spec_t>& _seq,
