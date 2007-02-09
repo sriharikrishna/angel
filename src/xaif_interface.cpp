@@ -1,6 +1,6 @@
 // $Id: xaif_interface.cpp,v 1.13 2004/05/19 14:15:49 gottschling Exp $
 
-#ifdef USE_XAIF
+#ifdef USEXAIFBOOSTER
 
 #include "xaif_interface.hpp"
 #include "eliminations.hpp"
@@ -314,7 +314,7 @@ void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph
 
 
 
-#endif // USE_XAIF
+#endif // USEXAIFBOOSTER
 
 
 

@@ -18,10 +18,10 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/property_map.hpp>
 
-#ifdef USE_XAIF
+#ifdef USEXAIFBOOSTER
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/LinearizedComputationalGraph.hpp"
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/JacobianAccumulationExpressionList.hpp"
-#endif // USE_XAIF
+#endif // USEXAIFBOOSTER
 
 #include "angel_exceptions.hpp"
 
@@ -175,12 +175,12 @@ public:
 			  c_graph_t& loop);
   friend void unpack_graph (const graph_package_t& gp, c_graph_t& cg);
 
-#ifdef USE_XAIF
+#ifdef USEXAIFBOOSTER
   friend void read_graph_xaif_booster (const xaifBoosterCrossCountryInterface::LinearizedComputationalGraph& xg, 
 				       c_graph_t& cg,
 				       std::vector<const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphVertex*>& av,
 				       std::vector<edge_address_t>& ev);
-#endif // USE_XAIF
+#endif // USEXAIFBOOSTER
 
 };
 

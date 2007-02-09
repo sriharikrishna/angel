@@ -3,7 +3,7 @@
 #ifndef 	_xaif_interface_include_
 #define 	_xaif_interface_include_
 
-#ifdef USE_XAIF
+#ifdef USEXAIFBOOSTER
 
 #include "angel_types.hpp"
 
@@ -29,6 +29,6 @@ void compute_elimination_sequence_lsa_face (const xaifBoosterCrossCountryInterfa
 
 } // namespace angel
 
-#endif // USE_XAIF
+#endif // USEXAIFBOOSTER
 
 #endif  // _xaif_interface_include_
