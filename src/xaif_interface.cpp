@@ -160,27 +160,23 @@ void build_jae_list_and_correlate_rg (const accu_graph_t& ag,
 				      VertexCorrelationList& v_cor_list,
 				      EdgeCorrelationList& e_cor_list) {
 
-  typedef LinearizedComputationalGraphVertex      xlvertex_t;
-  typedef JacobianAccumulationExpressionVertex    xavertex_t;
-  
   // build Jacobian Accumulation Expressions one at a time
-  vector<xavertex_t*> exp_output_pr; // pointer to output vertex of expression
+  vector<JacobianAccumulationExpressionVertex*> exp_output_pr; // pointer to output vertex of expression
   for (size_t c= 0; c < ag.accu_exp.size(); c++) {
     const accu_exp_graph_t& my_exp= ag.accu_exp[c];
     property_map<pure_accu_exp_graph_t, vertex_name_t>::const_type vpr = get(vertex_name, my_exp);
 
-    JacobianAccumulationExpression& new_exp= jae_list.addExpression();
-    vector<xavertex_t*>  vp (my_exp.v());
-    // for all vertices in my_exp
-    for (size_t vc= 0; vc < (size_t) my_exp.v(); vc++) {      
+    JacobianAccumulationExpression& new_jae = jae_list.addExpression();
+    vector<JacobianAccumulationExpressionVertex*>  vp (my_exp.v());
+    for (size_t vc= 0; vc < (size_t) my_exp.v(); vc++) { // for all vertices in my_exp
       const accu_exp_t& prop= vpr[vc];
 
       // create a new JAE vertex
-      xavertex_t& new_vertex= new_exp.addVertex();
-      vp[vc]= &new_vertex;
+      JacobianAccumulationExpressionVertex& new_jae_vertex = new_jae.addVertex();
+      vp[vc] = &new_jae_vertex;
 
       // if it's the last vertex, save its address in exp_output_pr
-      if (vc+1 == (size_t) my_exp.v()) exp_output_pr.push_back(&new_vertex);
+      if (vc+1 == (size_t) my_exp.v()) exp_output_pr.push_back(&new_jae_vertex);
 
       // set reference (for leaves) or set operation (non-leaves)
       switch (prop.ref_kind) { 
@@ -188,13 +184,14 @@ void build_jae_list_and_correlate_rg (const accu_graph_t& ag,
 	  throw_exception (true, consistency_exception, "Unset vertex"); break;
 	case accu_exp_t::exp:    
 	  throw_debug_exception (prop.ref.exp_nr >= int (c), consistency_exception, "Expression number too large")
-	  new_vertex.setInternalReference (*exp_output_pr[prop.ref.exp_nr]); break;
+	  new_jae_vertex.setInternalReference (*exp_output_pr[prop.ref.exp_nr]); break;
 	case accu_exp_t::lgn: {    
-	  const LinearizedComputationalGraphEdge* ptr= xaif_edge_pr (prop.ref.node, ag, ae); 
+	  const LinearizedComputationalGraphEdge* ptr = xaif_edge_pr (prop.ref.node, ag, ae); 
 	  throw_debug_exception (ptr == NULL, consistency_exception, "Unset reference");
-	  new_vertex.setExternalReference (*ptr); } break;
+	  new_jae_vertex.setExternalReference (*ptr); } break;
 	case accu_exp_t::isop:    
-	  new_vertex.setOperation (prop.ref.op == accu_exp_t::add ? xavertex_t::ADD_OP : xavertex_t::MULT_OP);
+	  new_jae_vertex.setOperation (prop.ref.op == accu_exp_t::add ? JacobianAccumulationExpressionVertex::ADD_OP
+								  : JacobianAccumulationExpressionVertex::MULT_OP);
       } // switch ref_kind
 
     } // for all vertices in expression
@@ -202,7 +199,7 @@ void build_jae_list_and_correlate_rg (const accu_graph_t& ag,
     // add edges to new Jacobian Accumulation Expression
     graph_traits<pure_accu_exp_graph_t>::edge_iterator ei, e_end;   // set edges
     for (tie (ei, e_end)= edges (my_exp); ei != e_end; ei++)
-      new_exp.addEdge(*vp[source (*ei, my_exp)], *vp[target (*ei, my_exp)]);
+      new_jae.addEdge(*vp[source (*ei, my_exp)], *vp[target (*ei, my_exp)]);
 
   } // for all expressions
 }
@@ -272,10 +269,11 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
 					   LinearizedComputationalGraph& rg,
 					   VertexCorrelationList& v_cor_list,
                                            EdgeCorrelationList& e_cor_list) {
+/*
   cout << "\n<++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>";
   cout << "\n<+++++++++++++++++++Entering compute_partial_elimination_sequence()++++++++++++++>";
   cout << "\n<++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>";
-
+*/
   c_graph_t cg;
   vector<const LinearizedComputationalGraphVertex*> av;
   vector<edge_address_t> ae;
@@ -284,11 +282,11 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
   //vector<edge_ij_elim_t> ev1, ev2, eij_elim_seq;
   int cost = 0;
 
-  cout << "\n\n############################## Building cg, the internal LCG...\n";
+  //cout << "\n\n############################## Building cg, the internal LCG...\n";
   read_graph_xaif_booster (xgraph, cg, av, ae);
-  write_graph ("resulting cg: ", cg);
+  //write_graph ("resulting cg: ", cg);
 
-  cout << "\n############################## Performing partial edge elimination sequence on cgp (copy of cg)...\n";
+  //cout << "\n############################## Performing partial edge elimination sequence on cgp (copy of cg)...\n";
 
   c_graph_t cgp (cg); // a partial elimination sequence will reduce cgp to "cg prime"
   eliminatable_objects (cgp, bev1);
@@ -298,35 +296,35 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
     edge_ij_elim_t elim (source (bev2[0].first, cgp), target (bev2[0].first, cgp), bev2[0].second);
     eij_elim_seq.push_back(elim);
     //eij_elim_seq.push_back(ev2[0];
-
+/*
     cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " are scarcity preserving\n";
     if (bev2[0].second) { cout << "Front-eliminating edge from " << elim.i << " to " << elim.j << "...\n"; }
     else { cout << "Back-eliminating edge from " << elim.i << " to " << elim.j << "...\n"; }
-
+*/
     cost += eliminate (bev2[0], cgp);
     eliminatable_objects (cgp, bev1);
     scarce_pres_edge_eliminations (bev1, cgp, bev2);
   }
   //cgp.clear_graph(); // clears isolated intermediate vertices (and also renumbers vertices!)
-
+/*
   write_graph ("resulting cgp: ", cgp);
   write_vector("Generated edge elimination sequence: ", eij_elim_seq);  
   cout << "\n############################## Converting edge elimination sequence in cg into face elimination sequence in lg\n";
-
+*/
   // transform the partial elimination sequence into a sequence of face eliminations
   line_graph_t lg (cg);
   vector<triplet_t> tv;
   convert_elimination_sequence (eij_elim_seq, lg, tv);
-
+/*
   write_vector("Same elimination sequence as face eliminations: ", tv);  
   cout << "\n############################## Performing face elimination seq. on lg and generating accumulation graph ac\n";
-
+*/
   // build accumulation graph
   accu_graph_t ag (cg, lg);
   for (size_t c= 0; c < tv.size(); c++) 
     face_elimination (tv[c], lg, ag);
 
-//#ifndef NDEBUG
+#ifndef NDEBUG
   write_graph ("Empty line graph", lg);
   line_graph_t::evn_t evn = get(vertex_name, lg);
   write_vertex_property (cout, "vertices of this edge graph", evn, lg);
@@ -339,35 +337,42 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
     //if (my_jacobi.second == 0) cout << "isn't Jacobian entry\n";
     //else cout << "is Jacoby entry: " << my_jacobi << std::endl;
   }
-//#endif
+#endif
 
-  cout << "\n\n############################## Building remainder graph rg from cgp\n";
+  //cout << "\n\n############################## Building remainder graph rg from cgp\n";
   build_remainder_graph(cgp, av, rg, v_cor_list, e_cor_list);
 
+  const LinearizedComputationalGraphVertex* xg_src_p = NULL;
+  const LinearizedComputationalGraphVertex* xg_tgt_p = NULL;
+  LinearizedComputationalGraphVertex* rg_src_p = NULL;
+  LinearizedComputationalGraphVertex* rg_tgt_p = NULL;
+
+  // Correlate original edges
   size_t numOrigEdges = ae.size() + lg.x() + lg.y();
   size_t i;
   line_graph_t::ei_t ei, e_end;
   for (tie(ei, e_end) = vertices(lg), i = 0; ei != e_end; ++ei, i++) {
     if (i == numOrigEdges) break; 
-    cout << "Line graph vertex " << *ei << " has markowitz degree " << in_degree (*ei, lg)*out_degree(*ei, lg) << "\n";
+    //cout << "Line graph vertex " << *ei << " has markowitz degree " << in_degree (*ei, lg)*out_degree(*ei, lg) << "\n";
     // isolated vertices are kept around.  we want to disregard them...
     if (in_degree (*ei, lg)*out_degree(*ei, lg) > 0) {
-      cout << "-> Line graph vertex corresponds to original LCG edge...setting correlation entry\n";    
+
+      //cout << "-> Line graph vertex corresponds to original LCG edge...setting correlation entry\n";    
 
       const LinearizedComputationalGraphEdge* xg_edge_p = xaif_edge_pr (*ei, ag, ae);
       throw_debug_exception (xg_edge_p == NULL, consistency_exception, "Unset reference");
 
       // find the source and target in rgraph of the edge 
-      const LinearizedComputationalGraphVertex* xg_src_p = &xgraph.getSourceOf(*xg_edge_p);
-      const LinearizedComputationalGraphVertex* xg_tgt_p = &xgraph.getTargetOf(*xg_edge_p);
-      LinearizedComputationalGraphVertex* rg_src_p = NULL;
-      LinearizedComputationalGraphVertex* rg_tgt_p = NULL;
+      xg_src_p = &xgraph.getSourceOf(*xg_edge_p);
+      xg_tgt_p = &xgraph.getTargetOf(*xg_edge_p);
+      rg_src_p = NULL;
+      rg_tgt_p = NULL;
       for (VertexCorrelationList::iterator vcori = v_cor_list.begin(); vcori != v_cor_list.end(); vcori++) {
         if (vcori->myOriginalVertex_p == xg_src_p) rg_src_p = vcori->myRemainderVertex_p;
         else if (vcori->myOriginalVertex_p == xg_tgt_p) rg_tgt_p = vcori->myRemainderVertex_p;
       } throw_debug_exception (rg_src_p == NULL || rg_tgt_p == NULL, consistency_exception, "Couldnt find vertices in v_cor_list");
 
-      cout << "-> Found the source and target of the edge in the remainder graph\n";
+      //cout << "-> Found the source and target of the edge in the remainder graph\n";
 
       // locate the edge in rgraph that goes from rg_src to rg_tgt
       LinearizedComputationalGraph::OutEdgeIteratorPair outedges (rg.getOutEdgesOf (*rg_src_p));
@@ -376,7 +381,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
 	if (&rg.getTargetOf(*oei) == rg_tgt_p) break;
       } throw_debug_exception (oei == oeend, consistency_exception, "Couldnt find edge in rgraph");
 
-      cout << "-> Found the edge in the remainder graph\n";
+      //cout << "-> Found the edge in the remainder graph\n";
 
       // find the edge correlation entry for the edge in rg, and set its pointer
       for (EdgeCorrelationList::iterator ecori = e_cor_list.begin(); ecori != e_cor_list.end(); ecori++) {
@@ -387,17 +392,119 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
 	}
       } // end all edge correlations
 
-      cout << "-> Found the correlation entry and set as LCG_EDGE\n\n";
+      //cout << "-> Found the correlation entry and set as LCG_EDGE\n\n";
 
     }
   }
 
-  cout << "\n\n############################## Building JAE list and correlation lists\n";
-  build_jae_list_and_correlate_rg(ag, av, ae, jae_list, rg, v_cor_list, e_cor_list);
+  line_graph_t::evn_t lg_vert_props = get(vertex_name, lg);
 
+  //cout << "\n\n############################## Building JAE list and correlation lists\n";
+  // build Jacobian Accumulation Expressions one at a time
+  vector<JacobianAccumulationExpressionVertex*> exp_output_pr; // pointer to output vertex of expression
+  for (size_t c= 0; c < ag.accu_exp.size(); c++) {
+    const accu_exp_graph_t& my_exp= ag.accu_exp[c];
+    property_map<pure_accu_exp_graph_t, vertex_name_t>::const_type vpr = get(vertex_name, my_exp);
+
+    JacobianAccumulationExpression& new_jae = jae_list.addExpression();
+    vector<JacobianAccumulationExpressionVertex*>  vp (my_exp.v());
+    for (size_t vc= 0; vc < (size_t) my_exp.v(); vc++) { // for all vertices in my_exp
+      const accu_exp_t& prop= vpr[vc];
+
+      // create a new JAE vertex
+      JacobianAccumulationExpressionVertex& new_jae_vertex = new_jae.addVertex();
+      vp[vc] = &new_jae_vertex;
+
+      // if it's the last vertex, save its address in exp_output_pr
+      if (vc+1 == (size_t) my_exp.v()) exp_output_pr.push_back(&new_jae_vertex);
+
+      // set reference (for leaves) or set operation (non-leaves)
+      switch (prop.ref_kind) { 
+	case accu_exp_t::nothing:
+	  throw_exception (true, consistency_exception, "Unset vertex"); break;
+	case accu_exp_t::exp:    
+	  throw_debug_exception (prop.ref.exp_nr >= int (c), consistency_exception, "Expression number too large")
+	  new_jae_vertex.setInternalReference (*exp_output_pr[prop.ref.exp_nr]); break;
+	case accu_exp_t::lgn: {    
+	  const LinearizedComputationalGraphEdge* ptr = xaif_edge_pr (prop.ref.node, ag, ae); 
+	  throw_debug_exception (ptr == NULL, consistency_exception, "Unset reference");
+	  new_jae_vertex.setExternalReference (*ptr); } break;
+	case accu_exp_t::isop:    
+	  new_jae_vertex.setOperation (prop.ref.op == accu_exp_t::add ? JacobianAccumulationExpressionVertex::ADD_OP
+								  : JacobianAccumulationExpressionVertex::MULT_OP);
+      } // switch ref_kind
+
+    } // for all vertices in expression
+    
+    // add edges to new Jacobian Accumulation Expression
+    graph_traits<pure_accu_exp_graph_t>::edge_iterator agei, age_end;   // set edges
+    for (tie (agei, age_end)= edges (my_exp); agei != age_end; agei++)
+      new_jae.addEdge(*vp[source (*agei, my_exp)], *vp[target (*agei, my_exp)]);
+
+    //check for a remainder edge that correlated with this JAE
+    for (tie(ei, e_end) = vertices(lg); ei != e_end; ++ei) {
+      if (in_degree (*ei, lg)*out_degree(*ei, lg) > 0 && ag.exp_nr[*ei] == (int) c) {
+        //cout << "Un-isolated line graph vertex " << *ei << " has markowitz degree " << in_degree (*ei, lg)*out_degree(*ei, lg);
+	//cout << " and property " << lg_vert_props[*ei] << ".  It corresponds to this JAE\n";
+
+	xg_src_p = av[lg_vert_props[*ei].first];
+	xg_tgt_p = av[lg_vert_props[*ei].second];
+	rg_src_p = NULL;
+	rg_tgt_p = NULL;
+
+	for (VertexCorrelationList::iterator vcori = v_cor_list.begin(); vcori != v_cor_list.end(); vcori++) {
+	  if (vcori->myOriginalVertex_p == xg_src_p) rg_src_p = vcori->myRemainderVertex_p;
+	else if (vcori->myOriginalVertex_p == xg_tgt_p) rg_tgt_p = vcori->myRemainderVertex_p;
+	} throw_debug_exception (rg_src_p == NULL || rg_tgt_p == NULL, consistency_exception, "Couldnt find vertices in v_cor_list");
+
+	//cout << "-> Found the source and target of the edge in the remainder graph\n";
+
+	// locate the edge in rgraph that goes from rg_src to rg_tgt
+	LinearizedComputationalGraph::OutEdgeIteratorPair outedges (rg.getOutEdgesOf (*rg_src_p));
+	LinearizedComputationalGraph::OutEdgeIterator oei = outedges.first, oeend= outedges.second;
+	for (; oei != oeend; ++oei) {
+	  if (&rg.getTargetOf(*oei) == rg_tgt_p) break;
+	} throw_debug_exception (oei == oeend, consistency_exception, "Couldnt find edge in rgraph");
+
+	//cout << "-> Found the edge in the remainder graph\n";
+
+	// find the edge correlation entry for the edge in rg, and set its pointer
+	for (EdgeCorrelationList::iterator ecori = e_cor_list.begin(); ecori != e_cor_list.end(); ecori++) {
+	  if (ecori->myRemainderGraphEdge_p == &*oei) {
+	    ecori->myType = EdgeCorrelationEntry::JAE_VERT;
+	    ecori->myEliminationReference.myJAEVertex_p = exp_output_pr.back();
+	    break;
+	  }
+	} throw_debug_exception (ecori == e_cor_list.end(), consistency_exception, "Couldnt find a correlation entry for the edge");
+
+	//cout << "-> Found the correlation entry and set as JAE\n\n";
+
+	break;
+      }
+    }
+
+  } // for all expressions
+
+/*
+  for (tie(ei, e_end) = vertices(lg); ei != e_end; ++ei) {
+    if (in_degree (*ei, lg)*out_degree(*ei, lg) > 0) {
+      cout << "Un-isolated line graph vertex " << *ei << " has markowitz degree " << in_degree (*ei, lg)*out_degree(*ei, lg);
+      if (ag.exp_nr[*ei] == -1) {
+	cout << " and corresponds to an ORIGINAL EDGE\n\n";
+      }
+      else {
+	cout << " and corresponds to EXP_NR " << ag.exp_nr[*ei] << "\n\n";
+      }
+    }
+  }
+*/
+
+  //build_jae_list_and_correlate_rg(ag, av, ae, jae_list, rg, v_cor_list, e_cor_list);
+/*
   cout << "\n>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++<";
   cout << "\n>+++++++++++++++++++Leaving compute_partial_elimination_sequence()+++++++++++++++<";
   cout << "\n>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++<\n\n";
+*/
 }
 
 void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
