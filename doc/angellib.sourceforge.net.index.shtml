@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+
+</head>
+
+
+<body style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255);" alink="#ff0000" link="#0000ef" vlink="#990000">
+
+<h1 style="color: rgb(0, 153, 0); text-align: center;">
+ANGEL</h1>
+
+<h3>
+Synopsis</h3>
+
+ANGEL
+stands for <span style="font-weight: bold; color: rgb(0, 153, 0);">A</span>utomatic
+differentiation <span style="font-weight: bold; color: rgb(0, 153, 0);">N</span>ested
+<span style="font-weight: bold; color: rgb(0, 153, 0);">G</span>raph
+<span style="font-weight: bold; color: rgb(0, 153, 0);">E</span>limination
+<span style="font-weight: bold; color: rgb(0, 153, 0);">L</span>ibrary.
+It implements graph elimination techniques in
+order to find the cheapest accumulation of Jacobian matrices.
+It provides:
+<ul>
+
+  <li>
+Sparse representation of c-graphs and their dual
+line graphs including many helper functions to work with them</li>
+
+  <li>
+Vertex, edge, and face elimination</li>
+
+  <ul>
+
+  </ul>
+
+  <li>
+Structured graph generator</li>
+
+  <li>
+Heuristics for selecting next vertex, edge or face
+to eliminate</li>
+
+  <ul>
+
+    <li>
+Lowest Markowitz degree first</li>
+
+    <li>
+Lowest relative Markowitz degree first</li>
+
+    <li>
+Minimal Fill-in</li>
+
+    <li>
+Maximal overall path length reduction</li>
+
+    <li>
+Maximal overall Markowitz degree reduction</li>
+
+    <li>
+Lowest Markowitz minimal damage</li>
+
+  </ul>
+
+  <li>
+Stochastic methods</li>
+
+  <ul>
+
+    <li>
+It is intended to optimize elimination sequences
+but written as universally as possible and can be applied to any
+problem
+where neighborhood relation and objective function are provided as
+functor</li>
+
+    <li>
+Metropolis with fixed temperature</li>
+
+    <li>
+Logarithmic simulated annealing</li>
+
+  </ul>
+
+</ul>
+
+ANGEL
+has been developed as an independent library but is primarily used by
+the <a href="http://www.mcs.anl.gov/openad">OpenAD</a>
+framework for automatic differentiation. <br>
+
+<h3>Downloads</h3>
+
+Dependencies: 
+<ol>
+
+  <li><a href="http://www.gnu.org/software/make/">GNU
+make</a></li>
+
+
+  <li><a href="http://www.boost.org">boost libraries</a></li>
+  <li>&nbsp;<a href="http://www.mcs.anl.gov/openad">OpenAD</a> : this
+dependency&nbsp; can be avoided by commenting out<br>
+
+    <tt> CPPFLAGS += -DUSEXAIFBOOSTER</tt> <br>
+
+and the lines below that one in <br>
+
+    <tt>angel/specs/lib_usage.conf</tt></li>
+
+</ol>
+
+<a href="angel.tgz">Source code tar file</a> as of
+Feb/09/2007&nbsp;
+<h3>Documentation</h3>
+
+For
+details on classes and functions
+in ANGEL see
+the reference manual <a href="refman.pdf">PDF</a> or <a href="html/index.html">html pages</a> (last
+generated on Feb/09/2007)
+<h3>Author &amp;&nbsp;Acknowledgements</h3>
+
+<ul>
+
+  <li>main author is Peter Gottschling</li>
+
+  <li>further contributions have been made by Uwe Naumann</li>
+
+  <li>the initial development of ANGEL was part of the XCOp
+project and was supported
+by the Engineering and Physikal Sciences Research Council (EPSRC - UK)
+under grant number GR/R/38101/01.</li>
+
+  <li>further development was supported under the <a target="_parent" href="http://www.nsf.gov/">NSF</a>'s
+    <a target="_parent" href="http://www.nsf.gov/itr">Information
+Technology Research (ITR)</a> program under contract OCE-0205590</li>
+
+</ul>
+This page was last updated on <!--#flastmod file="index.shtml" -->.
+</body>
+</html>
