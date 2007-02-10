@@ -103,7 +103,7 @@ inline int LSA (Object_t& object, Neighbor_t neighbor, Cost_t costs, double gamm
     \param object Some state in the configuration space.
     \param neighbor Neighborhood relation applicable to object
     \param costs Cost operator applicable to object
-    \param temp Temperature
+    \param t temperature
     \param max_iter Maximal number of iterations
 
     Object_t, Neighbor_t and Cost_t can be arbitrary

@@ -16,7 +16,7 @@ ifeq "$(strip $(usexaif))" "yes"
   CPPFLAGS	+= -I$(XAIF_DIR)
 endif
 
-.PHONY:	it lib objects doc clean distclean dist docdist echo
+.PHONY:	it lib objects doc clean dist echo
 
 it: 	lib 
 
@@ -27,43 +27,21 @@ lib/libangel.a:	objects
 	$(AR) $(ARFLAGS) $@ src/*.o
 
 objects:
-	cd src && $(MAKE) && cd ..
+	cd src && $(MAKE) 
 
 doc:
 	doxygen Doxyfile
-	cd doc && $(MAKE) doc && cd ..
+	cd doc/latex && $(MAKE)
 
 clean:
-	cd src && $(MAKE) clean && cd ..
+	cd src && $(MAKE) clean 
 	$(RM) $(RMFLAGS) lib/libangel.a
-
-#removes everything but the sources and CVS files
-distclean:	clean
-	cd src && $(MAKE) distclean && cd ..
-	cd doc && $(MAKE) distclean && cd ..
+	$(RM) $(RMFLAGS) doc/latex doc/html
 
 echo:
-	cd src && $(MAKE) echo && cd ..
+	cd src && $(MAKE) echo 
 
 dist:
-	cd .. && tar -cf angel.tar --no-recursion angel/Makefile angel/*/Makefile angel/src/*.cpp \
-		angel/include/*.hpp angel/lib angel/doc/html \
-		angel/Doxyfile angel/specs/*.conf \
-	&& gzip angel.tar && cd angel
-
-docdist:
-	cd .. && tar -cf angel_doc.tar --no-recursion  \
-		angel/lib angel/doc/html/* angel/doc/latex/refman.pdf \
-	&& gzip angel_doc.tar && cd angel
-
-
-
-
-
-
-
-
-
-
-
-
+	cd .. && tar -zcvf angel.tgz --no-recursion angel/Makefile angel/*/Makefile angel/src/*.cpp \
+		angel/include/*.hpp angel/lib \
+		angel/Doxyfile angel/specs/*.conf 
