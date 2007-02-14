@@ -79,13 +79,18 @@ void read_graph_xaif_booster (const LinearizedComputationalGraph& xg, c_graph_t&
   for (; bi != be; bi++) deps.push_back (which_index (*bi, av)); 
 
   int edge_number= 0;
+  boost::property_map<c_graph_t, EdgeIsUnitType>::type eisunit = get(EdgeIsUnitType(), cg);
   xgraph_t::ConstEdgeIteratorPair eip (xg.edges());
   for (xgraph_t::ConstEdgeIterator ei (eip.first), e_end (eip.second); ei != e_end; ++ei) {
     vertex_t source= which_index (& (xg.getSourceOf (*ei)), av),
              target= which_index (& (xg.getTargetOf (*ei)), av);
-    add_edge (source, target, edge_number++, cg);
-    ae.push_back (edge_address_t(source, target, &*ei)); }
+    pair<c_graph_t::edge_t, bool> new_edge = add_edge (source, target, edge_number++, cg);
+    ae.push_back (edge_address_t(source, target, &*ei));
+    (*ei).hasUnitLabel() ? eisunit[new_edge.first] = true
+			 : eisunit[new_edge.first] = false;
 
+    //if(eisunit[new_edge.first]) cout << "is_unit label in angel graph seems to be labeled\n";
+  } // end for all LCG edges
 
   cg.X= int (indeps.size()); cg.dependents= deps;
 
