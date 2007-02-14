@@ -75,7 +75,10 @@ int front_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
 	||
 	!eUnit[edge_jk]) 
       nnt++;
-    if (found_ik) ew[edge_ik]+= d;
+    if (found_ik) { 
+      ew[edge_ik]+= d;
+      eUnit[edge_ik]=false; 
+    } 
     else {
       tie (edge_ik, found_ik)= add_edge (i, k, cg.next_edge_number++, cg);
       ew[edge_ik]= d; 
@@ -141,7 +144,10 @@ int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
 	!eUnit[edge_ki]) 
       nnt++;
 
-    if (found_kj) ew[edge_kj]+= d;
+    if (found_kj) { 
+      ew[edge_kj]+= d;
+      eUnit[edge_kj]=false; 
+    }
     else {
       tie (edge_kj, found_kj)= add_edge (k, j, cg.next_edge_number++, cg);
       ew[edge_kj]= d; 
