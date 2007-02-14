@@ -45,6 +45,7 @@ int front_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
   typedef c_graph_t::edge_t            edge_t;
   typedef c_graph_t::oei_t             oei_t;
   c_graph_t::ew_t                      ew= get(edge_weight, cg);
+  boost::property_map<c_graph_t, EdgeIsUnitType>::type eUnit = get(EdgeIsUnitType(), cg);
   // write_edge_property (std::cout, "edge weights ", ew, cg);
 
   vertex_t i= source (edge_ij, cg), j= target (edge_ij, cg);
@@ -69,12 +70,22 @@ int front_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
     tie (edge_ik, found_ik)= edge (i, k, cg);
   
     // test whether elimination induces op, i.e. += || *
-    nnt+= found_ik || ew[edge_jk] != 1 && c_ji != 1; 
-
+    // nnt+= found_ik || ew[edge_jk] != 1 && c_ji != 1; 
+    if (!eUnit[edge_ij]
+	||
+	!eUnit[edge_jk]) 
+      nnt++;
     if (found_ik) ew[edge_ik]+= d;
     else {
       tie (edge_ik, found_ik)= add_edge (i, k, cg.next_edge_number++, cg);
-      ew[edge_ik]= d; }
+      ew[edge_ik]= d; 
+      if (eUnit[edge_ij]
+	  &&
+	  eUnit[edge_jk]) 
+	eUnit[edge_ik]=true;
+      else
+	eUnit[edge_ik]=false;
+    }
   }
   remove_edge (edge_ij, cg);
 
@@ -100,6 +111,7 @@ int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
   typedef c_graph_t::edge_t            edge_t;
   typedef c_graph_t::iei_t             iei_t;
   c_graph_t::ew_t                      ew= get(edge_weight, cg);
+  boost::property_map<c_graph_t, EdgeIsUnitType>::type eUnit = get(EdgeIsUnitType(), cg);
 
   vertex_t i= source (edge_ij, cg), j= target (edge_ij, cg);
 
@@ -123,12 +135,24 @@ int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
     tie (edge_kj, found_kj)= edge (k, j, cg);
   
     // test whether elimination induces op, i.e. += || *
-    nnt+= found_kj || ew[edge_ki] != 1 && c_ji != 1; 
+    // nnt+= found_kj || ew[edge_ki] != 1 && c_ji != 1; 
+    if (!eUnit[edge_ij]
+	||
+	!eUnit[edge_ki]) 
+      nnt++;
 
     if (found_kj) ew[edge_kj]+= d;
     else {
       tie (edge_kj, found_kj)= add_edge (k, j, cg.next_edge_number++, cg);
-      ew[edge_kj]= d; }
+      ew[edge_kj]= d; 
+      if (eUnit[edge_ij]
+	  &&
+	  eUnit[edge_ki]) 
+	eUnit[edge_kj]=true;
+      else
+	eUnit[edge_kj]=false;
+
+    }
   }
   remove_edge (edge_ij, cg);
 
@@ -140,11 +164,11 @@ int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
       remove_edge (ev[n], cg); 
   // is overkill: remove_irrelevant_edges (i, cg);
 
-#ifdef IGNORE_TRIVIAL_ELIMINATIONS
+  //#ifdef IGNORE_TRIVIAL_ELIMINATIONS
   return nnt;
-#else
-  return ev.size();
-#endif
+// #else
+//   return ev.size();
+// #endif
 }
 
 

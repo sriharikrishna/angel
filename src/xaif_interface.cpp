@@ -510,6 +510,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
   cout << "\n>+++++++++++++++++++Leaving compute_partial_elimination_sequence()+++++++++++++++<";
   cout << "\n>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++<\n\n";
 */
+  std::cout << "compute_partial_elimination_sequence: cost " << cost << std::endl;
 }
 
 void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,

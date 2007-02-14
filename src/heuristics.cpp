@@ -1118,6 +1118,7 @@ int minimal_distance_face_t::operator() (const vector<line_graph_t::face_t>& fv1
 int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
                                    const c_graph_t& cg,
                                    vector<edge_bool_t>& bev2) {
+  boost::property_map<c_graph_t, EdgeIsUnitType>::const_type eUnit = get(EdgeIsUnitType(), cg);
   bev2.resize (0);
   if (bev1.size() == 0) return 0;
 
@@ -1146,7 +1147,37 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
     // select eliminations that create a one or fewer fill-ins
     int fill = isFront ? new_out_edges (e,cg)
                        : new_in_edges (e,cg);
-    if (fill < 2) bev2.push_back (bev1[c]);
+    if (fill < 2) 
+      bev2.push_back (bev1[c]);
+#ifdef IGNORE_TRIVIAL_ELIMINATIONS
+    else { 
+      if (eUnit[e]) {
+	bool allUnitEdges=true; 
+	if (isFront) {
+	  c_graph_t::oei_t oei, oe_end;
+	  for (tie (oei, oe_end)= out_edges (target (e, cg), cg); 
+	       oei != oe_end; ++oei) {
+	    if (!eUnit[*oei]) { 
+	      allUnitEdges=false; 
+	      break;
+	    }
+	  }
+	}
+	else {
+	  c_graph_t::iei_t iei, ie_end;
+	  for (tie (iei, ie_end)= in_edges (source (e, cg), cg); 
+	       iei != ie_end; ++iei) {
+	    if (!eUnit[*iei]) { 
+	      allUnitEdges=false; 
+	      break;
+	    }
+	  }
+	}
+	if (allUnitEdges)
+	  bev2.push_back (bev1[c]);
+      }
+    }
+#endif 
   }
   return bev2.size();
 }
