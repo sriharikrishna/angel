@@ -1161,15 +1161,15 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
 	  for (; toei != toe_end; ++toei) {
 	    // look at a target out edge and see if this is absorption
 	    c_graph_t::vertex_t tt= target (*toei, cg);
-	    c_graph_t::oei_t inner_soei= soei;
-	    for (; inner_soei != soe_end; ++inner_soei) {
-	      if (target (*inner_soei, cg) == tt ) { 
+	    c_graph_t::oei_t absorb_soei= soei;
+	    for (; absorb_soei != soe_end; ++absorb_soei) {
+	      if (target (*absorb_soei, cg) == tt ) { 
 		// this is absorption
-		if (!eUnit[*toei] && eUnit[*inner_soei]) {
+		if (!eUnit[*toei] && eUnit[*absorb_soei]) {
 		  // this absorbing edge was unit but will turn variable
 		  extraVariableEdges++; 
 		}
-		else if (eUnit[*toei] && eUnit[*inner_soei]) { 
+		else if (eUnit[*toei] && eUnit[*absorb_soei]) { 
 		  // this the difference to considering constant edges: 
 		  // the absorbing edge is unit too but won't be after absorption
 		  extraVariableEdges++; 
@@ -1180,7 +1180,7 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
 		break; 
 	      }
 	    }
-	    if (!eUnit[*toei] && inner_soei != soe_end){ 
+	    if (!eUnit[*toei] && absorb_soei == soe_end){ 
 	      // this is variable fill-in 
 	      extraVariableEdges++; 
 	    }
@@ -1194,15 +1194,15 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
 	  for (; siei != sie_end; ++siei) {
 	    // look at a source in edge and see if this is absorption
 	    c_graph_t::vertex_t ss= source (*siei, cg);
-	    c_graph_t::iei_t inner_tiei= tiei;
-	    for (; inner_tiei != tie_end; ++inner_tiei) {
-	      if (source (*inner_tiei, cg) == ss ) { 
+	    c_graph_t::iei_t absorb_tiei= tiei;
+	    for (; absorb_tiei != tie_end; ++absorb_tiei) {
+	      if (source (*absorb_tiei, cg) == ss ) { 
 		// this is absorption
-		if (!eUnit[*siei] && eUnit[*inner_tiei]) {
+		if (!eUnit[*siei] && eUnit[*absorb_tiei]) {
 		  // this absorbing edge was unit but will turn variable
 		  extraVariableEdges++; 
 		}
-		else if (eUnit[*siei] && eUnit[*inner_tiei]) { 
+		else if (eUnit[*siei] && eUnit[*absorb_tiei]) { 
 		  // this the difference to considering constant edges: 
 		  // the absorbing edge is unit too but won't be after absorption
 		  extraVariableEdges++; 
@@ -1213,7 +1213,7 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
 		break; 
 	      }
 	    }
-	    if (!eUnit[*siei] && inner_tiei != tie_end){ 
+	    if (!eUnit[*siei] && absorb_tiei == tie_end){ 
 	      // this is variable fill-in 
 	      extraVariableEdges++; 
 	    }
