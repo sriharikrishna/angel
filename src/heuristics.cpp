@@ -1152,7 +1152,7 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
 #ifdef IGNORE_TRIVIAL_ELIMINATIONS
     else { 
       if (eUnit[e]) {
-	int  extraVariableEdges=0; 
+	int  extraVariableEdges=0;
 	if (isFront) {
 	  // look at all potential results of this elimination
 	  c_graph_t::oei_t  soei, soe_end, toei, toe_end;
@@ -1219,7 +1219,8 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
 	    }
 	  }
 	}
-	if (extraVariableEdges<2)
+	if (extraVariableEdges==0)
+	  // we are eliminating a unit edge
 	  bev2.push_back (bev1[c]);
       }
     }
