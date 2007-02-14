@@ -72,7 +72,7 @@ int front_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
     // test whether elimination induces op, i.e. += || *
     // nnt+= found_ik || ew[edge_jk] != 1 && c_ji != 1; 
     if (!eUnit[edge_ij]
-	||
+	&&
 	!eUnit[edge_jk]) 
       nnt++;
     if (found_ik) { 
@@ -140,7 +140,7 @@ int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
     // test whether elimination induces op, i.e. += || *
     // nnt+= found_kj || ew[edge_ki] != 1 && c_ji != 1; 
     if (!eUnit[edge_ij]
-	||
+	&&
 	!eUnit[edge_ki]) 
       nnt++;
 
@@ -170,11 +170,11 @@ int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
       remove_edge (ev[n], cg); 
   // is overkill: remove_irrelevant_edges (i, cg);
 
-  //#ifdef IGNORE_TRIVIAL_ELIMINATIONS
+#ifdef IGNORE_TRIVIAL_ELIMINATIONS
   return nnt;
-// #else
-//   return ev.size();
-// #endif
+#else
+  return ev.size();
+#endif
 }
 
 

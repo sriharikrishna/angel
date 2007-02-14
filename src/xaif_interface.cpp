@@ -345,6 +345,16 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
 #endif
 
   //cout << "\n\n############################## Building remainder graph rg from cgp\n";
+  c_graph_t::ei_t rei,re_end;
+  tie(rei,re_end)=edges(cgp);
+  property_map<c_graph_t, EdgeIsUnitType>::type eUnit = get(EdgeIsUnitType(), cgp);
+  int edgeCount(0), unitEdgeCount(0);
+  for (;rei!=re_end;++rei) { 
+    edgeCount++;
+    if (eUnit[*rei])
+      unitEdgeCount++;
+  }
+  std::cout << "remainder graph edges: " << edgeCount << " unit label edges: " << unitEdgeCount << std::endl;
   build_remainder_graph(cgp, av, rg, v_cor_list, e_cor_list);
 
   const LinearizedComputationalGraphVertex* xg_src_p = NULL;
