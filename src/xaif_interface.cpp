@@ -282,7 +282,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
   c_graph_t cg;
   vector<const LinearizedComputationalGraphVertex*> av;
   vector<edge_address_t> ae;
-  vector<edge_bool_t> bev1, bev2;
+  vector<edge_bool_t> bev1, bev2, bev3, bev4;
   vector<edge_ij_elim_t> eij_elim_seq;
   //vector<edge_ij_elim_t> ev1, ev2, eij_elim_seq;
   int cost = 0;
@@ -296,19 +296,22 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
   c_graph_t cgp (cg); // a partial elimination sequence will reduce cgp to "cg prime"
   eliminatable_objects (cgp, bev1);
   scarce_pres_edge_eliminations (bev1, cgp, bev2);
-
-  while(!bev2.empty()) {
-    edge_ij_elim_t elim (source (bev2[0].first, cgp), target (bev2[0].first, cgp), bev2[0].second);
+  lowest_markowitz_edge(bev2,cgp,bev3);
+  reverse_mode_edge(bev3,cgp,bev4);
+  while(!bev4.empty()) {
+    edge_ij_elim_t elim (source (bev4[0].first, cgp), target (bev4[0].first, cgp), bev4[0].second);
     eij_elim_seq.push_back(elim);
     //eij_elim_seq.push_back(ev2[0];
-/*
+
     cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " are scarcity preserving\n";
-    if (bev2[0].second) { cout << "Front-eliminating edge from " << elim.i << " to " << elim.j << "...\n"; }
+    if (bev4[0].second) { cout << "Front-eliminating edge from " << elim.i << " to " << elim.j << "...\n"; }
     else { cout << "Back-eliminating edge from " << elim.i << " to " << elim.j << "...\n"; }
-*/
-    cost += eliminate (bev2[0], cgp);
+
+    cost += eliminate (bev4[0], cgp);
     eliminatable_objects (cgp, bev1);
     scarce_pres_edge_eliminations (bev1, cgp, bev2);
+    lowest_markowitz_edge(bev2,cgp,bev3);
+    reverse_mode_edge(bev3,cgp,bev4);
   }
   //cgp.clear_graph(); // clears isolated intermediate vertices (and also renumbers vertices!)
 /*
@@ -484,13 +487,15 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
 	//cout << "-> Found the edge in the remainder graph\n";
 
 	// find the edge correlation entry for the edge in rg, and set its pointer
-	for (EdgeCorrelationList::iterator ecori = e_cor_list.begin(); ecori != e_cor_list.end(); ecori++) {
+	EdgeCorrelationList::iterator ecori = e_cor_list.begin();
+	for (; ecori != e_cor_list.end(); ecori++) {
 	  if (ecori->myRemainderGraphEdge_p == &*oei) {
 	    ecori->myType = EdgeCorrelationEntry::JAE_VERT;
 	    ecori->myEliminationReference.myJAEVertex_p = exp_output_pr.back();
 	    break;
 	  }
-	} throw_debug_exception (ecori == e_cor_list.end(), consistency_exception, "Couldnt find a correlation entry for the edge");
+	} 
+	throw_debug_exception (ecori == e_cor_list.end(), consistency_exception, "Couldnt find a correlation entry for the edge");
 
 	//cout << "-> Found the correlation entry and set as JAE\n\n";
 

@@ -584,6 +584,8 @@ int lowest_markowitz_edge_t::operator() (const vector<edge_bool_t>& ev1,
   return standard_heuristic_op (ev1, cg, ev2, lme_op, *this);
 }
 
+lowest_markowitz_edge_t lowest_markowitz_edge;
+
 // -------------------------------------------------------------------------
 // Lowest relative Markowitz
 // -------------------------------------------------------------------------
@@ -1125,10 +1127,146 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
   for (size_t c = 0; c < bev1.size(); c++) {
     c_graph_t::edge_t e = bev1[c].first;
     bool isFront = bev1[c].second;
-    vector<c_graph_t::vertex_t> v_v;
-
+#ifdef IGNORE_TRIVIAL_ELIMINATIONS
+    int  extraVariableEdges=0;
+    if (eUnit[e]) {
+      if (isFront) {
+	// look at all potential results of this elimination
+	c_graph_t::oei_t  soei, soe_end, toei, toe_end;
+	tie (soei, soe_end)= out_edges (source (e, cg), cg);
+	tie (toei, toe_end)= out_edges (target (e, cg), cg);
+	for (; toei != toe_end; ++toei) {
+	  // look at a target out edge and see if this is absorption
+	  c_graph_t::vertex_t tt= target (*toei, cg);
+	  c_graph_t::oei_t absorb_soei= soei;
+	  for (; absorb_soei != soe_end; ++absorb_soei) {
+	    if (target (*absorb_soei, cg) == tt ) { 
+	      // this is absorption
+	      if (!eUnit[*toei] && eUnit[*absorb_soei]) {
+		// this absorbing edge was unit but will turn variable
+		extraVariableEdges++; 
+	      }
+	      else if (eUnit[*toei] && eUnit[*absorb_soei]) { 
+		// this the difference to considering constant edges: 
+		// the absorbing edge is unit too but won't be after absorption
+		extraVariableEdges++; 
+	      }
+		else { 
+		  // the absorbing edge is already variable, no need to worry
+		} 
+	      break; 
+	    }
+	  }
+	  if (!eUnit[*toei] && absorb_soei == soe_end){ 
+	    // this is variable fill-in 
+	    extraVariableEdges++; 
+	  }
+	}
+      }
+      else { // back elimination
+	// look at all potential results of this elimination
+	c_graph_t::iei_t  tiei, tie_end, siei, sie_end;
+	tie (tiei, tie_end)= in_edges (target (e, cg), cg);
+	tie (siei, sie_end)= in_edges (source (e, cg), cg);
+	for (; siei != sie_end; ++siei) {
+	  // look at a source in edge and see if this is absorption
+	  c_graph_t::vertex_t ss= source (*siei, cg);
+	  c_graph_t::iei_t absorb_tiei= tiei;
+	  for (; absorb_tiei != tie_end; ++absorb_tiei) {
+	    if (source (*absorb_tiei, cg) == ss ) { 
+	      // this is absorption
+	      if (!eUnit[*siei] && eUnit[*absorb_tiei]) {
+		// this absorbing edge was unit but will turn variable
+		extraVariableEdges++; 
+	      }
+	      else if (eUnit[*siei] && eUnit[*absorb_tiei]) { 
+		// this the difference to considering constant edges: 
+		// the absorbing edge is unit too but won't be after absorption
+		extraVariableEdges++; 
+	      }
+	      else { 
+		// the absorbing edge is already variable, no need to worry
+	      } 
+	      break; 
+	    }
+	  }
+	  if (!eUnit[*siei] && absorb_tiei == tie_end){ 
+	    // this is variable fill-in 
+	    extraVariableEdges++; 
+	  }
+	}
+      }
+      if (extraVariableEdges==0)
+	// we are eliminating a unit edge
+	bev2.push_back (bev1[c]);
+    }
+    else { 
+      // the result will always be variable but may 
+      // be absorbed by an edge that already is variable
+      if (isFront) {
+	// look at all potential results of this elimination
+	c_graph_t::oei_t  soei, soe_end, toei, toe_end;
+	tie (soei, soe_end)= out_edges (source (e, cg), cg);
+	tie (toei, toe_end)= out_edges (target (e, cg), cg);
+	for (; toei != toe_end; ++toei) {
+	  // look at a target out edge and see if this is absorption
+	  c_graph_t::vertex_t tt= target (*toei, cg);
+	  c_graph_t::oei_t absorb_soei= soei;
+	  for (; absorb_soei != soe_end; ++absorb_soei) {
+	    if (target (*absorb_soei, cg) == tt ) { 
+	      // this is absorption
+	      if (eUnit[*absorb_soei]) {
+		// this absorbing edge was unit but will turn variable
+		extraVariableEdges++; 
+	      }
+	      else { 
+		// the absorbing edge is already variable, no need to worry
+	      } 
+	      break; 
+	    }
+	  }
+	  if (absorb_soei == soe_end){ 
+	    // this is variable fill-in 
+	    extraVariableEdges++; 
+	  }
+	}
+      }
+      else { // back elimination
+	// look at all potential results of this elimination
+	c_graph_t::iei_t  tiei, tie_end, siei, sie_end;
+	tie (tiei, tie_end)= in_edges (target (e, cg), cg);
+	tie (siei, sie_end)= in_edges (source (e, cg), cg);
+	for (; siei != sie_end; ++siei) {
+	  // look at a source in edge and see if this is absorption
+	  c_graph_t::vertex_t ss= source (*siei, cg);
+	  c_graph_t::iei_t absorb_tiei= tiei;
+	  for (; absorb_tiei != tie_end; ++absorb_tiei) {
+	    if (source (*absorb_tiei, cg) == ss ) { 
+	      // this is absorption
+	      if (eUnit[*absorb_tiei]) {
+		// this absorbing edge was unit but will turn variable
+		extraVariableEdges++; 
+	      }
+	      else { 
+		// the absorbing edge is already variable, no need to worry
+	      } 
+	      break; 
+	    }
+	  }
+	  if (absorb_tiei == tie_end){ 
+	    // this is variable fill-in 
+	    extraVariableEdges++; 
+	  }
+	}
+      }
+      if (extraVariableEdges<2)
+	// we are eliminating a variable edge
+	bev2.push_back (bev1[c]);
+    } 
+#else
     // select edge elimination objects that would isolate the target vertex
     // (for forward eliminations) or source vertex (for back eliminations)
+    vector<c_graph_t::vertex_t> v_v;
     if (isFront) {
       predecessor_set (target (e, cg), cg, v_v);
       if (v_v.size() == 1) {
@@ -1143,87 +1281,11 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
 	continue;
       }
     }
-
     // select eliminations that create a one or fewer fill-ins
     int fill = isFront ? new_out_edges (e,cg)
                        : new_in_edges (e,cg);
     if (fill < 2) 
       bev2.push_back (bev1[c]);
-#ifdef IGNORE_TRIVIAL_ELIMINATIONS
-    else { 
-      if (eUnit[e]) {
-	int  extraVariableEdges=0;
-	if (isFront) {
-	  // look at all potential results of this elimination
-	  c_graph_t::oei_t  soei, soe_end, toei, toe_end;
-	  tie (soei, soe_end)= out_edges (source (e, cg), cg);
-	  tie (toei, toe_end)= out_edges (target (e, cg), cg);
-	  for (; toei != toe_end; ++toei) {
-	    // look at a target out edge and see if this is absorption
-	    c_graph_t::vertex_t tt= target (*toei, cg);
-	    c_graph_t::oei_t absorb_soei= soei;
-	    for (; absorb_soei != soe_end; ++absorb_soei) {
-	      if (target (*absorb_soei, cg) == tt ) { 
-		// this is absorption
-		if (!eUnit[*toei] && eUnit[*absorb_soei]) {
-		  // this absorbing edge was unit but will turn variable
-		  extraVariableEdges++; 
-		}
-		else if (eUnit[*toei] && eUnit[*absorb_soei]) { 
-		  // this the difference to considering constant edges: 
-		  // the absorbing edge is unit too but won't be after absorption
-		  extraVariableEdges++; 
-		}
-		else { 
-		  // the absorbing edge is already variable, no need to worry
-		} 
-		break; 
-	      }
-	    }
-	    if (!eUnit[*toei] && absorb_soei == soe_end){ 
-	      // this is variable fill-in 
-	      extraVariableEdges++; 
-	    }
-	  }
-	}
-	else { // back elimination
-	  // look at all potential results of this elimination
-	  c_graph_t::iei_t  tiei, tie_end, siei, sie_end;
-	  tie (tiei, tie_end)= in_edges (target (e, cg), cg);
-	  tie (siei, sie_end)= in_edges (source (e, cg), cg);
-	  for (; siei != sie_end; ++siei) {
-	    // look at a source in edge and see if this is absorption
-	    c_graph_t::vertex_t ss= source (*siei, cg);
-	    c_graph_t::iei_t absorb_tiei= tiei;
-	    for (; absorb_tiei != tie_end; ++absorb_tiei) {
-	      if (source (*absorb_tiei, cg) == ss ) { 
-		// this is absorption
-		if (!eUnit[*siei] && eUnit[*absorb_tiei]) {
-		  // this absorbing edge was unit but will turn variable
-		  extraVariableEdges++; 
-		}
-		else if (eUnit[*siei] && eUnit[*absorb_tiei]) { 
-		  // this the difference to considering constant edges: 
-		  // the absorbing edge is unit too but won't be after absorption
-		  extraVariableEdges++; 
-		}
-		else { 
-		  // the absorbing edge is already variable, no need to worry
-		} 
-		break; 
-	      }
-	    }
-	    if (!eUnit[*siei] && absorb_tiei == tie_end){ 
-	      // this is variable fill-in 
-	      extraVariableEdges++; 
-	    }
-	  }
-	}
-	if (extraVariableEdges==0)
-	  // we are eliminating a unit edge
-	  bev2.push_back (bev1[c]);
-      }
-    }
 #endif 
   }
   return bev2.size();
