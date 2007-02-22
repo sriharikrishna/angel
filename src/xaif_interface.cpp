@@ -180,7 +180,7 @@ void build_jae_list_and_correlate_rg (const accu_graph_t& ag,
       JacobianAccumulationExpressionVertex& new_jae_vertex = new_jae.addVertex();
       vp[vc] = &new_jae_vertex;
 
-      // if it's the last vertex, save its address in exp_output_pr
+      // if it's the last vertex (the root), save its address in exp_output_pr
       if (vc+1 == (size_t) my_exp.v()) exp_output_pr.push_back(&new_jae_vertex);
 
       // set reference (for leaves) or set operation (non-leaves)
@@ -274,11 +274,6 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
 					   LinearizedComputationalGraph& rg,
 					   VertexCorrelationList& v_cor_list,
                                            EdgeCorrelationList& e_cor_list) {
-/*
-  cout << "\n<++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>";
-  cout << "\n<+++++++++++++++++++Entering compute_partial_elimination_sequence()++++++++++++++>";
-  cout << "\n<++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++>";
-*/
   c_graph_t cg;
   vector<const LinearizedComputationalGraphVertex*> av;
   vector<edge_address_t> ae;
@@ -320,6 +315,32 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
   cout << "\n############################## Converting edge elimination sequence in cg into face elimination sequence in lg\n";
 */
   // transform the partial elimination sequence into a sequence of face eliminations
+
+// MINIMAL EXAMPLE THAT DEMONSTRATES REFILL:
+/*
+  c_graph_t refillG (1,2,1);
+  add_edge (0, 1, refillG);
+  add_edge (0, 2, refillG);
+  add_edge (1, 2, refillG);
+  add_edge (2, 3, refillG);
+
+  write_graph ("-----------------------------------------\nrefill G: ", refillG);
+
+  vector<edge_ij_elim_t> refill_elim_seq;
+  refill_elim_seq.push_back(*new edge_ij_elim_t (0, 2, 1));
+  cout << "front eliminate edge (0,2)\n";
+  refill_elim_seq.push_back(*new edge_ij_elim_t (0, 1, 1));
+  cout << "front eliminate edge (0,1)\n";
+  refill_elim_seq.push_back(*new edge_ij_elim_t (0, 2, 1));
+  cout << "front eliminate edge (0,2)\n";
+
+  cout << "converting refill_elim_seq...\n";
+
+  line_graph_t refillLG (refillG);
+  vector<triplet_t> refillTV;
+  convert_elimination_sequence (refill_elim_seq, refillLG, refillTV);
+*/
+
   line_graph_t lg (cg);
   vector<triplet_t> tv;
   convert_elimination_sequence (eij_elim_seq, lg, tv);
@@ -520,11 +541,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
 */
 
   //build_jae_list_and_correlate_rg(ag, av, ae, jae_list, rg, v_cor_list, e_cor_list);
-/*
-  cout << "\n>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++<";
-  cout << "\n>+++++++++++++++++++Leaving compute_partial_elimination_sequence()+++++++++++++++<";
-  cout << "\n>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++<\n\n";
-*/
+
   std::cout << "compute_partial_elimination_sequence: cost " << cost << std::endl;
 }
 
