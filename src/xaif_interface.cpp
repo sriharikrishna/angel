@@ -157,58 +157,6 @@ void write_graph_xaif_booster (const accu_graph_t& ag,
   } // end expression
 }
 
-void build_jae_list_and_correlate_rg (const accu_graph_t& ag,
-				      const vector<const LinearizedComputationalGraphVertex*>& av,
-				      const vector<edge_address_t>& ae,
-				      JacobianAccumulationExpressionList& jae_list,
-				      LinearizedComputationalGraph& rg,
-				      VertexCorrelationList& v_cor_list,
-				      EdgeCorrelationList& e_cor_list) {
-
-  // build Jacobian Accumulation Expressions one at a time
-  vector<JacobianAccumulationExpressionVertex*> exp_output_pr; // pointer to output vertex of expression
-  for (size_t c= 0; c < ag.accu_exp.size(); c++) {
-    const accu_exp_graph_t& my_exp= ag.accu_exp[c];
-    property_map<pure_accu_exp_graph_t, vertex_name_t>::const_type vpr = get(vertex_name, my_exp);
-
-    JacobianAccumulationExpression& new_jae = jae_list.addExpression();
-    vector<JacobianAccumulationExpressionVertex*>  vp (my_exp.v());
-    for (size_t vc= 0; vc < (size_t) my_exp.v(); vc++) { // for all vertices in my_exp
-      const accu_exp_t& prop= vpr[vc];
-
-      // create a new JAE vertex
-      JacobianAccumulationExpressionVertex& new_jae_vertex = new_jae.addVertex();
-      vp[vc] = &new_jae_vertex;
-
-      // if it's the last vertex (the root), save its address in exp_output_pr
-      if (vc+1 == (size_t) my_exp.v()) exp_output_pr.push_back(&new_jae_vertex);
-
-      // set reference (for leaves) or set operation (non-leaves)
-      switch (prop.ref_kind) { 
-	case accu_exp_t::nothing:
-	  throw_exception (true, consistency_exception, "Unset vertex"); break;
-	case accu_exp_t::exp:    
-	  throw_debug_exception (prop.ref.exp_nr >= int (c), consistency_exception, "Expression number too large")
-	  new_jae_vertex.setInternalReference (*exp_output_pr[prop.ref.exp_nr]); break;
-	case accu_exp_t::lgn: {    
-	  const LinearizedComputationalGraphEdge* ptr = xaif_edge_pr (prop.ref.node, ag, ae); 
-	  throw_debug_exception (ptr == NULL, consistency_exception, "Unset reference");
-	  new_jae_vertex.setExternalReference (*ptr); } break;
-	case accu_exp_t::isop:    
-	  new_jae_vertex.setOperation (prop.ref.op == accu_exp_t::add ? JacobianAccumulationExpressionVertex::ADD_OP
-								  : JacobianAccumulationExpressionVertex::MULT_OP);
-      } // switch ref_kind
-
-    } // for all vertices in expression
-    
-    // add edges to new Jacobian Accumulation Expression
-    graph_traits<pure_accu_exp_graph_t>::edge_iterator ei, e_end;   // set edges
-    for (tie (ei, e_end)= edges (my_exp); ei != e_end; ei++)
-      new_jae.addEdge(*vp[source (*ei, my_exp)], *vp[target (*ei, my_exp)]);
-
-  } // for all expressions
-}
-
 void build_remainder_graph (const c_graph_t& cgp,
 			    const vector<const LinearizedComputationalGraphVertex*> av,
 			    LinearizedComputationalGraph& rg,
@@ -539,8 +487,6 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
     }
   }
 */
-
-  //build_jae_list_and_correlate_rg(ag, av, ae, jae_list, rg, v_cor_list, e_cor_list);
 
   std::cout << "compute_partial_elimination_sequence: cost " << cost << std::endl;
 }
