@@ -222,49 +222,8 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
 					   LinearizedComputationalGraph& rg,
 					   VertexCorrelationList& v_cor_list,
                                            EdgeCorrelationList& e_cor_list) {
-  c_graph_t cg;
-  vector<const LinearizedComputationalGraphVertex*> av;
-  vector<edge_address_t> ae;
-  vector<edge_bool_t> bev1, bev2, bev3, bev4;
-  vector<edge_ij_elim_t> eij_elim_seq;
-  //vector<edge_ij_elim_t> ev1, ev2, eij_elim_seq;
-  int cost = 0;
-
-  //cout << "\n\n############################## Building cg, the internal LCG...\n";
-  read_graph_xaif_booster (xgraph, cg, av, ae);
-  //write_graph ("resulting cg: ", cg);
-
-  //cout << "\n############################## Performing partial edge elimination sequence on cgp (copy of cg)...\n";
-
-  c_graph_t cgp (cg); // a partial elimination sequence will reduce cgp to "cg prime"
-  eliminatable_objects (cgp, bev1);
-  scarce_pres_edge_eliminations (bev1, cgp, bev2);
-  lowest_markowitz_edge(bev2,cgp,bev3);
-  reverse_mode_edge(bev3,cgp,bev4);
-  while(!bev4.empty()) {
-    edge_ij_elim_t elim (source (bev4[0].first, cgp), target (bev4[0].first, cgp), bev4[0].second);
-    eij_elim_seq.push_back(elim);
-    //eij_elim_seq.push_back(ev2[0];
-
-    cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " are scarcity preserving\n";
-    if (bev4[0].second) { cout << "Front-eliminating edge from " << elim.i << " to " << elim.j << "...\n"; }
-    else { cout << "Back-eliminating edge from " << elim.i << " to " << elim.j << "...\n"; }
-
-    cost += eliminate (bev4[0], cgp);
-    eliminatable_objects (cgp, bev1);
-    scarce_pres_edge_eliminations (bev1, cgp, bev2);
-    lowest_markowitz_edge(bev2,cgp,bev3);
-    reverse_mode_edge(bev3,cgp,bev4);
-  }
-  //cgp.clear_graph(); // clears isolated intermediate vertices (and also renumbers vertices!)
-/*
-  write_graph ("resulting cgp: ", cgp);
-  write_vector("Generated edge elimination sequence: ", eij_elim_seq);  
-  cout << "\n############################## Converting edge elimination sequence in cg into face elimination sequence in lg\n";
-*/
-  // transform the partial elimination sequence into a sequence of face eliminations
-
 // MINIMAL EXAMPLE THAT DEMONSTRATES REFILL:
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 /*
   c_graph_t refillG (1,2,1);
   add_edge (0, 1, refillG);
@@ -288,6 +247,54 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
   vector<triplet_t> refillTV;
   convert_elimination_sequence (refill_elim_seq, refillLG, refillTV);
 */
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  c_graph_t cg;
+  vector<const LinearizedComputationalGraphVertex*> av;
+  vector<edge_address_t> ae;
+  vector<edge_bool_t> bev1, bev2, bev3, bev4;
+  vector<edge_ij_elim_t> eij_elim_seq;
+  //vector<edge_ij_elim_t> ev1, ev2, eij_elim_seq;
+  int cost = 0;
+
+#ifndef NDEBUG
+  cout << "\n\n############################## Building cg, the internal copy of the LCG...\n";
+#endif
+
+  read_graph_xaif_booster (xgraph, cg, av, ae);
+
+#ifndef NDEBUG
+  //write_graph ("resulting cg: ", cg);
+  //cout << "\n############################## Performing partial edge elimination sequence on cgp (copy of cg)...\n";
+#endif
+
+  c_graph_t cgp (cg); // a partial edge elimination sequence will be performed on cgp
+  eliminatable_objects (cgp, bev1);
+  scarce_pres_edge_eliminations (bev1, cgp, bev2);
+  lowest_markowitz_edge(bev2,cgp,bev3);
+  reverse_mode_edge(bev3,cgp,bev4);
+  while(!bev4.empty()) {
+    edge_ij_elim_t elim (source (bev4[0].first, cgp), target (bev4[0].first, cgp), bev4[0].second);
+    eij_elim_seq.push_back(elim);
+    //eij_elim_seq.push_back(ev2[0];
+
+    cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " are scarcity preserving\n";
+    if (bev4[0].second) { cout << "Front-eliminating edge from " << elim.i << " to " << elim.j << "...\n"; }
+    else {		  cout << "Back-eliminating edge from " << elim.i << " to " << elim.j << "...\n"; }
+
+    cost += eliminate (bev4[0], cgp);
+    eliminatable_objects (cgp, bev1);
+    scarce_pres_edge_eliminations (bev1, cgp, bev2);
+    lowest_markowitz_edge(bev2,cgp,bev3);
+    reverse_mode_edge(bev3,cgp,bev4);
+  }
+  //cgp.clear_graph(); // clears isolated intermediate vertices (and also renumbers vertices!)
+/*
+  write_graph ("resulting cgp: ", cgp);
+  write_vector("Generated edge elimination sequence: ", eij_elim_seq);  
+  cout << "\n############################## Converting edge elimination sequence in cg into face elimination sequence in lg\n";
+*/
+  // transform the partial elimination sequence into a sequence of face eliminations
 
   line_graph_t lg (cg);
   vector<triplet_t> tv;
