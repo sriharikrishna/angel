@@ -492,46 +492,58 @@ bool convert_elimination_sequence (const vector<edge_ij_elim_t>& ev,
   line_graph_t lgc (lg);
   tv.resize (0);
   for (size_t c= 0; c < ev.size(); c++) {
-    edge_ij_elim_t                 ee= ev[c];
-    // cout << "conv_elim_seq: eliminate edge " << ee;
-    // write_graph ("from graph", lgc);
-    // line_graph_t::evn_t            evn= get(vertex_name, lgc);
-    // write_vertex_property (cout, "vertices of this edge graph", evn, lgc);
-    vector<line_graph_t::edge_t>   lev;
-    bool found= find_edge (ee.i, ee.j, lgc, lev);
-    if (!found) {cout << "for edge (" << ee.i << ", " << ee.j 
-		      << ") does not exist a line graph node!\n"; return false; }
-    if (lev.size() > 1) {cout << "for edge (" << ee.i << ", " << ee.j 
-			      << ") does exist multiple line graph nodes!\n"; return false; }
-    line_graph_t::edge_t           ledge= lev[0];
+    edge_ij_elim_t ee = ev[c];
+    vector<line_graph_t::edge_t> lev;
+    line_graph_t::edge_t ledge;
+
+#ifndef NDEBUG
+    cout << endl;
+    cout << "convert_elimination_sequence: eliminate edge " << ee;
+    write_graph ("from line graph: ", lgc);
+    line_graph_t::evn_t evn = get(vertex_name, lgc);
+    write_vertex_property (cout, "Labels of vertices in this line graph: ", evn, lgc);
+#endif
+
+    bool found = find_edge (ee.i, ee.j, lgc, lev);
+    throw_exception (!found || lev.empty(), consistency_exception, "LCG edge has no corresponding line graph node");
+
+    if (lev.size() == 1) { ledge = lev[0]; }
+    else { // if lev.size() != 1
+      cout << lev.size() << " line graph nodes correspond to LCG edge (" << ee.i << ", " << ee.j << ")."
+			 << "  Determining the correct one...";
+      vector<line_graph_t::edge_t> candidates;
+      // iterate through corresponding line graph vertices to ensure only one of them isn't isolated
+      for (size_t l = 0; l < lev.size(); l++) {
+        if (in_degree(lev[l], lgc) > 0 || out_degree(lev[l], lgc) > 0) candidates.push_back(lev[l]);
+      }
+      throw_exception (candidates.empty(), consistency_exception, "all corresponding line graph nodes are isolated");
+      throw_exception (candidates.size() > 1, consistency_exception, "multiple non-isolated corresponding line graph nodes");
+
+      cout << " Unique correlation found!\n";
+      ledge = candidates[0];
+    } // end lev.size() != 1
+
     if (ee.front) {
       line_graph_t::ofi_t oi, oend;
-      for (boost::tie (oi, oend)= out_edges (ledge, lgc); oi != oend; ++oi) {
-	triplet_t t (ledge, target (*oi, lgc), -1); tv.push_back (t); 
-	// cout << "new face " << t;
+      for (boost::tie (oi, oend) = out_edges (ledge, lgc); oi != oend; ++oi) {
+        triplet_t t (ledge, target (*oi, lgc), -1); tv.push_back (t);
+#ifndef NDEBUG
+        cout << "new face " << t;
+#endif
       }
       front_edge_elimination (ee.i, ee.j, lgc);
     } else {
       line_graph_t::ifi_t ii, iend;
-      for (boost::tie (ii, iend)= in_edges (ledge, lgc); ii != iend; ++ii) {
-	triplet_t t (source (*ii, lgc), ledge, -1); tv.push_back (t); 
-	// cout << "new face " << t;
+      for (boost::tie (ii, iend) = in_edges (ledge, lgc); ii != iend; ++ii) {
+        triplet_t t (source (*ii, lgc), ledge, -1); tv.push_back (t);
+#ifndef NDEBUG
+        cout << "new face " << t;
+#endif
       }
-      back_edge_elimination (ee.i, ee.j, lgc); } 
-    // cout << endl;
-  }
+      back_edge_elimination (ee.i, ee.j, lgc); }
+  } // end all edge eliminations
   return true;
-}
-
-
-
+} // end convert_elimination_sequence()
 
 } // namespace angel
-
-
-
-
-
-
-
 
