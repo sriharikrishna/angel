@@ -494,6 +494,11 @@ bool convert_elimination_sequence (const vector<edge_ij_elim_t>& ev,
   for (size_t c= 0; c < ev.size(); c++) {
     edge_ij_elim_t ee = ev[c];
     vector<line_graph_t::edge_t> lev;
+    // cout << "conv_elim_seq: eliminate edge " << ee;
+    // write_graph ("from graph", lgc);
+    // line_graph_t::evn_t            evn= get(vertex_name, lgc);
+    // write_vertex_property (cout, "vertices of this edge graph", evn, lgc);
+    // std::cout << "dealing with edge elim: " << ee.i << " to " << ee.j << std::endl; 
     line_graph_t::edge_t ledge;
 
 #ifndef NDEBUG
