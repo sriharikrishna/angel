@@ -21,6 +21,7 @@
 #ifdef USEXAIFBOOSTER
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/LinearizedComputationalGraph.hpp"
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/JacobianAccumulationExpressionList.hpp"
+#include "xaifBooster/algorithms/CrossCountryInterface/inc/GraphCorrelations.hpp"
 #endif // USEXAIFBOOSTER
 
 #include "angel_exceptions.hpp"
@@ -190,6 +191,15 @@ public:
 				       c_graph_t& cg,
 				       std::vector<const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphVertex*>& av,
 				       std::vector<edge_address_t>& ev);
+
+  friend void compute_partial_elimination_sequence (const xaifBoosterCrossCountryInterface::LinearizedComputationalGraph& ourLCG,
+							     int tasks,
+							     double, // for interface unification
+							     xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& jae_list,
+							     xaifBoosterCrossCountryInterface::LinearizedComputationalGraph& remainderLCG,
+							     xaifBoosterCrossCountryInterface::VertexCorrelationList& v_cor_list,
+							     xaifBoosterCrossCountryInterface::EdgeCorrelationList& e_cor_list);
+
 #endif // USEXAIFBOOSTER
 
 };
