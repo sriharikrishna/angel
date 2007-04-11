@@ -568,7 +568,7 @@ EdgeRefType_E getRefType (const c_graph_t::edge_t e, const c_graph_t& angelLCG, 
     }
   }
   cout << "Error: can't return reference type - no reference entry could be found for edge" << endl;
-  //throw_exception (true, consistency_exception, "can't return reference type - no reference entry could be found for edge");
+  throw_exception (true, consistency_exception, "can't return reference type - no reference entry could be found for edge");
 } // end getRef_type ()
 
 const LinearizedComputationalGraphEdge* getLCG_p (const c_graph_t::edge_t e,
@@ -583,7 +583,7 @@ const LinearizedComputationalGraphEdge* getLCG_p (const c_graph_t::edge_t e,
     }
   }
   cout << "Error: can't return LCG_p - no reference entry could be found for edge" << endl;
-  //throw_exception (true, consistency_exception, "can't return LCG_p - no reference entry could be found for edge");
+  throw_exception (true, consistency_exception, "can't return LCG_p - no reference entry could be found for edge");
 } // end getLCG_p ()
 
 JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
@@ -600,7 +600,7 @@ JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
     }
   }
   cout << "Error: can't return JAE_p - no reference entry could be found for edge" << endl;
-  //throw_exception (true, consistency_exception, "can't return JAE_p - no reference entry could be found for edge");
+  throw_exception (true, consistency_exception, "can't return JAE_p - no reference entry could be found for edge");
 } // end getJAE_p ()
 
 void updateRef (EdgeRef_t ref, const c_graph_t& angelLCG, list<EdgeRef_t>& edge_ref_list) {
@@ -618,7 +618,7 @@ void updateRef (EdgeRef_t ref, const c_graph_t& angelLCG, list<EdgeRef_t>& edge_
     }
   }
   cout << "ERROR: can't update edge reference - no reference entry for that edge could be found in the list" << endl;
-  //throw_exception (true, consistency_exception, "can't update edge reference - no reference entry for that edge could be found in the list");
+  throw_exception (true, consistency_exception, "can't update edge reference - no reference entry for that edge could be found in the list");
 } // end setRef();
 
 // Creates a new JAE corresponding to multiplying edges e1 and e2
@@ -671,37 +671,33 @@ void multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 
   //test for absorption
   bool found_absorption;
-  c_graph_t::edge_t e3;
-  tie (e3, found_absorption) = edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG);
+  c_graph_t::edge_t absorb_e;
+  tie (absorb_e, found_absorption) = edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG);
 
-  if (found_absorption) { // absorption into e3
+  if (found_absorption) {
+    cout << "absorption into edge " << absorb_e << "detected!" << endl;
 
-    cout << "absorption into edge " << e3 << "detected!" << endl;
-
-    JacobianAccumulationExpressionVertex& jaev_e3 = new_jae.addVertex();
-    EdgeRefType_E e3_ref_type = getRefType (e3, angelLCG, edge_ref_list);
-    if (e3_ref_type == LCG_EDGE) {
-      const LinearizedComputationalGraphEdge* e3_LCG_p = getLCG_p (e3, angelLCG, edge_ref_list);
-      jaev_e3.setExternalReference (*e3_LCG_p);
+    JacobianAccumulationExpressionVertex& jaev_absorb_e = new_jae.addVertex();
+    EdgeRefType_E absorb_e_ref_type = getRefType (absorb_e, angelLCG, edge_ref_list);
+    if (absorb_e_ref_type == LCG_EDGE) {
+      const LinearizedComputationalGraphEdge* absorb_e_LCG_p = getLCG_p (absorb_e, angelLCG, edge_ref_list);
+      jaev_absorb_e.setExternalReference (*absorb_e_LCG_p);
     }
-    else if (e3_ref_type == JAE_VERT) {
-      JacobianAccumulationExpressionVertex* e3_JAE_p = getJAE_p (e3, angelLCG, edge_ref_list);
-      jaev_e3.setInternalReference (*e3_JAE_p);
+    else if (absorb_e_ref_type == JAE_VERT) {
+      JacobianAccumulationExpressionVertex* absorb_e_JAE_p = getJAE_p (absorb_e, angelLCG, edge_ref_list);
+      jaev_absorb_e.setInternalReference (*absorb_e_JAE_p);
     }
-    else cout << "Error - edge reference type for edge " << e3 << " is UNDEFINED" << endl;
+    else cout << "Error - edge reference type for absorb edge " << absorb_e << " is UNDEFINED" << endl;
 
     //create add vertex, connect it up
     JacobianAccumulationExpressionVertex& jaev_add = new_jae.addVertex();
-    jaev_mult.setOperation (JacobianAccumulationExpressionVertex::ADD_OP);
-    new_jae.addEdge(jaev_e3, jaev_add);
+    jaev_add.setOperation (JacobianAccumulationExpressionVertex::ADD_OP);
+    new_jae.addEdge(jaev_absorb_e, jaev_add);
     new_jae.addEdge(jaev_mult, jaev_add);
 
-    //point e3 at the top of the new JAE
-    EdgeRef_t new_e3_ref (e3, &jaev_add);
-    updateRef (new_e3_ref, angelLCG, edge_ref_list);
-    //new_e3_ref.my_angelLCG_edge_p = &e3;
-    //new_e3_ref.my_type = JAE_VERT;
-    //new_e3_ref.my_ref_p.my_JAE_vertex_p = &jaev_add;
+    //point absorb_e at the top of the new JAE
+    EdgeRef_t absorb_e_ref (absorb_e, &jaev_add);
+    updateRef (absorb_e_ref, angelLCG, edge_ref_list);
   }
   else { // no absorption
 
@@ -751,7 +747,7 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
   }
   else cout << "no further removals required." << endl;
 
-  cout << "front_eliminate_edge_directly returning cost" << cost << endl;
+  cout << "front_eliminate_edge_directly returning cost of " << cost << endl;
 
   return cost;
 } // end front_eliminate_edge_directly()
@@ -800,27 +796,22 @@ unsigned int preroute_edge_directly (c_graph_t::edge_t e,
   c_graph_t::oei_t oei, oe_end;  
 
   // locate the pivot edge (edge from v to the target of e)
+  bool found_pivot_e;
   c_graph_t::edge_t pivot_e;
-  for (tie (oei, oe_end) = out_edges (v, angelLCG); oei != oe_end; oei++) {
-    if (target (*oei, angelLCG) == tgt_of_e) {
-      pivot_e = *oei;
-      cout << "we have found the outedge of v whose target is the same as the target of e" << endl;
-      break;
-    }
-  }
-  throw_exception (oei == oe_end, consistency_exception, "can't preroute edge e about vertex v - no edge from v to the target of e found!");
+  tie (pivot_e, found_pivot_e) = edge (v, tgt_of_e, angelLCG);
+  throw_exception (!found_pivot_e, consistency_exception, "can't preroute edge e about vertex v - no edge from v to the target of e found!");
 
-/*  // Increment the edge from the source of e to to v by the quotient e/pivot_e (create it if it doesnt exist)
+  // Increment the edge from the source of e to to v by the quotient e/pivot_e (create it if it doesnt exist)
   JacobianAccumulationExpression& new_jae = jae_list.addExpression();
 
   JacobianAccumulationExpressionVertex& jaev_e = new_jae.addVertex();
   EdgeRefType_E e_ref_type = getRefType (e, angelLCG, edge_ref_list);
   if (e_ref_type == LCG_EDGE) {
-    const LinearizedComputationalGraphEdge* e_LCG_p = getLCG_p (e1, angelLCG, edge_ref_list);
+    const LinearizedComputationalGraphEdge* e_LCG_p = getLCG_p (e, angelLCG, edge_ref_list);
     jaev_e.setExternalReference (*e_LCG_p);
   }
   else if (e_ref_type == JAE_VERT) {
-    JacobianAccumulationExpressionVertex* e_JAE_p = getJAE_p (e1, angelLCG, edge_ref_list);
+    JacobianAccumulationExpressionVertex* e_JAE_p = getJAE_p (e, angelLCG, edge_ref_list);
     jaev_e.setInternalReference (*e_JAE_p);
   }
   else cout << "Error - edge reference type for prerouted edge " << e << " is UNDEFINED" << endl;
@@ -829,26 +820,26 @@ unsigned int preroute_edge_directly (c_graph_t::edge_t e,
   EdgeRefType_E pivot_e_ref_type = getRefType (pivot_e, angelLCG, edge_ref_list);
   if (pivot_e_ref_type == LCG_EDGE) {
     const LinearizedComputationalGraphEdge* pivot_e_LCG_p = getLCG_p (pivot_e, angelLCG, edge_ref_list);
-    jaev_e2.setExternalReference (*pivot_e_LCG_p);
+    jaev_pivot_e.setExternalReference (*pivot_e_LCG_p);
   }
   else if (pivot_e_ref_type == JAE_VERT) {
     JacobianAccumulationExpressionVertex* pivot_e_JAE_p = getJAE_p (pivot_e, angelLCG, edge_ref_list);
-    jaev_e2.setInternalReference (*pivot_e_JAE_p);
+    jaev_pivot_e.setInternalReference (*pivot_e_JAE_p);
   }
   else cout << "Error - edge reference type for pivot edge " << pivot_e << " is UNDEFINED" << endl;
 
   // Create the divide vertex and connect it up
   JacobianAccumulationExpressionVertex& jaev_divide = new_jae.addVertex();
-  jaev_divide.setOperation (JacobianAccumulationExpressionVertex::DIVIDE_OP);
+  //jaev_divide.setOperation (JacobianAccumulationExpressionVertex::DIVIDE_OP);
   new_jae.addEdge(jaev_e, jaev_divide);
-  new_jae.addEdge(jaev_pivot_e, jaev_divide); */
+  new_jae.addEdge(jaev_pivot_e, jaev_divide);
 
   //test for absorption
   bool found_increment_e;
   c_graph_t::edge_t increment_e;
   tie (increment_e, found_increment_e) = edge (src_of_e, v, angelLCG);
   if (found_increment_e) {
-    /*JacobianAccumulationExpressionVertex& jaev_increment_e = new_jae.addVertex();
+    JacobianAccumulationExpressionVertex& jaev_increment_e = new_jae.addVertex();
     EdgeRefType_E increment_e_ref_type = getRefType (increment_e, angelLCG, edge_ref_list);
     if (increment_e_ref_type == LCG_EDGE) {
       const LinearizedComputationalGraphEdge* increment_e_LCG_p = getLCG_p (increment_e, angelLCG, edge_ref_list);
@@ -862,29 +853,66 @@ unsigned int preroute_edge_directly (c_graph_t::edge_t e,
 
     //create add vertex, connect it up
     JacobianAccumulationExpressionVertex& jaev_add = new_jae.addVertex();
-    jaev_mult.setOperation (JacobianAccumulationExpressionVertex::ADD_OP);
+    jaev_add.setOperation (JacobianAccumulationExpressionVertex::ADD_OP);
     new_jae.addEdge(jaev_increment_e, jaev_add);
-    new_jae.addEdge(jaev_mult, jaev_add);
+    new_jae.addEdge(jaev_divide, jaev_add);
 
     //point increment_e at the top of the new JAE
     EdgeRef_t new_increment_e_ref (increment_e, &jaev_add);
-    updateRef (new_increment_e_ref, angelLCG, edge_ref_list); */
+    updateRef (new_increment_e_ref, angelLCG, edge_ref_list);
   }
   else { //no increment edge was already present
     //create the new edge
-    tie (increment_e, found_increment_e)= add_edge (src_of_e, v, angelLCG.next_edge_number++, angelLCG);
+    tie (increment_e, found_increment_e) = add_edge (src_of_e, v, angelLCG.next_edge_number++, angelLCG);
 
-    /*// point the new edge at the divide operation in the new JAE
+    // point the new edge at the divide operation in the new JAE
     EdgeRef_t new_increment_e_ref (increment_e, &jaev_divide);
-    edge_ref_list.push_back(new_increment_e_ref);*/
+    edge_ref_list.push_back(new_increment_e_ref);
   }
 
   // Perform decrement operations
-
-
+  //
   // for all successors of v (except the target of e), perform decrement operations on edges from src_of_e to 
   for (tie (oei, oe_end) = out_edges (v, angelLCG); oei != oe_end; oei++) {
     if (target (*oei, angelLCG) != tgt_of_e) {
+      c_graph_t::vertex_t tgt_of_decremented_e = target (*oei, angelLCG);
+
+      JacobianAccumulationExpression& new_jae = jae_list.addExpression();
+
+      //get references for jaev_rerouted_e and jaev_pivot_e
+
+      // create division vertex e/pe and connect it up
+      JacobianAccumulationExpressionVertex& jaev_divide = new_jae.addVertex();
+      JacobianAccumulationExpressionVertex& jaev_rerouted_e = new_jae.addVertex();
+      JacobianAccumulationExpressionVertex& jaev_pivot_e = new_jae.addVertex();
+      new_jae.addEdge(jaev_rerouted_e, jaev_divide);
+      new_jae.addEdge(jaev_pivot_e, jaev_divide);
+
+      // create mult vertex and connect it up
+      JacobianAccumulationExpressionVertex& jaev_mult = new_jae.addVertex();
+      new_jae.addEdge(jaev_divide, jaev_mult);
+
+
+      // check for absorption
+      bool found_decrement_e;
+      c_graph_t::edge_t decrement_e;
+      tie (decrement_e, found_decrement_e) = edge (src_of_e, tgt_of_decremented_e, angelLCG);
+
+      // absorption
+      if (found_decrement_e) {
+	JacobianAccumulationExpressionVertex& jaev_decrement_e = new_jae.addVertex();
+	JacobianAccumulationExpressionVertex& jaev_subtract = new_jae.addVertex();
+	new_jae.addEdge(jaev_decrement_e, jaev_subtract);
+	new_jae.addEdge(jaev_mult, jaev_subtract);
+      }
+      // fill-in
+      else {
+
+
+      }
+
+
+
       perform_quotient_decrement_directly (e, pivot_e, target (*oei, angelLCG), angelLCG, edge_ref_list, jae_list);
       cost++;
     }
