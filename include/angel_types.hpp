@@ -150,6 +150,7 @@ public:
     std::swap (next_edge_number, _g.next_edge_number); dependents.swap (_g.dependents); }
 
   int x () const {return X;}                           ///< Number of independent variables
+  void x (int x) { X=x;}                               ///< Number of independent variables
   int y () const {return (int) dependents.size();}     ///< Number of dependent variables
   int v () const {return (int) num_vertices(*this);}   ///< Number of variables 
   int z () const {return v()-x()-y();}                 ///< Number of intermediate vertices
@@ -191,14 +192,6 @@ public:
 				       c_graph_t& cg,
 				       std::vector<const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphVertex*>& av,
 				       std::vector<edge_address_t>& ev);
-
-  friend void compute_partial_elimination_sequence (const xaifBoosterCrossCountryInterface::LinearizedComputationalGraph& ourLCG,
-							     int tasks,
-							     double, // for interface unification
-							     xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& jae_list,
-							     xaifBoosterCrossCountryInterface::LinearizedComputationalGraph& remainderLCG,
-							     xaifBoosterCrossCountryInterface::VertexCorrelationList& v_cor_list,
-							     xaifBoosterCrossCountryInterface::EdgeCorrelationList& e_cor_list);
 
 #endif // USEXAIFBOOSTER
 

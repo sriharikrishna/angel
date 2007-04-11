@@ -303,7 +303,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 
   } // end for all LCG edges
 
-  angelLCG.X = int (indeps.size());
+  angelLCG.x(int (indeps.size()));
   angelLCG.dependents = deps;
 
 // END READ GRAPH
@@ -408,7 +408,6 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
  * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
   cout << "compute_partial_elimination_sequence: cost " << cost_of_elim_seq << endl;
-  }
   }
   catch (base_exception e) { 
     throw EliminationException(std::string("angel exception caught within compute_partial_elimination_sequence : ")+e.what_reason());
