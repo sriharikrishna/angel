@@ -215,13 +215,20 @@ void build_remainder_graph (const c_graph_t& cgp,
   } // end all edges
 } // end build_remainder_graph()
 
+} // namespace angel
+
+using namespace angel;
+
+namespace xaifBoosterCrossCountryInterface {
+
 void compute_partial_elimination_sequence (const LinearizedComputationalGraph& xgraph,
 					   int tasks,
 					   double, // for interface unification
 					   JacobianAccumulationExpressionList& jae_list,
 					   LinearizedComputationalGraph& rg,
 					   VertexCorrelationList& v_cor_list,
-                                           EdgeCorrelationList& e_cor_list) {
+					   EdgeCorrelationList& e_cor_list) {
+  try { 
 // MINIMAL EXAMPLE THAT DEMONSTRATES REFILL:
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 /*
@@ -496,12 +503,17 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& x
 */
 
   std::cout << "compute_partial_elimination_sequence: cost " << cost << std::endl;
+  }
+  catch (base_exception e) { 
+    throw EliminationException(std::string("angel exception caught within compute_partial_elimination_sequence : ")+e.what_reason());
+  }
 }
 
 void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
 				   int task,
 				   double, // for interface unification
 				   JacobianAccumulationExpressionList& elist) {
+  try { 
   c_graph_t cg;
   vector<const LinearizedComputationalGraphVertex*> av;
   vector<edge_address_t> ae;
@@ -583,12 +595,17 @@ void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
 #endif
 
   write_graph_xaif_booster (ac, av, ae, elist);
+  }
+  catch (base_exception e) { 
+    throw EliminationException(std::string("angel exception caught within compute_elimination_sequence : ")+e.what_reason());
+  }
 }
 
 void compute_elimination_sequence_lsa_face (const LinearizedComputationalGraph& xgraph,
 					    int iterations, 
 					    double gamma,
 					    JacobianAccumulationExpressionList& expression_list) {
+  try { 
   c_graph_t                                            cg;
   vector<const LinearizedComputationalGraphVertex*>    av;
   vector<edge_address_t>                               ae;
@@ -611,13 +628,18 @@ void compute_elimination_sequence_lsa_face (const LinearizedComputationalGraph& 
   ac.set_jacobi_entries ();
 
   write_graph_xaif_booster (ac, av, ae, expression_list);
+  }
+  catch (base_exception e) { 
+    throw EliminationException(std::string("angel exception caught within compute_elimination_sequence_lsa_face : ")+e.what_reason());
+  }
+
 }
 
 void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph& xgraph,
 					      int iterations, 
 					      double gamma,
 					      JacobianAccumulationExpressionList& expression_list) {
-
+  try { 
   c_graph_t                                            cg;
   vector<const LinearizedComputationalGraphVertex*>    av;
   vector<edge_address_t>                               ae;
@@ -654,9 +676,14 @@ void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph
   ac.set_jacobi_entries ();
 
   write_graph_xaif_booster (ac, av, ae, expression_list);
+  }
+  catch (base_exception e) { 
+    throw EliminationException(std::string("angel exception caught within compute_elimination_sequence_lsa_vertex : ")+e.what_reason());
+  }
+
 }
 
-} // namespace angel
+}
 
 
 
