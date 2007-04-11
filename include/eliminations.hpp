@@ -13,6 +13,11 @@
 
 namespace angel {
 
+#ifdef USEXAIFBOOSTER
+  using namespace xaifBoosterCrossCountryInterface;
+  using std::list;
+#endif
+
   using std::vector;
   using std::cout;
   using boost::tie;
@@ -745,6 +750,95 @@ bool convert_elimination_sequence (const vector<edge_ij_elim_t>& ev,
 				   const line_graph_t& lg,
 				   vector<triplet_t>& tv);
 
+#ifdef USEXAIFBOOSTER
+enum EdgeRefType_E {LCG_EDGE,
+                    JAE_VERT,
+                    UNDEFINED};
+
+struct EdgeRef_t {
+
+/*  union {
+    const LinearizedComputationalGraphEdge* my_LCG_edge_p;
+    JacobianAccumulationExpressionVertex* my_JAE_vertex_p;
+  } my_ref_p; */
+
+  c_graph_t::edge_t my_angelLCGedge;
+  EdgeRefType_E my_type;
+  const LinearizedComputationalGraphEdge* my_LCG_edge_p;
+  JacobianAccumulationExpressionVertex* my_JAE_vertex_p;
+
+  EdgeRef_t (c_graph_t::edge_t _e,
+	     //EdgeRefType_E _type,
+	     const LinearizedComputationalGraphEdge* _LCGedge_p) :
+    my_angelLCGedge(_e),
+    my_type(LCG_EDGE),
+    my_LCG_edge_p(_LCGedge_p),
+    my_JAE_vertex_p(NULL) {};
+
+  EdgeRef_t (c_graph_t::edge_t _e,
+	     //EdgeRefType_E _type,
+	     JacobianAccumulationExpressionVertex* _JAEvert_p) :
+    my_angelLCGedge(_e),
+    my_type(JAE_VERT),
+    my_LCG_edge_p(NULL),
+    my_JAE_vertex_p(_JAEvert_p) {};
+};
+
+EdgeRefType_E getRefType (const c_graph_t::edge_t e,
+			  const c_graph_t& angelLCG,
+			  const list<EdgeRef_t>& edge_ref_list);
+
+const LinearizedComputationalGraphEdge* getLCG_p (const c_graph_t::edge_t e,
+						  const c_graph_t& angelLCG,
+						  const list<EdgeRef_t>& edge_ref_list);
+
+JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
+						const c_graph_t& angelLCG,
+						const list<EdgeRef_t>& edge_ref_list);
+
+void updateRef (EdgeRef_t ref,
+		const c_graph_t& angelLCG,
+		list<EdgeRef_t>& edge_ref_list);
+
+void multiply_edge_pair_directly (const c_graph_t::edge_t e1,
+				  const c_graph_t::edge_t e2,
+				  c_graph_t& angelLCG,
+				  list<EdgeRef_t>& edge_ref_list,
+				  JacobianAccumulationExpressionList& jae_list);
+
+unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
+					    c_graph_t& angelLCG,
+					    list<EdgeRef_t>& edge_ref_list,
+					    JacobianAccumulationExpressionList& jae_list);
+
+unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
+					   c_graph_t& angelLCG,
+					   list<EdgeRef_t>& edge_ref_list,
+					   JacobianAccumulationExpressionList& jae_list);
+
+// Decrement edge from the source of prerouted_e to tgt (set as -= (src of pivot_e, tgt) * prerouted_e/pivot_e
+void perform_quotient_decrement_directly (c_graph_t::edge_t prerouted_e,
+					  c_graph_t::edge_t pivot_e,
+					  c_graph_t::vertex_t tgt,
+					  c_graph_t& angelLCG,
+					  list<EdgeRef_t>& edge_ref_list,
+					  JacobianAccumulationExpressionList& jae_list);
+
+// preroute edge e through vertex v
+unsigned int preroute_edge_directly (c_graph_t::edge_t e,
+				     c_graph_t::vertex_t v,
+				     c_graph_t& angelLCG,
+				     list<EdgeRef_t>& edge_ref_list,
+				     JacobianAccumulationExpressionList& jae_list);
+
+// postroute edge e through vertex v
+unsigned int postroute_edge_directly (c_graph_t::edge_t e,
+				      c_graph_t::vertex_t v,
+				      c_graph_t& angelLCG,
+				      list<EdgeRef_t>& edge_ref_list,
+				      JacobianAccumulationExpressionList& jae_list);
+
+#endif
 
 } // namespace angel
 
