@@ -751,6 +751,20 @@ bool convert_elimination_sequence (const vector<edge_ij_elim_t>& ev,
 				   vector<triplet_t>& tv);
 
 #ifdef USEXAIFBOOSTER
+
+struct edge_reroute_t {
+  c_graph_t::edge_t e;
+  c_graph_t::edge_t pivot_e;
+  bool isPre;
+
+  edge_reroute_t (c_graph_t::edge_t _e,
+		  c_graph_t::edge_t _pivot_e,
+		  bool _isPre) : e (_e), pivot_e (_pivot_e), isPre (_isPre) {}
+};
+
+void reroutable_edges (const c_graph_t& angelLCG,
+		       vector<edge_reroute_t>& reroutables);
+
 enum EdgeRefType_E {LCG_EDGE,
                     JAE_VERT,
                     UNDEFINED};
@@ -768,7 +782,6 @@ struct EdgeRef_t {
   JacobianAccumulationExpressionVertex* my_JAE_vertex_p;
 
   EdgeRef_t (c_graph_t::edge_t _e,
-	     //EdgeRefType_E _type,
 	     const LinearizedComputationalGraphEdge* _LCGedge_p) :
     my_angelLCGedge(_e),
     my_type(LCG_EDGE),
@@ -776,7 +789,6 @@ struct EdgeRef_t {
     my_JAE_vertex_p(NULL) {};
 
   EdgeRef_t (c_graph_t::edge_t _e,
-	     //EdgeRefType_E _type,
 	     JacobianAccumulationExpressionVertex* _JAEvert_p) :
     my_angelLCGedge(_e),
     my_type(JAE_VERT),
@@ -796,21 +808,68 @@ JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
 						const c_graph_t& angelLCG,
 						const list<EdgeRef_t>& edge_ref_list);
 
-void updateRef (EdgeRef_t ref,
+void removeRef (const c_graph_t::edge_t e,
 		const c_graph_t& angelLCG,
 		list<EdgeRef_t>& edge_ref_list);
 
+/** Multiply a contiguous pair of edges in an angel c_graph_t and create a new
+    xaifBoosterCrossCountryInterface::JacobianAccumulationExpression.
+
+    \param e1 the first edge. 
+    \param e2 the second edge (its source is the target of e1. 
+    \param angelLCG the c_graph_t (passed by reference) that the operation is performed on.
+    \param edge_ref_list the stl list container that keeps track of the reference
+           (LCG pointer or JAE pointer) for each edge in angelLCG.
+    \param jae_list the xaifBooster JAE list that we construct incrementally
+           as we perform eliminations.
+    \return The cost (in terms of multiplications) of the elimination.
+
+    If there's fill-in, a new edge is created and a new edge reference points it to the new JAE.
+    If there's absorption, the existing edge has its reference updated to point to the new JAE.
+ */
 void multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 				  const c_graph_t::edge_t e2,
 				  c_graph_t& angelLCG,
 				  list<EdgeRef_t>& edge_ref_list,
 				  JacobianAccumulationExpressionList& jae_list);
 
+/** Front eliminate an edge from an angel c_graph_t but go directly to a
+    xaifBoosterCrossCountryInterface::JacobianAccumulationExpression, rather
+    than the internal angel accumulation graph type.
+
+    \param e the edge that will be front eliminated. 
+    \param angelLCG the c_graph_t (passed by reference) that the elimination is performed on.
+    \param edge_ref_list the stl list container that keeps track of the reference
+           (LCG pointer or JAE pointer) for each edge in angelLCG.
+    \param jae_list the xaifBooster JAE list that we construct incrementally
+           as we perform eliminations.
+    \return The cost (in terms of multiplications) of the elimination.
+
+    This function should also be aware of unit edges.  This entails labeling
+    new edges as unit where appropriate, as well as counting unit multiplications
+    appropriately.
+ */
 unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 					    c_graph_t& angelLCG,
 					    list<EdgeRef_t>& edge_ref_list,
 					    JacobianAccumulationExpressionList& jae_list);
 
+/** Back eliminate an edge from an angel c_graph_t but go directly to a
+    xaifBoosterCrossCountryInterface::JacobianAccumulationExpression, rather
+    than the internal angel accumulation graph type.
+
+    \param e the edge that will be back eliminated.
+    \param angelLCG the c_graph_t (passed by reference) that the elimination is performed on.
+    \param edge_ref_list the stl list container that keeps track of the reference
+           (LCG pointer or JAE pointer) for each edge in angelLCG.
+    \param jae_list the xaifBooster JAE list that we construct incrementally
+           as we perform eliminations.
+    \return The cost (in terms of multiplications) of the elimination.
+
+    This function should also be aware of unit edges.  This entails labeling
+    new edges as unit where appropriate, as well as counting unit multiplications
+    appropriately.
+ */
 unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   c_graph_t& angelLCG,
 					   list<EdgeRef_t>& edge_ref_list,
