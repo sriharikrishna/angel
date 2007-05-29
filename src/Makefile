@@ -13,7 +13,7 @@ CXXFLAGS+= -DNDEBUG
 #CPPFLAGS+= -DSAME_RANDOM_VALUES # pseudo random values identical in each run, for debugging
 
 OBJECTS	= heuristics.o sa.o angel_comm.o angel_types.o angel_tools.o angel_io.o eliminations.o \
-			graph_generator.o xaif_interface.o 
+			reroutings.o graph_generator.o xaif_interface.o 
 IDIR	= ../include
 CXXFLAGS+= -c
 
@@ -44,6 +44,9 @@ angel_io.o: angel_io.cpp $(IDIR)/angel_io.hpp $(IDIR)/angel_types.hpp \
 eliminations.o: eliminations.cpp $(IDIR)/eliminations.hpp $(IDIR)/angel_types.hpp \
 		$(IDIR)/angel_tools.hpp $(IDIR)/angel_io.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ eliminations.cpp
+
+reroutings.o: reroutings.cpp $(IDIR)/reroutings.hpp $(IDIR)/angel_types.hpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ reroutings.cpp
 
 heuristics.o: heuristics.cpp $(IDIR)/heuristics.hpp $(IDIR)/angel_types.hpp \
 		$(IDIR)/angel_tools.hpp \

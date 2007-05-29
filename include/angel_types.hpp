@@ -652,6 +652,50 @@ struct accu_graph_t {
   void set_jacobi_entries ();
 };
 
+#ifdef USEXAIFBOOSTER
+enum EdgeRefType_E {LCG_EDGE,
+                    JAE_VERT,
+                    UNDEFINED};
+
+struct EdgeRef_t {
+
+/*  union {
+ *    const LinearizedComputationalGraphEdge* my_LCG_edge_p;
+ *    JacobianAccumulationExpressionVertex* my_JAE_vertex_p;
+ *  } my_ref_p; */
+
+  c_graph_t::edge_t my_angelLCGedge;
+  EdgeRefType_E my_type;
+  const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* my_LCG_edge_p;
+  xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* my_JAE_vertex_p;
+
+  EdgeRef_t (c_graph_t::edge_t _e,
+             const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* _LCGedge_p) :
+    my_angelLCGedge(_e),
+    my_type(LCG_EDGE),
+    my_LCG_edge_p(_LCGedge_p),
+    my_JAE_vertex_p(NULL) {};
+
+  EdgeRef_t (c_graph_t::edge_t _e,
+             xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* _JAEvert_p) :
+    my_angelLCGedge(_e),
+    my_type(JAE_VERT),
+    my_LCG_edge_p(NULL),
+    my_JAE_vertex_p(_JAEvert_p) {};
+};
+
+struct edge_reroute_t {
+  c_graph_t::edge_t e;
+  c_graph_t::edge_t pivot_e;
+  bool isPre;
+
+  edge_reroute_t (c_graph_t::edge_t _e,
+                  c_graph_t::edge_t _pivot_e,
+                  bool _isPre) :
+    e (_e), pivot_e (_pivot_e), isPre (_isPre) {}
+};
+
+#endif // USEXAIFBOOSTER
 
 } // namespace angel
 

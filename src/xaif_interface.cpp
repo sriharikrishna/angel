@@ -4,6 +4,7 @@
 
 #include "xaif_interface.hpp"
 #include "eliminations.hpp"
+#include "reroutings.hpp"
 #include "heuristics.hpp"
 
 #include "angel_io.hpp"
@@ -250,11 +251,12 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   scarce_pres_edge_eliminations (bev1, angelLCG, bev2);
   lowest_markowitz_edge (bev2, angelLCG, bev3);
   reverse_mode_edge (bev3, angelLCG, bev4);
+  cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " are scarcity preserving.  ";
+
   while(!bev4.empty()) {
     c_graph_t::edge_t e = bev3[0].first;
     bool isFront = bev3[0].second;
 
-    cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " are scarcity preserving.  ";
     if (isFront) cout << "Front-eliminating edge " << e << "..." << endl;
     else cout << "Back-eliminating edge " << e << "..." << endl;
 
@@ -265,17 +267,68 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
     scarce_pres_edge_eliminations (bev1, angelLCG, bev2);
     lowest_markowitz_edge (bev2, angelLCG, bev3);
     reverse_mode_edge (bev3, angelLCG, bev4);
+    cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " are scarcity preserving.  ";
   }
+  cout << "\n********* No more scarcity-preserving edge eliminations remain.  Now Performing edge reroutings..." << endl;
+
+  vector<edge_reroute_t> erv1, erv2, erv3;
+  reroutable_edges (angelLCG, erv1);
+  edge_reducing_reroutings (erv1, angelLCG, erv2);
+  edge_reducing_rerouteElims (erv1, angelLCG, erv3);
+
+  cout << "of " << erv1.size() << " possible edge reroutings, " << erv2.size() << " reduce the edge count "
+       << "and " << erv3.size() << " reduce the edge count when followed by an edge elimination" << endl;
+
+  while (!erv2.empty() && !erv3.empty()) {
+    if (!erv2.empty()) { // an edge count reducing edge elimination can be performed
+      if (erv2[0].isPre) cout << "pre"; else cout << "post";
+      cout << "routing edge " << erv2[0].e << " about pivot edge " << erv2[0].pivot_e << "..." << endl;
+
+      cost_of_elim_seq += erv2[0].isPre ? preroute_edge_directly (erv2[0], angelLCG, edge_ref_list, jae_list)
+					: postroute_edge_directly (erv2[0], angelLCG, edge_ref_list, jae_list);
+    }
+    else { //rerouting followed by edge elim
+      c_graph_t::edge_t increment_e;
+      bool found_increment_e;
+
+      if (erv2[0].isPre) {
+	cout << "prerouting edge " << erv3[0].e << " about pivot edge " << erv3[0].pivot_e << endl;
+	cout << "followed by back elimination of edge (" << source (erv3[0].e, angelLCG) << ","
+							 << source (erv3[0].pivot_e, angelLCG) << ")" << endl;
+
+	cost_of_elim_seq += postroute_edge_directly (erv3[0], angelLCG, edge_ref_list, jae_list);
+	tie (increment_e, found_increment_e) = edge (source (erv3[0].e, angelLCG), source (erv3[0].pivot_e, angelLCG), angelLCG);
+	throw_exception (!found_increment_e, consistency_exception, "increment edge could not be found for front elimination");
+	back_eliminate_edge_directly (increment_e, angelLCG, edge_ref_list, jae_list);
+      }
+      else {
+	cout << "postrouting edge " << erv3[0].e << " about pivot edge " << erv3[0].pivot_e << "..." << endl;
+	cout << "followed by front elimination of edge (" << target (erv3[0].pivot_e, angelLCG) << ","
+							  << target (erv3[0].e, angelLCG) << ")" << endl;
+	cost_of_elim_seq += preroute_edge_directly (erv3[0], angelLCG, edge_ref_list, jae_list);
+	tie (increment_e, found_increment_e) = edge (target (erv3[0].pivot_e, angelLCG), target (erv3[0].e, angelLCG), angelLCG);
+	throw_exception (!found_increment_e, consistency_exception, "increment edge could not be found for front elimination");
+	front_eliminate_edge_directly (increment_e, angelLCG, edge_ref_list, jae_list);
+      }
+    }
+
+    reroutable_edges (angelLCG, erv1);
+    edge_reducing_reroutings (erv1, angelLCG, erv2);
+    edge_reducing_rerouteElims (erv1, angelLCG, erv3);
+    cout << "of " << erv1.size() << " possible edge reroutings, " << erv2.size() << " reduce the edge count "
+         << "and " << erv3.size() << " reduce the edge count when followed by an edge elimination" << endl;
+  }
+
+  cout << "No more scarcity-preserving edge reroutings remain.  Now building the remainder graph..." << endl;
 
 #ifndef NDEBUG
   write_graph ("angelLCG after partial edge elimination sequence (G prime): ", angelLCG);
-  cout << "\n###############################################################################"
-       << "\n####################################### Building remainderLCG from angelLCG...\n";
 #endif
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * BUILD REMAINDER LCG AND CORRELATION LISTS FROM REDUCED ANGEL GRAPH
  * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+
   remainderLCG.clear();
 
   // copy and correlate vertices
@@ -328,9 +381,6 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 
     e_cor_list.push_back(new_edge_correlation);
   } // end all edges in angelLCG
-
-/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
   cout << "compute_partial_elimination_sequence: cost " << cost_of_elim_seq << endl;
   }

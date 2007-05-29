@@ -752,50 +752,6 @@ bool convert_elimination_sequence (const vector<edge_ij_elim_t>& ev,
 
 #ifdef USEXAIFBOOSTER
 
-struct edge_reroute_t {
-  c_graph_t::edge_t e;
-  c_graph_t::edge_t pivot_e;
-  bool isPre;
-
-  edge_reroute_t (c_graph_t::edge_t _e,
-		  c_graph_t::edge_t _pivot_e,
-		  bool _isPre) : e (_e), pivot_e (_pivot_e), isPre (_isPre) {}
-};
-
-void reroutable_edges (const c_graph_t& angelLCG,
-		       vector<edge_reroute_t>& reroutables);
-
-enum EdgeRefType_E {LCG_EDGE,
-                    JAE_VERT,
-                    UNDEFINED};
-
-struct EdgeRef_t {
-
-/*  union {
-    const LinearizedComputationalGraphEdge* my_LCG_edge_p;
-    JacobianAccumulationExpressionVertex* my_JAE_vertex_p;
-  } my_ref_p; */
-
-  c_graph_t::edge_t my_angelLCGedge;
-  EdgeRefType_E my_type;
-  const LinearizedComputationalGraphEdge* my_LCG_edge_p;
-  JacobianAccumulationExpressionVertex* my_JAE_vertex_p;
-
-  EdgeRef_t (c_graph_t::edge_t _e,
-	     const LinearizedComputationalGraphEdge* _LCGedge_p) :
-    my_angelLCGedge(_e),
-    my_type(LCG_EDGE),
-    my_LCG_edge_p(_LCGedge_p),
-    my_JAE_vertex_p(NULL) {};
-
-  EdgeRef_t (c_graph_t::edge_t _e,
-	     JacobianAccumulationExpressionVertex* _JAEvert_p) :
-    my_angelLCGedge(_e),
-    my_type(JAE_VERT),
-    my_LCG_edge_p(NULL),
-    my_JAE_vertex_p(_JAEvert_p) {};
-};
-
 EdgeRefType_E getRefType (const c_graph_t::edge_t e,
 			  const c_graph_t& angelLCG,
 			  const list<EdgeRef_t>& edge_ref_list);
@@ -875,29 +831,7 @@ unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   list<EdgeRef_t>& edge_ref_list,
 					   JacobianAccumulationExpressionList& jae_list);
 
-// Decrement edge from the source of prerouted_e to tgt (set as -= (src of pivot_e, tgt) * prerouted_e/pivot_e
-void perform_quotient_decrement_directly (c_graph_t::edge_t prerouted_e,
-					  c_graph_t::edge_t pivot_e,
-					  c_graph_t::vertex_t tgt,
-					  c_graph_t& angelLCG,
-					  list<EdgeRef_t>& edge_ref_list,
-					  JacobianAccumulationExpressionList& jae_list);
-
-// preroute edge e through vertex v
-unsigned int preroute_edge_directly (c_graph_t::edge_t e,
-				     c_graph_t::vertex_t v,
-				     c_graph_t& angelLCG,
-				     list<EdgeRef_t>& edge_ref_list,
-				     JacobianAccumulationExpressionList& jae_list);
-
-// postroute edge e through vertex v
-unsigned int postroute_edge_directly (c_graph_t::edge_t e,
-				      c_graph_t::vertex_t v,
-				      c_graph_t& angelLCG,
-				      list<EdgeRef_t>& edge_ref_list,
-				      JacobianAccumulationExpressionList& jae_list);
-
-#endif
+#endif // USEXAIFBOOSTER
 
 } // namespace angel
 
