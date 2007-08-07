@@ -1281,10 +1281,10 @@ int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
 	continue;
       }
     }
-    // select eliminations that create a one or fewer fill-ins
+    // select eliminations that result in no fill-in (strict reduction of edge count)
     int fill = isFront ? new_out_edges (e,cg)
                        : new_in_edges (e,cg);
-    if (fill < 2) 
+    if (fill <= 0) 
       bev2.push_back (bev1[c]);
 #endif 
   }

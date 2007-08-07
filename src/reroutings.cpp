@@ -55,7 +55,7 @@ void reroutable_edges (const c_graph_t& angelLCG,
 
     // check for preroutability
 #ifndef NDEBUG
-    cout << "checking edge " << *ei << " for preroutability...";
+    cout << endl << "checking edge " << *ei << " for preroutability...";
 #endif
     if (in_degree (target (*ei, angelLCG), angelLCG) > 1) {
       vertex_downset (source (*ei, angelLCG), angelLCG, downset);
@@ -70,16 +70,19 @@ void reroutable_edges (const c_graph_t& angelLCG,
 	  if (*vli == source (*iei, angelLCG)) break;
 	if (vli == downset.end()) { // source(pivot) is not in the downset of source(ei)
 #ifndef NDEBUG
-	  cout << " -> viable prerouting with pivot edge " << *iei << endl;
+	  cout << " -> viable prerouting with pivot edge " << *iei;
 #endif
 	  erv.push_back (edge_reroute_t (*ei, *iei, true));
 	}
+#ifndef NDEBUG
+	else { cout << " -> no viable prerouting" << endl; }
+#endif
       } // end all pivot candidates
     } // end if possible pivots exist
 
     // check for postroutability
 #ifndef NDEBUG
-    cout << "\nchecking edge " << *ei << " for postroutability: ";
+    cout << endl << "checking edge " << *ei << " for postroutability...";
 #endif
     if (out_degree (source (*ei, angelLCG), angelLCG) > 1) {
       vertex_upset (target (*ei, angelLCG), angelLCG, upset);
@@ -94,10 +97,13 @@ void reroutable_edges (const c_graph_t& angelLCG,
 	  if (*vli == source (*iei, angelLCG)) break;
 	if (vli == upset.end()) { // target(pivot) is not in the upset of target(ei)
 #ifndef NDEBUG
-	  cout << " -> viable postrouting with pivot edge " << *oei << endl;
+	  cout << " -> viable postrouting with pivot edge " << *oei;
 #endif
 	  erv.push_back (edge_reroute_t (*ei, *oei, false));
 	}
+#ifndef NDEBUG
+	else { cout << " -> no viable postrouting" << endl; }
+#endif
       } // end all pivot candidates
     } // end if possible pivots exist
 
@@ -172,32 +178,42 @@ void edge_reducing_rerouteElims (vector<edge_reroute_t>& erv1,
 #endif
 
   erv2.clear();
-  c_graph_t::iei_t iei, ie_end, iei2, ie_end2;
-  c_graph_t::oei_t oei, oe_end, oei2, oe_end2;
+  c_graph_t::iei_t iei, ie_end;
+  c_graph_t::oei_t oei, oe_end;
   c_graph_t::edge_t find_e;
   bool found_e;
   int fill;
 
+#ifndef NDEBUG
+    cout << endl;
+#endif
+  
   for (size_t i = 0; i < erv1.size(); i++) {
+
 
 #ifdef IGNORE_TRIVIAL_ELIMINATIONS
     if (eIsUnit[erv1[i].e]) fill = 0;
     else fill = -1;
 #else
-    fill = -1;
+    fill = -2;
 #endif
 
     if (erv1[i].isPre) { // pre-routing
+      c_graph_t::iei_t e_iei, e_ie_end, pe_iei, pe_ie_end;
+
       // In order for the subsequent back-elimination of the increment edge to be edge count-reducing,
-      // the predecessors of src(pe) must be a subset of the predecessors of src(e)
-      for (tie (iei, ie_end) = in_edges (source (erv1[i].pivot_e, angelLCG), angelLCG); iei != ie_end; ++iei) {
-	for (tie (iei2, ie_end2) = in_edges (source (erv1[i].e, angelLCG), angelLCG); iei2 != ie_end2; ++iei2) {
-	  if (*iei == *iei2) break;
+      // the predecessors of src(e) must be a subset of the predecessors of src(pe)
+
+      // for all predecessors of src(e)
+      for (tie (e_iei, e_ie_end) = in_edges (source (erv1[i].e, angelLCG), angelLCG); e_iei != e_ie_end; ++e_iei) {
+	// search through predecessors of src(pe) to find absorbing edge
+	for (tie (pe_iei, pe_ie_end) = in_edges (source (erv1[i].pivot_e, angelLCG), angelLCG); pe_iei != pe_ie_end; ++pe_iei) {
+	  if (source (*e_iei, angelLCG) == source (*pe_iei, angelLCG)) break;
 	}
-	if (iei2 == ie_end2) break;
+	if (pe_iei == pe_ie_end) break; // no absorbing edge was found
       }
       // if some pred of src(pe) is not also a pred of src(e)
-      if (iei != ie_end) continue;
+      if (e_iei != e_ie_end) continue;
 
       // test for increment edge fill-in
       tie (find_e, found_e) = edge (source (erv1[i].e, angelLCG), source (erv1[i].pivot_e, angelLCG), angelLCG);
@@ -221,16 +237,20 @@ void edge_reducing_rerouteElims (vector<edge_reroute_t>& erv1,
     } // end pre-routing
 
     else { // post-routing
+      c_graph_t::oei_t e_oei, e_oe_end, pe_oei, pe_oe_end;
+
       // In order for the subsequent front-elimination of the increment edge to be edge count-reducing,
-      // the successors of tgt(pe) must be a subset of the successors of tgt(e)
-      for (tie (oei, oe_end) = out_edges (target (erv1[i].pivot_e, angelLCG), angelLCG); oei != oe_end; ++oei) {
-	for (tie (oei2, oe_end2) = out_edges (target (erv1[i].e, angelLCG), angelLCG); oei2 != oe_end2; ++oei2) {
-	  if (*oei == *oei2) break;
+      // the successors of tgt(e) must be a subset of the successors of tgt(pe)
+
+      // for each successor of tgt(e)
+      for (tie (e_oei, e_oe_end) = out_edges (target (erv1[i].e, angelLCG), angelLCG); e_oei != e_oe_end; ++e_oei) {
+	// check each successor of tgt(pe)
+	for (tie (pe_oei, pe_oe_end) = out_edges (target (erv1[i].pivot_e, angelLCG), angelLCG); pe_oei != pe_oe_end; ++pe_oei) {
+	  if (target(*pe_oei, angelLCG) == target(*e_oei, angelLCG)) break; // we have found the absorption edge
 	}
-	if (oei2 == oe_end2) break;
+	if (pe_oei == pe_oe_end) break; // no absorption edge could be found
       }
-      // if some pred of src(pe) is not also a pred of src(e)
-      if (oei != oe_end) continue;
+      if (e_oei != e_oe_end) continue; // an absorption edge couldnt be found each time
 
       // test for increment edge fill-in
       tie (find_e, found_e) = edge (target (erv1[i].pivot_e, angelLCG), target (erv1[i].e, angelLCG), angelLCG);
@@ -244,7 +264,7 @@ void edge_reducing_rerouteElims (vector<edge_reroute_t>& erv1,
       for (tie (iei, ie_end) = in_edges (target (erv1[i].pivot_e, angelLCG), angelLCG); iei != ie_end; ++iei) {
 	// skip the pivot edge
 	if (source (*iei, angelLCG) == source (erv1[i].pivot_e, angelLCG)) continue;
-	tie (find_e, found_e) = edge (source (*iei, angelLCG), target (erv1[i].e, angelLCG), angelLCG);
+        tie (find_e, found_e) = edge (source (*iei, angelLCG), target (erv1[i].e, angelLCG), angelLCG);
 #ifdef IGNORE_TRIVIAL_ELIMINATIONS
 	if (!found_e && (!eIsUnit[erv1[i].e] || !eIsUnit[erv1[i].pivot_e] || !eIsUnit[*iei])) fill++;
 #else
