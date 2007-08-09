@@ -75,7 +75,7 @@ void reroutable_edges (const c_graph_t& angelLCG,
 	  erv.push_back (edge_reroute_t (*ei, *iei, true));
 	}
 #ifndef NDEBUG
-	else { cout << " -> no viable prerouting" << endl; }
+	else cout << " -> no viable prerouting" << endl;
 #endif
       } // end all pivot candidates
     } // end if possible pivots exist
@@ -94,7 +94,7 @@ void reroutable_edges (const c_graph_t& angelLCG,
 	if (out_degree (target (*oei, angelLCG), angelLCG) == 0) continue;
 	// ensure that the target of the pivot isnt in the upset of target(ei) (would create cycle)
 	for (vli = upset.begin(); vli != upset.end(); vli++)
-	  if (*vli == source (*iei, angelLCG)) break;
+	  if (*vli == target (*oei, angelLCG)) break;
 	if (vli == upset.end()) { // target(pivot) is not in the upset of target(ei)
 #ifndef NDEBUG
 	  cout << " -> viable postrouting with pivot edge " << *oei;
@@ -299,58 +299,25 @@ unsigned int preroute_edge_directly (edge_reroute_t er,
   c_graph_t::oei_t oei, oe_end; 
 
   // Increment the edge from the source of e to to v by the quotient e/pivot_e (create it if it doesnt exist)
-  /*JacobianAccumulationExpression& new_jae = jae_list.addExpression();
-
+  JacobianAccumulationExpression& new_jae = jae_list.addExpression();
   JacobianAccumulationExpressionVertex& jaev_e = new_jae.addVertex();
-  EdgeRefType_E e_ref_type = getRefType (e, angelLCG, edge_ref_list);
-  if (e_ref_type == LCG_EDGE) {
-    const LinearizedComputationalGraphEdge* e_LCG_p = getLCG_p (e, angelLCG, edge_ref_list);
-    jaev_e.setExternalReference (*e_LCG_p);
-  }
-  else if (e_ref_type == JAE_VERT) {
-    JacobianAccumulationExpressionVertex* e_JAE_p = getJAE_p (e, angelLCG, edge_ref_list);
-    jaev_e.setInternalReference (*e_JAE_p);
-  }
-  else cout << "Error - edge reference type for prerouted edge " << e << " is UNDEFINED" << endl;
-
+  setJaevRef (er.e, jaev_e, angelLCG, edge_ref_list);
   JacobianAccumulationExpressionVertex& jaev_pivot_e = new_jae.addVertex();
-  EdgeRefType_E pivot_e_ref_type = getRefType (pivot_e, angelLCG, edge_ref_list);
-  if (pivot_e_ref_type == LCG_EDGE) {
-    const LinearizedComputationalGraphEdge* pivot_e_LCG_p = getLCG_p (pivot_e, angelLCG, edge_ref_list);
-    jaev_pivot_e.setExternalReference (*pivot_e_LCG_p);
-  }
-  else if (pivot_e_ref_type == JAE_VERT) {
-    JacobianAccumulationExpressionVertex* pivot_e_JAE_p = getJAE_p (pivot_e, angelLCG, edge_ref_list);
-    jaev_pivot_e.setInternalReference (*pivot_e_JAE_p);
-  }
-  else cout << "Error - edge reference type for pivot edge " << pivot_e << " is UNDEFINED" << endl;
-
-  // Create the divide vertex and connect it up
+  setJaevRef (er.pivot_e, jaev_pivot_e, angelLCG, edge_ref_list);
   JacobianAccumulationExpressionVertex& jaev_divide = new_jae.addVertex();
   //jaev_divide.setOperation (JacobianAccumulationExpressionVertex::DIVIDE_OP);
   new_jae.addEdge(jaev_e, jaev_divide);
   new_jae.addEdge(jaev_pivot_e, jaev_divide);
-*/
+
   //test for absorption
   bool found_increment_e;
   c_graph_t::edge_t increment_e;
   tie (increment_e, found_increment_e) = edge (source (er.e, angelLCG), source (er.pivot_e, angelLCG), angelLCG);
-  if (found_increment_e) {
-    cout << "-------------------> Increment_e from " << source (er.e, angelLCG) << " to "
-	 << source (er.pivot_e, angelLCG) << " already present (absorption)" << endl;
-    /*JacobianAccumulationExpressionVertex& jaev_increment_e = new_jae.addVertex();
-    EdgeRefType_E increment_e_ref_type = getRefType (increment_e, angelLCG, edge_ref_list);
-    if (increment_e_ref_type == LCG_EDGE) {
-      const LinearizedComputationalGraphEdge* increment_e_LCG_p = getLCG_p (increment_e, angelLCG, edge_ref_list);
-      jaev_increment_e.setExternalReference (*increment_e_LCG_p);
-    }
-    else if (increment_e_ref_type == JAE_VERT) {
-      JacobianAccumulationExpressionVertex* increment_e_JAE_p = getJAE_p (increment_e, angelLCG, edge_ref_list);
-      jaev_increment_e.setInternalReference (*increment_e_JAE_p);
-    }
-    else cout << "Error - edge reference type for edge " << increment_e << " is UNDEFINED" << endl;
+  if (found_increment_e) { // increment absorption
+    cout << "---> Increment_e from " << source (er.e, angelLCG) << " to " << source (er.pivot_e, angelLCG) << " already present (absorb)" << endl;
 
-    //create add vertex, connect it up
+    JacobianAccumulationExpressionVertex& jaev_increment_e = new_jae.addVertex();
+    setJaevRef (increment_e, jaev_increment_e, angelLCG, edge_ref_list);
     JacobianAccumulationExpressionVertex& jaev_add = new_jae.addVertex();
     jaev_add.setOperation (JacobianAccumulationExpressionVertex::ADD_OP);
     new_jae.addEdge(jaev_increment_e, jaev_add);
@@ -359,27 +326,27 @@ unsigned int preroute_edge_directly (edge_reroute_t er,
     //point increment_e at the top of the new JAE
     removeRef (increment_e, angelLCG, edge_ref_list);
     EdgeRef_t new_increment_e_ref (increment_e, &jaev_add);
-    edge_ref_list.push_back(new_increment_e_ref);*/
+    edge_ref_list.push_back(new_increment_e_ref);
   }
-  else { //no increment edge was already present
+  else { //no increment edge was already present (fill-in)
     cout << "-------> Increment_e from " << source (er.e, angelLCG) << " to "
 	 << source (er.pivot_e, angelLCG) << " NOT present (fill-in) ";
     tie (increment_e, found_increment_e) = add_edge (source (er.e, angelLCG),
 						     source (er.pivot_e, angelLCG),
 						     angelLCG.next_edge_number++,
 						     angelLCG);
-
-    if (eIsUnit[er.e] && eIsUnit[er.pivot_e]) eIsUnit[increment_e] = true;
-    else eIsUnit[increment_e] = false;
-
-    if (eIsUnit[er.e] && eIsUnit[er.pivot_e])
+    if (eIsUnit[er.e] && eIsUnit[er.pivot_e]) {
       cout << "** Both " << er.e << " and " << er.pivot_e << "are unit => new fill edge " << increment_e << " is unit\n";
-    else
+      eIsUnit[increment_e] = true;
+    }
+    else {
       cout << "********* new fill edge " << increment_e << " is NOT a unit edge";
+      eIsUnit[increment_e] = false;
+    }
 
     // point the new edge at the divide operation in the new JAE
-    /*EdgeRef_t new_increment_e_ref (increment_e, &jaev_divide);
-    edge_ref_list.push_back(new_increment_e_ref);*/
+    EdgeRef_t new_increment_e_ref (increment_e, &jaev_divide);
+    edge_ref_list.push_back(new_increment_e_ref);
   }
 
   // Perform decrement operations
@@ -420,8 +387,13 @@ unsigned int preroute_edge_directly (edge_reroute_t er,
 							 target (*oei, angelLCG),
 							 angelLCG.next_edge_number++,
 							 angelLCG);
+
       if (eIsUnit[er.e] && eIsUnit[er.pivot_e] && eIsUnit[*oei]) eIsUnit[decrement_e] = true;
       else eIsUnit[decrement_e] = false;
+
+      // point the new edge at the divide operation in the new JAE
+      EdgeRef_t new_increment_e_ref (increment_e, &jaev_divide);
+      edge_ref_list.push_back(new_increment_e_ref);
     }
 
     //perform_quotient_decrement_directly (e, pivot_e, target (*oei, angelLCG), angelLCG, edge_ref_list, jae_list);
@@ -443,25 +415,54 @@ unsigned int postroute_edge_directly (edge_reroute_t er,
   c_graph_t::iei_t iei, ie_end; 
   c_graph_t::oei_t oei, oe_end; 
 
+  // Increment the edge from the source of e to to v by the quotient e/pivot_e (create it if it doesnt exist)
+  JacobianAccumulationExpression& new_jae = jae_list.addExpression();
+  JacobianAccumulationExpressionVertex& jaev_e = new_jae.addVertex();
+  setJaevRef (er.e, jaev_e, angelLCG, edge_ref_list);
+  JacobianAccumulationExpressionVertex& jaev_pivot_e = new_jae.addVertex();
+  setJaevRef (er.pivot_e, jaev_pivot_e, angelLCG, edge_ref_list);
+  JacobianAccumulationExpressionVertex& jaev_divide = new_jae.addVertex();
+  //jaev_divide.setOperation (JacobianAccumulationExpressionVertex::DIVIDE_OP);
+  new_jae.addEdge(jaev_e, jaev_divide);
+  new_jae.addEdge(jaev_pivot_e, jaev_divide);
+
   //test for absorption for the increment edge
   bool found_increment_e;
   c_graph_t::edge_t increment_e;
   tie (increment_e, found_increment_e) = edge (target (er.pivot_e, angelLCG), target (er.e, angelLCG), angelLCG);
   if (found_increment_e) {
-    cout << "-------------------> Increment_e from " << target (er.pivot_e, angelLCG) << " to "
-	 << target (er.e, angelLCG) << " already present (absorption)" << endl;
+    cout << "+++> Increment_e from " << target (er.pivot_e, angelLCG) << " to " << target (er.e, angelLCG) << " already present (absorption)" << endl;
+
+    JacobianAccumulationExpressionVertex& jaev_increment_e = new_jae.addVertex();
+    setJaevRef (increment_e, jaev_increment_e, angelLCG, edge_ref_list);
+    JacobianAccumulationExpressionVertex& jaev_add = new_jae.addVertex();
+    jaev_add.setOperation (JacobianAccumulationExpressionVertex::ADD_OP);
+    new_jae.addEdge(jaev_increment_e, jaev_add);
+    new_jae.addEdge(jaev_divide, jaev_add);
+
+    //point increment_e at the top of the new JAE
+    removeRef (increment_e, angelLCG, edge_ref_list);
+    EdgeRef_t new_increment_e_ref (increment_e, &jaev_add);
+    edge_ref_list.push_back(new_increment_e_ref);
   }
   else { //no increment edge was already present
-    cout << "-------------------> Increment_e from " << target (er.pivot_e, angelLCG) << " to "
-	 << target (er.e, angelLCG) << " NOT already present (fill-in)" << endl;
+    cout << "+++> Increment_e from " << target (er.pivot_e, angelLCG) << " to " << target (er.e, angelLCG) << " NOT already present (fill-in)...";
     tie (increment_e, found_increment_e) = add_edge (target (er.pivot_e, angelLCG),
 						     target (er.e, angelLCG),
 						     angelLCG.next_edge_number++,
 						     angelLCG);
-    if (eIsUnit[er.e] && eIsUnit[er.pivot_e])
+    if (eIsUnit[er.e] && eIsUnit[er.pivot_e]) {
+      cout << "Both " << er.e << " and " << er.pivot_e << "are unit => new fill edge " << increment_e << " is unit" << endl;
       eIsUnit[increment_e] = true;
-    else
+    }
+    else {
+      cout << "new fill edge " << increment_e << " is NOT a unit edge" << endl;
       eIsUnit[increment_e] = false;
+    }
+
+    // point the new edge at the divide operation in the new JAE
+    EdgeRef_t new_increment_e_ref (increment_e, &jaev_divide);
+    edge_ref_list.push_back(new_increment_e_ref);
   }
 
   // Perform decrement operations
@@ -477,11 +478,11 @@ unsigned int postroute_edge_directly (edge_reroute_t er,
     c_graph_t::edge_t decrement_e;
     tie (decrement_e, found_decrement_e) = edge (source (*iei, angelLCG), target (er.e, angelLCG), angelLCG);
     if (found_decrement_e) { // absorption
-      cout << "+++++++++++++++++++++> Decrement_e from " << source (*iei, angelLCG) << " to "
+      cout << "---> Decrement_e from " << source (*iei, angelLCG) << " to "
 	   << target (er.e, angelLCG) << " already present (absorption)" << endl;
     }
     else { // fill-in
-      cout << "+++++++++++++++++++++> Decrement_e from " << source (*iei, angelLCG) << " to "
+      cout << "---> Decrement_e from " << source (*iei, angelLCG) << " to "
 	   << target (er.e, angelLCG) << " NOT already present (fill-in)" << endl;
       tie (decrement_e, found_decrement_e) = add_edge (source (*iei, angelLCG), target (er.e, angelLCG), angelLCG.next_edge_number++, angelLCG);
       if (eIsUnit[er.e] && eIsUnit[er.pivot_e] && eIsUnit[*oei])

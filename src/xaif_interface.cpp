@@ -275,11 +275,10 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   reroutable_edges (angelLCG, erv1);
   edge_reducing_reroutings (erv1, angelLCG, erv2);
   edge_reducing_rerouteElims (erv1, angelLCG, erv3);
-
   cout << "of " << erv1.size() << " possible edge reroutings, " << erv2.size() << " reduce the edge count "
        << "and " << erv3.size() << " reduce the edge count when followed by an edge elimination" << endl;
 
-  while (!erv2.empty() && !erv3.empty()) {
+  while (!erv2.empty() || !erv3.empty()) {
     if (!erv2.empty()) { // an edge count reducing edge elimination can be performed
       if (erv2[0].isPre) cout << "pre"; else cout << "post";
       cout << "routing edge " << erv2[0].e << " about pivot edge " << erv2[0].pivot_e << "..." << endl;
@@ -291,23 +290,24 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
       c_graph_t::edge_t increment_e;
       bool found_increment_e;
 
-      if (erv2[0].isPre) {
+      if (erv3[0].isPre) {
 	cout << "prerouting edge " << erv3[0].e << " about pivot edge " << erv3[0].pivot_e << endl;
 	cout << "followed by back elimination of edge (" << source (erv3[0].e, angelLCG) << ","
 							 << source (erv3[0].pivot_e, angelLCG) << ")" << endl;
 
-	cost_of_elim_seq += postroute_edge_directly (erv3[0], angelLCG, edge_ref_list, jae_list);
+	cost_of_elim_seq += preroute_edge_directly (erv3[0], angelLCG, edge_ref_list, jae_list);
 	tie (increment_e, found_increment_e) = edge (source (erv3[0].e, angelLCG), source (erv3[0].pivot_e, angelLCG), angelLCG);
 	throw_exception (!found_increment_e, consistency_exception, "increment edge could not be found for front elimination");
 	back_eliminate_edge_directly (increment_e, angelLCG, edge_ref_list, jae_list);
       }
       else {
-	cout << "postrouting edge " << erv3[0].e << " about pivot edge " << erv3[0].pivot_e << "..." << endl;
+	cout << "postrouting edge " << erv3[0].e << " about pivot edge " << erv3[0].pivot_e << "...";
 	cout << "followed by front elimination of edge (" << target (erv3[0].pivot_e, angelLCG) << ","
 							  << target (erv3[0].e, angelLCG) << ")" << endl;
-	cost_of_elim_seq += preroute_edge_directly (erv3[0], angelLCG, edge_ref_list, jae_list);
+	cost_of_elim_seq += postroute_edge_directly (erv3[0], angelLCG, edge_ref_list, jae_list);
 	tie (increment_e, found_increment_e) = edge (target (erv3[0].pivot_e, angelLCG), target (erv3[0].e, angelLCG), angelLCG);
 	throw_exception (!found_increment_e, consistency_exception, "increment edge could not be found for front elimination");
+	cout << "Now performing the front-elimination of " << increment_e << "..." << endl;
 	front_eliminate_edge_directly (increment_e, angelLCG, edge_ref_list, jae_list);
       }
     }

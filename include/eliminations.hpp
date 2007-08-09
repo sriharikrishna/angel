@@ -764,6 +764,11 @@ JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
 						const c_graph_t& angelLCG,
 						const list<EdgeRef_t>& edge_ref_list);
 
+void setJaevRef (const c_graph_t::edge_t e,
+		 JacobianAccumulationExpressionVertex& jaev,
+		 const c_graph_t& angelLCG,
+		 const list<EdgeRef_t>& edge_ref_list);
+	
 void removeRef (const c_graph_t::edge_t e,
 		const c_graph_t& angelLCG,
 		list<EdgeRef_t>& edge_ref_list);

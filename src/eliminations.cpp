@@ -595,6 +595,19 @@ JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
   throw_exception (true, consistency_exception, "can't return JAE_p - no reference entry could be found for edge");
 } // end getJAE_p ()
 
+void setJaevRef (const c_graph_t::edge_t e, JacobianAccumulationExpressionVertex& jaev, const c_graph_t& angelLCG, const list<EdgeRef_t>& edge_ref_list) {
+  EdgeRefType_E e_ref_type = getRefType (e, angelLCG, edge_ref_list);
+  if (e_ref_type == LCG_EDGE) {
+    const LinearizedComputationalGraphEdge* LCG_p = getLCG_p (e, angelLCG, edge_ref_list);
+    jaev.setExternalReference (*LCG_p);
+  }
+  else if (e_ref_type == JAE_VERT) {
+    JacobianAccumulationExpressionVertex* JAE_p = getJAE_p (e, angelLCG, edge_ref_list);
+    jaev.setInternalReference (*JAE_p);
+  }
+  else throw_exception (true, consistency_exception, "cannot set JAE vertex ref because edge reference type is UNDEFINED");
+} // end setJaevRef ()
+
 void removeRef (const c_graph_t::edge_t e,
 		const c_graph_t& angelLCG,
 		list<EdgeRef_t>& edge_ref_list) {
