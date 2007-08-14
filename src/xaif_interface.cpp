@@ -171,8 +171,6 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 					   LinearizedComputationalGraph& remainderLCG,
 					   VertexCorrelationList& v_cor_list,
 					   EdgeCorrelationList& e_cor_list) {
-  try { 
-
 //**************************************************************************************************
 // Process LCG from xaifBooster into an angel c_graph_t
 
@@ -383,10 +381,6 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   } // end all edges in angelLCG
 
   cout << "compute_partial_elimination_sequence: cost " << cost_of_elim_seq << endl;
-  }
-  catch (base_exception e) { 
-    throw EliminationException(std::string("angel exception caught within compute_partial_elimination_sequence : ")+e.what_reason());
-  }
 }
 
  /* 	END DIRECT ELIMINATION
@@ -398,7 +392,6 @@ void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
 				   int task,
 				   double, // for interface unification
 				   JacobianAccumulationExpressionList& elist) {
-  try { 
   c_graph_t cg;
   vector<const LinearizedComputationalGraphVertex*> av;
   vector<edge_address_t> ae;
@@ -480,17 +473,12 @@ void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
 #endif
 
   write_graph_xaif_booster (ac, av, ae, elist);
-  }
-  catch (base_exception e) { 
-    throw EliminationException(std::string("angel exception caught within compute_elimination_sequence : ")+e.what_reason());
-  }
-}
+} // end of angel::compute_elimination_sequence()
 
 void compute_elimination_sequence_lsa_face (const LinearizedComputationalGraph& xgraph,
 					    int iterations, 
 					    double gamma,
 					    JacobianAccumulationExpressionList& expression_list) {
-  try { 
   c_graph_t                                            cg;
   vector<const LinearizedComputationalGraphVertex*>    av;
   vector<edge_address_t>                               ae;
@@ -513,18 +501,13 @@ void compute_elimination_sequence_lsa_face (const LinearizedComputationalGraph& 
   ac.set_jacobi_entries ();
 
   write_graph_xaif_booster (ac, av, ae, expression_list);
-  }
-  catch (base_exception e) { 
-    throw EliminationException(std::string("angel exception caught within compute_elimination_sequence_lsa_face : ")+e.what_reason());
-  }
 
-}
+} // end of angel::compute_elimination_sequence_lsa_face()
 
 void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph& xgraph,
 					      int iterations, 
 					      double gamma,
 					      JacobianAccumulationExpressionList& expression_list) {
-  try { 
   c_graph_t                                            cg;
   vector<const LinearizedComputationalGraphVertex*>    av;
   vector<edge_address_t>                               ae;
@@ -561,14 +544,44 @@ void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph
   ac.set_jacobi_entries ();
 
   write_graph_xaif_booster (ac, av, ae, expression_list);
+
+} // end of angel::compute_elimination_sequence_lsa_vertex()
+
+void Elimination::eliminate() {
+
+  try {
+    if (this.myType == REGULAR_ELIMTYPE) {
+      compute_elimination_sequence (this.getLCG(),
+				    this.myJAEList);
+    }
+    else if (this.myType == LSA_VERTEX_ELIMTYPE) {
+      compute_elimination_sequence_lsa_vertex (this.getLCG(),
+					       this.myNumIterations,
+					       this.myGamma,
+					       this.myJAEList);
+    }
+    else if (this.myType == LSA_FACE_ELIMTYPE) {
+      compute_elimination_sequence_lsa_face (this.getLCG(),
+					     this.myNumIterations,
+					     this.myGamma,
+					     this.myJaeList);
+    }
+    else if (this.myType == SCARCE_ELIMTYPE) {
+      compute_partial_elimination_sequence (this.getLCG(),
+					    this.myJAEList,
+					    this.myRemainderLCG,
+					    this.myVertexCorList,
+					    this.myEdgeCorList);
+    }
+    else throw_exception (true, consistency_exception, "Missing or invalid elimination type");
   }
   catch (base_exception e) { 
-    throw EliminationException(std::string("angel exception caught within compute_elimination_sequence_lsa_vertex : ")+e.what_reason());
+    throw EliminationException(std::string("angel exception caught within Elimination::eliminate() : ")+e.what_reason());
   }
 
-}
+} // end of Elimination::eliminate()
 
-}
+} // end namespace angel
 
 
 

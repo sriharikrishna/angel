@@ -332,8 +332,7 @@ unsigned int preroute_edge_directly (edge_reroute_t er,
     edge_ref_list.push_back(new_increment_e_ref);
   }
   else { //no increment edge was already present (fill-in)
-    cout << "++> Increment_e from " << source (er.e, angelLCG) << " to "
-	 << source (er.pivot_e, angelLCG) << " NOT present (fill-in)...";
+    cout << "++> Increment_e from " << source (er.e, angelLCG) << " to " << source (er.pivot_e, angelLCG) << " NOT present (fill-in)...";
     tie (increment_e, found_increment_e) = add_edge (source (er.e, angelLCG),
 						     source (er.pivot_e, angelLCG),
 						     angelLCG.next_edge_number++,
