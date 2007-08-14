@@ -547,31 +547,35 @@ void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph
 
 } // end of angel::compute_elimination_sequence_lsa_vertex()
 
-void Elimination::eliminate() {
+} // end namespace angel
+
+namespace xaifBoosterCrossCountryInterface {
+
+void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
 
   try {
-    if (this.myType == REGULAR_ELIMTYPE) {
-      compute_elimination_sequence (this.getLCG(),
-				    this.myJAEList);
+    if (myType == REGULAR_ELIMTYPE) {
+      compute_elimination_sequence (getLCG(),
+				    getEliminationResult().myJAEList);
     }
-    else if (this.myType == LSA_VERTEX_ELIMTYPE) {
-      compute_elimination_sequence_lsa_vertex (this.getLCG(),
-					       this.myNumIterations,
-					       this.myGamma,
-					       this.myJAEList);
+    else if (myType == LSA_VERTEX_ELIMTYPE) {
+      compute_elimination_sequence_lsa_vertex (getLCG(),
+					       getNumIterations(),
+					       getGamma(),
+					       getEliminationResult().myJAEList);
     }
-    else if (this.myType == LSA_FACE_ELIMTYPE) {
-      compute_elimination_sequence_lsa_face (this.getLCG(),
-					     this.myNumIterations,
-					     this.myGamma,
-					     this.myJaeList);
+    else if (myType == LSA_FACE_ELIMTYPE) {
+      compute_elimination_sequence_lsa_face (getLCG(),
+					     getNumIterations(),
+					     getGamma(),
+					     getEliminationResult().myJaeList);
     }
-    else if (this.myType == SCARCE_ELIMTYPE) {
-      compute_partial_elimination_sequence (this.getLCG(),
-					    this.myJAEList,
-					    this.myRemainderLCG,
-					    this.myVertexCorList,
-					    this.myEdgeCorList);
+    else if (myType == SCARCE_ELIMTYPE) {
+      compute_partial_elimination_sequence (getLCG(),
+					    getEliminationResult().myJAEList,
+					    getEliminationResult().myRemainderLCG,
+					    getEliminationResult().myVertexCorList,
+					    getEliminationResult().myEdgeCorList);
     }
     else throw_exception (true, consistency_exception, "Missing or invalid elimination type");
   }
@@ -581,7 +585,7 @@ void Elimination::eliminate() {
 
 } // end of Elimination::eliminate()
 
-} // end namespace angel
+} // end namespace xaifBoosterCrossCountryInterface
 
 
 
