@@ -165,8 +165,6 @@ using namespace angel;
 namespace xaifBoosterCrossCountryInterface {
 
 void compute_partial_elimination_sequence (const LinearizedComputationalGraph& ourLCG,
-					   int tasks,
-					   double, // for interface unification
 					   JacobianAccumulationExpressionList& jae_list,
 					   LinearizedComputationalGraph& remainderLCG,
 					   VertexCorrelationList& v_cor_list,
@@ -389,8 +387,6 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
  */
 
 void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
-				   int task,
-				   double, // for interface unification
 				   JacobianAccumulationExpressionList& elist) {
   c_graph_t cg;
   vector<const LinearizedComputationalGraphVertex*> av;
@@ -568,14 +564,14 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
       compute_elimination_sequence_lsa_face (getLCG(),
 					     getNumIterations(),
 					     getGamma(),
-					     getEliminationResult().myJaeList);
+					     getEliminationResult().myJAEList);
     }
     else if (myType == SCARCE_ELIMTYPE) {
       compute_partial_elimination_sequence (getLCG(),
 					    getEliminationResult().myJAEList,
 					    getEliminationResult().myRemainderLCG,
-					    getEliminationResult().myVertexCorList,
-					    getEliminationResult().myEdgeCorList);
+					    getEliminationResult().myVertexCorrelationList,
+					    getEliminationResult().myEdgeCorrelationList);
     }
     else throw_exception (true, consistency_exception, "Missing or invalid elimination type");
   }
