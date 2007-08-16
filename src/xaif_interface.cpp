@@ -168,9 +168,14 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 					   JacobianAccumulationExpressionList& jae_list,
 					   LinearizedComputationalGraph& remainderLCG,
 					   VertexCorrelationList& v_cor_list,
-					   EdgeCorrelationList& e_cor_list) {
+					   EdgeCorrelationList& e_cor_list,
+					   unsigned int& numReroutings) {
 //**************************************************************************************************
 // Process LCG from xaifBooster into an angel c_graph_t
+
+#ifndef NDEBUG
+  cout << "Creating internal angel LCG...." << endl;
+#endif
 
   c_graph_t angelLCG;
 
@@ -307,6 +312,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 	front_eliminate_edge_directly (increment_e, angelLCG, edge_ref_list, jae_list);
       }
     }
+    numReroutings++;
 
     reroutable_edges (angelLCG, erv1);
     edge_reducing_reroutings (erv1, angelLCG, erv2);
@@ -571,7 +577,8 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
 					    getEliminationResult().myJAEList,
 					    getEliminationResult().myRemainderLCG,
 					    getEliminationResult().myVertexCorrelationList,
-					    getEliminationResult().myEdgeCorrelationList);
+					    getEliminationResult().myEdgeCorrelationList,
+					    getEliminationResult().myNumReroutings);
     }
     else throw_exception (true, consistency_exception, "Missing or invalid elimination type");
   }
