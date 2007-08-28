@@ -1,5 +1,3 @@
-// $Id: xaif_interface.cpp,v 1.13 2004/05/19 14:15:49 gottschling Exp $
-
 #ifdef USEXAIFBOOSTER
 
 #include "xaif_interface.hpp"
@@ -80,17 +78,19 @@ void read_graph_xaif_booster (const LinearizedComputationalGraph& xg, c_graph_t&
   for (; bi != be; bi++) deps.push_back (which_index (*bi, av)); 
 
   int edge_number= 0;
-  boost::property_map<c_graph_t, EdgeIsUnitType>::type eisunit = get(EdgeIsUnitType(), cg);
+  boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), cg);
   xgraph_t::ConstEdgeIteratorPair eip (xg.edges());
   for (xgraph_t::ConstEdgeIterator ei (eip.first), e_end (eip.second); ei != e_end; ++ei) {
     vertex_t source= which_index (& (xg.getSourceOf (*ei)), av),
              target= which_index (& (xg.getTargetOf (*ei)), av);
     pair<c_graph_t::edge_t, bool> new_edge = add_edge (source, target, edge_number++, cg);
     ae.push_back (edge_address_t(source, target, &*ei));
-    (*ei).hasUnitLabel() ? eisunit[new_edge.first] = true
-			 : eisunit[new_edge.first] = false;
-
-    //if(eisunit[new_edge.first]) cout << "is_unit label in angel graph seems to be labeled\n";
+    if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::UNIT_LABEL)
+      eType[new_edge.first] = UNIT_EDGE;
+    else if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::CONSTANT_LABEL)
+      eType[new_edge.first] = CONSTANT_EDGE;
+    else
+      eType[new_edge.first] = VARIABLE_EDGE;
   } // end for all LCG edges
 
   cg.X= int (indeps.size()); cg.dependents= deps;
@@ -165,11 +165,20 @@ using namespace angel;
 namespace xaifBoosterCrossCountryInterface {
 
 void compute_partial_elimination_sequence (const LinearizedComputationalGraph& ourLCG,
+					   const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					   const bool allowMaintainingFlag,
 					   JacobianAccumulationExpressionList& jae_list,
 					   LinearizedComputationalGraph& remainderLCG,
 					   VertexCorrelationList& v_cor_list,
 					   EdgeCorrelationList& e_cor_list,
 					   unsigned int& numReroutings) {
+
+  cout << "entering compute_partial_elimination_sequence()..." << endl;
+  cout << "allowMaintainingFlag is set to ";
+  if (allowMaintainingFlag) cout << "true";
+  else cout << "false";
+  cout << ", and ourAwarenessLevel is set to " << Elimination::AwarenessLevelToString(ourAwarenessLevel) << endl;
+
 //**************************************************************************************************
 // Process LCG from xaifBooster into an angel c_graph_t
 
@@ -222,16 +231,19 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   // COPY EDGES ----------------------------------------------------------------
   list<EdgeRef_t> edge_ref_list;
   int edge_number = 0;
-  boost::property_map<c_graph_t, EdgeIsUnitType>::type eisunit = get(EdgeIsUnitType(), angelLCG);
+  boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), angelLCG);
   LinearizedComputationalGraph::ConstEdgeIteratorPair eip (ourLCG.edges());
   for (LinearizedComputationalGraph::ConstEdgeIterator ei (eip.first), e_end (eip.second); ei != e_end; ++ei) {
     // locate source and target of edge in angelLCG
     c_graph_t::vertex_t source = which_index (& (ourLCG.getSourceOf (*ei)), ourLCG_verts);
     c_graph_t::vertex_t	target = which_index (& (ourLCG.getTargetOf (*ei)), ourLCG_verts);
     pair<c_graph_t::edge_t, bool> new_edge = add_edge (source, target, edge_number++, angelLCG);
-    (*ei).hasUnitLabel() ? eisunit[new_edge.first] = true
-			 : eisunit[new_edge.first] = false;
-    //if (eisunit[new_edge.first]) cout << "is_unit label in angel graph seems to be labeled\n";
+    if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::UNIT_LABEL)
+      eType[new_edge.first] = UNIT_EDGE;
+    else if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::CONSTANT_LABEL)
+      eType[new_edge.first] = CONSTANT_EDGE;
+    else
+      eType[new_edge.first] = VARIABLE_EDGE;
     EdgeRef_t new_edge_ref (new_edge.first, &*ei);
     edge_ref_list.push_back(new_edge_ref);
   } // end for all LCG edges
@@ -249,7 +261,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   unsigned int cost_of_elim_seq = 0;
 
   eliminatable_objects (angelLCG, bev1);
-  scarce_pres_edge_eliminations (bev1, angelLCG, bev2);
+  scarce_pres_edge_eliminations (bev1, angelLCG, ourAwarenessLevel, allowMaintainingFlag, bev2);
   lowest_markowitz_edge (bev2, angelLCG, bev3);
   reverse_mode_edge (bev3, angelLCG, bev4);
   cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " are scarcity preserving.  ";
@@ -261,11 +273,11 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
     if (isFront) cout << "Front-eliminating edge " << e << "..." << endl;
     else cout << "Back-eliminating edge " << e << "..." << endl;
 
-    cost_of_elim_seq += isFront ? front_eliminate_edge_directly (e, angelLCG, edge_ref_list, jae_list)
-				: back_eliminate_edge_directly (e, angelLCG, edge_ref_list, jae_list);
+    cost_of_elim_seq += isFront ? front_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list)
+				: back_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
 
     eliminatable_objects (angelLCG, bev1);
-    scarce_pres_edge_eliminations (bev1, angelLCG, bev2);
+    scarce_pres_edge_eliminations (bev1, angelLCG, ourAwarenessLevel, allowMaintainingFlag, bev2);
     lowest_markowitz_edge (bev2, angelLCG, bev3);
     reverse_mode_edge (bev3, angelLCG, bev4);
     cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " are scarcity preserving.  ";
@@ -274,9 +286,9 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 
   vector<edge_reroute_t> erv1, erv2, erv3;
   reroutable_edges (angelLCG, erv1);
-  edge_reducing_reroutings (erv1, angelLCG, erv2);
-  edge_reducing_rerouteElims (erv1, angelLCG, erv3);
-  cout << "of " << erv1.size() << " possible edge reroutings, " << erv2.size() << " reduce the edge count "
+  edge_reducing_reroutings (erv1, angelLCG, ourAwarenessLevel, allowMaintainingFlag, erv2);
+  edge_reducing_rerouteElims (erv1, angelLCG, ourAwarenessLevel, allowMaintainingFlag, erv3);
+  cout << "\n\nOf " << erv1.size() << " possible edge reroutings, " << erv2.size() << " reduce the edge count "
        << "and " << erv3.size() << " reduce the edge count when followed by an edge elimination" << endl;
 
   while (!erv2.empty() || !erv3.empty()) {
@@ -284,8 +296,8 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
       if (erv2[0].isPre) cout << "pre"; else cout << "post";
       cout << "routing edge " << erv2[0].e << " about pivot edge " << erv2[0].pivot_e << "..." << endl;
 
-      cost_of_elim_seq += erv2[0].isPre ? preroute_edge_directly (erv2[0], angelLCG, edge_ref_list, jae_list)
-					: postroute_edge_directly (erv2[0], angelLCG, edge_ref_list, jae_list);
+      cost_of_elim_seq += erv2[0].isPre ? preroute_edge_directly (erv2[0], angelLCG, ourAwarenessLevel, edge_ref_list, jae_list)
+					: postroute_edge_directly (erv2[0], angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
     }
     else { //rerouting followed by edge elim
       c_graph_t::edge_t increment_e;
@@ -296,28 +308,31 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 	cout << "followed by back elimination of edge (" << source (erv3[0].e, angelLCG) << ","
 							 << source (erv3[0].pivot_e, angelLCG) << ")" << endl;
 
-	cost_of_elim_seq += preroute_edge_directly (erv3[0], angelLCG, edge_ref_list, jae_list);
+	cost_of_elim_seq += preroute_edge_directly (erv3[0], angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
 	tie (increment_e, found_increment_e) = edge (source (erv3[0].e, angelLCG), source (erv3[0].pivot_e, angelLCG), angelLCG);
-	throw_exception (!found_increment_e, consistency_exception, "increment edge could not be found for front elimination");
-	back_eliminate_edge_directly (increment_e, angelLCG, edge_ref_list, jae_list);
+	throw_exception (!found_increment_e, consistency_exception, "increment edge could not be found for back-elimination");
+	back_eliminate_edge_directly (increment_e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
       }
       else {
 	cout << "postrouting edge " << erv3[0].e << " about pivot edge " << erv3[0].pivot_e << "...";
 	cout << "followed by front elimination of edge (" << target (erv3[0].pivot_e, angelLCG) << ","
 							  << target (erv3[0].e, angelLCG) << ")" << endl;
-	cost_of_elim_seq += postroute_edge_directly (erv3[0], angelLCG, edge_ref_list, jae_list);
+	cost_of_elim_seq += postroute_edge_directly (erv3[0], angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
 	tie (increment_e, found_increment_e) = edge (target (erv3[0].pivot_e, angelLCG), target (erv3[0].e, angelLCG), angelLCG);
 	throw_exception (!found_increment_e, consistency_exception, "increment edge could not be found for front elimination");
 	cout << "Now performing the front-elimination of " << increment_e << "..." << endl;
-	front_eliminate_edge_directly (increment_e, angelLCG, edge_ref_list, jae_list);
+	front_eliminate_edge_directly (increment_e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
       }
+#ifndef NDEBUG
+    write_graph ("current contents of angelLCG: ", angelLCG);
+#endif
     }
     numReroutings++;
 
     reroutable_edges (angelLCG, erv1);
-    edge_reducing_reroutings (erv1, angelLCG, erv2);
-    edge_reducing_rerouteElims (erv1, angelLCG, erv3);
-    cout << "of " << erv1.size() << " possible edge reroutings, " << erv2.size() << " reduce the edge count "
+    edge_reducing_reroutings (erv1, angelLCG, ourAwarenessLevel, allowMaintainingFlag, erv2);
+    edge_reducing_rerouteElims (erv1, angelLCG, ourAwarenessLevel, allowMaintainingFlag, erv3);
+    cout << "\n\nOf " << erv1.size() << " possible edge reroutings, " << erv2.size() << " reduce the edge count "
          << "and " << erv3.size() << " reduce the edge count when followed by an edge elimination" << endl;
   }
 
@@ -574,6 +589,8 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
     }
     else if (myType == SCARCE_ELIMTYPE) {
       compute_partial_elimination_sequence (getLCG(),
+					    ourAwarenessLevel,
+					    ourAllowMaintainingFlag,
 					    getEliminationResult().myJAEList,
 					    getEliminationResult().myRemainderLCG,
 					    getEliminationResult().myVertexCorrelationList,

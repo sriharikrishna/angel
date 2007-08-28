@@ -1370,14 +1370,11 @@ int find_best_subset (const vector<Object_t>& v1, const Ad_graph_t& adg,
     \param bev2 Set of scarcity preserving edge elimination objects
     \return size of bev2
 */
-int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
-				   const c_graph_t& cg,
-				   vector<edge_bool_t>& bev2);
-
-int scarce_pres_edge_eliminations (vector<edge_ij_elim_t>& ev1,
-				   const c_graph_t& cg,
-				   vector<edge_ij_elim_t>& ev2);
-
+unsigned int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
+					    const c_graph_t& cg,
+					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					    const bool allowMaintainingFlag,
+					    vector<edge_bool_t>& bev2);
 
 #ifdef USE_MPI
 /// Build a parallel heuristic out of a sequential 

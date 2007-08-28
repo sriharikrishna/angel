@@ -1,5 +1,3 @@
-// $Id: heuristics.cpp,v 1.10 2005/03/22 05:08:40 jean_utke Exp $
-
 #include "heuristics.hpp"
 
 #include <limits.h>
@@ -1117,206 +1115,117 @@ int minimal_distance_face_t::operator() (const vector<line_graph_t::face_t>& fv1
 // -------------------------------------------------------------------------
 // Scarcity preserving edge eliminations
 // -------------------------------------------------------------------------
-int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
-                                   const c_graph_t& cg,
-                                   vector<edge_bool_t>& bev2) {
-  boost::property_map<c_graph_t, EdgeIsUnitType>::const_type eUnit = get(EdgeIsUnitType(), cg);
+unsigned int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
+					    const c_graph_t& angelLCG,
+					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					    const bool allowMaintainingFlag,
+					    vector<edge_bool_t>& bev2) {
   bev2.resize (0);
-  if (bev1.size() == 0) return 0;
+  if (bev1.empty()) return 0;
+
+#ifndef NDEBUG
+  cout << "------Determining which edge eliminations reduce the nontrivial edge count------" << endl;
+#endif
+  
+  boost::property_map<c_graph_t, EdgeType>::const_type eType = get(EdgeType(), angelLCG);
+  c_graph_t::oei_t oei, oe_end;
+  c_graph_t::iei_t iei, ie_end;
+  c_graph_t::edge_t absorb_e;
+  bool found_absorb;
+  int nontrivialEdgeChange;
 
   for (size_t c = 0; c < bev1.size(); c++) {
     c_graph_t::edge_t e = bev1[c].first;
     bool isFront = bev1[c].second;
-#ifdef IGNORE_TRIVIAL_ELIMINATIONS
-    int  extraVariableEdges=0;
-    if (eUnit[e]) {
-      if (isFront) {
-	// look at all potential results of this elimination
-	c_graph_t::oei_t  soei, soe_end, toei, toe_end;
-	tie (soei, soe_end)= out_edges (source (e, cg), cg);
-	tie (toei, toe_end)= out_edges (target (e, cg), cg);
-	for (; toei != toe_end; ++toei) {
-	  // look at a target out edge and see if this is absorption
-	  c_graph_t::vertex_t tt= target (*toei, cg);
-	  c_graph_t::oei_t absorb_soei= soei;
-	  for (; absorb_soei != soe_end; ++absorb_soei) {
-	    if (target (*absorb_soei, cg) == tt ) { 
-	      // this is absorption
-	      if (!eUnit[*toei] && eUnit[*absorb_soei]) {
-		// this absorbing edge was unit but will turn variable
-		extraVariableEdges++; 
-	      }
-	      else if (eUnit[*toei] && eUnit[*absorb_soei]) { 
-		// this the difference to considering constant edges: 
-		// the absorbing edge is unit too but won't be after absorption
-		extraVariableEdges++; 
-	      }
-		else { 
-		  // the absorbing edge is already variable, no need to worry
-		} 
-	      break; 
-	    }
-	  }
-	  if (!eUnit[*toei] && absorb_soei == soe_end){ 
-	    // this is variable fill-in 
-	    extraVariableEdges++; 
-	  }
-	}
+    nontrivialEdgeChange = 0;
+
+    // No awareness: removal of e decreases edge count
+    if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
+    // unit awareness: e must be nonunit for its removal to decrease nontrivial edges
+    else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[e] != UNIT_EDGE) nontrivialEdgeChange--;
+    // constant awareness: e must be variable for its removal to decrease nontrivial edges
+    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[e] == VARIABLE_EDGE) nontrivialEdgeChange--;
+
+    if (isFront) { // front-elimination
+#ifndef NDEBUG
+      cout << "examining front-elimination of " << e << "... ";
+#endif
+      // if tgt(e) is isolated by the elimination
+      if (in_degree (target (e, angelLCG), angelLCG) == 1) {
+	for (tie (oei, oe_end) = out_edges (target (e, angelLCG), angelLCG); oei != oe_end; ++oei) {
+	  // all the outedges of tgt(e) will go away.  we need to see how this affects nontrivial edge count
+	  if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
+	  else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*oei] != UNIT_EDGE) nontrivialEdgeChange--;
+	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*oei] == VARIABLE_EDGE) nontrivialEdgeChange--;
+	} // end all outedges of tgt(e)
       }
-      else { // back elimination
-	// look at all potential results of this elimination
-	c_graph_t::iei_t  tiei, tie_end, siei, sie_end;
-	tie (tiei, tie_end)= in_edges (target (e, cg), cg);
-	tie (siei, sie_end)= in_edges (source (e, cg), cg);
-	for (; siei != sie_end; ++siei) {
-	  // look at a source in edge and see if this is absorption
-	  c_graph_t::vertex_t ss= source (*siei, cg);
-	  c_graph_t::iei_t absorb_tiei= tiei;
-	  for (; absorb_tiei != tie_end; ++absorb_tiei) {
-	    if (source (*absorb_tiei, cg) == ss ) { 
-	      // this is absorption
-	      if (!eUnit[*siei] && eUnit[*absorb_tiei]) {
-		// this absorbing edge was unit but will turn variable
-		extraVariableEdges++; 
-	      }
-	      else if (eUnit[*siei] && eUnit[*absorb_tiei]) { 
-		// this the difference to considering constant edges: 
-		// the absorbing edge is unit too but won't be after absorption
-		extraVariableEdges++; 
-	      }
-	      else { 
-		// the absorbing edge is already variable, no need to worry
-	      } 
-	      break; 
-	    }
-	  }
-	  if (!eUnit[*siei] && absorb_tiei == tie_end){ 
-	    // this is variable fill-in 
-	    extraVariableEdges++; 
-	  }
+	      
+      // determine effect of absorption/fill-in
+      for (tie (oei, oe_end) = out_edges (target (e, angelLCG), angelLCG); oei != oe_end; ++oei) {
+	tie (absorb_e, found_absorb) = edge (source (e, angelLCG), target (*oei, angelLCG), angelLCG);
+	if (found_absorb) { // absorption
+	  //no awareness: no increase in edge count
+	  //unit awareness: absorb_e will be nonunit afterwards.  increase only if absorb_e was previously unit 
+	  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE) nontrivialEdgeChange++;
+	  // constant awareness: increase if absorb edge is nonvariable and either e or *oei is variable
+	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS)
+	    if (eType[absorb_e] != VARIABLE_EDGE && (eType[e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
 	}
-      }
-      if (extraVariableEdges==0)
-	// we are eliminating a unit edge
-	bev2.push_back (bev1[c]);
+	else { // fill-in
+	  if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange++;
+	  // unit awareness: if either is nonunit, the fill-in is nonunit
+	  else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e] != UNIT_EDGE || eType[*oei] != UNIT_EDGE)) nontrivialEdgeChange++;
+	  // constant awareness: if either is variable, the fill-in is variable
+	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
+	}
+      } // end all successors of tgt(e)
     }
-    else { 
-      // the result will always be variable but may 
-      // be absorbed by an edge that already is variable
-      if (isFront) {
-	// look at all potential results of this elimination
-	c_graph_t::oei_t  soei, soe_end, toei, toe_end;
-	tie (soei, soe_end)= out_edges (source (e, cg), cg);
-	tie (toei, toe_end)= out_edges (target (e, cg), cg);
-	for (; toei != toe_end; ++toei) {
-	  // look at a target out edge and see if this is absorption
-	  c_graph_t::vertex_t tt= target (*toei, cg);
-	  c_graph_t::oei_t absorb_soei= soei;
-	  for (; absorb_soei != soe_end; ++absorb_soei) {
-	    if (target (*absorb_soei, cg) == tt ) { 
-	      // this is absorption
-	      if (eUnit[*absorb_soei]) {
-		// this absorbing edge was unit but will turn variable
-		extraVariableEdges++; 
-	      }
-	      else { 
-		// the absorbing edge is already variable, no need to worry
-	      } 
-	      break; 
-	    }
-	  }
-	  if (absorb_soei == soe_end){ 
-	    // this is variable fill-in 
-	    extraVariableEdges++; 
-	  }
+    else { // back-elimination
+#ifndef NDEBUG
+      cout << "examining back-elimination of " << e << "... ";
+#endif
+      // if src(e) is isolated by the elimination
+      if (out_degree (source (e, angelLCG), angelLCG) == 1) {
+	for (tie (iei, ie_end) = in_edges (source (e, angelLCG), angelLCG); iei != ie_end; ++iei) {
+	  // all the inedges of src(e) will go away.  we need to see how this affects nontrivial edge count
+	  if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
+	  else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*iei] != UNIT_EDGE) nontrivialEdgeChange--;
+	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*iei] == VARIABLE_EDGE) nontrivialEdgeChange--;
+	} // end all inedges of src(e)
+      }
+	      
+      // determine effect of absorption/fill-in
+      for (tie (iei, ie_end) = in_edges (source (e, angelLCG), angelLCG); iei != ie_end; ++iei) {
+	tie (absorb_e, found_absorb) = edge (source (*iei, angelLCG), target (e, angelLCG), angelLCG);
+	if (found_absorb) { // absorption
+	  //no awareness: no increase in edge count
+	  //unit awareness: absorb_e will be nonunit afterwards.  increase only if absorb_e was previously unit
+	  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE) nontrivialEdgeChange++;
+	  // constant awareness: increase if absorb edge is nonvariable and either e or *oei is variable
+	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS)
+	    if (eType[absorb_e] != VARIABLE_EDGE && (eType[e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
 	}
-      }
-      else { // back elimination
-	// look at all potential results of this elimination
-	c_graph_t::iei_t  tiei, tie_end, siei, sie_end;
-	tie (tiei, tie_end)= in_edges (target (e, cg), cg);
-	tie (siei, sie_end)= in_edges (source (e, cg), cg);
-	for (; siei != sie_end; ++siei) {
-	  // look at a source in edge and see if this is absorption
-	  c_graph_t::vertex_t ss= source (*siei, cg);
-	  c_graph_t::iei_t absorb_tiei= tiei;
-	  for (; absorb_tiei != tie_end; ++absorb_tiei) {
-	    if (source (*absorb_tiei, cg) == ss ) { 
-	      // this is absorption
-	      if (eUnit[*absorb_tiei]) {
-		// this absorbing edge was unit but will turn variable
-		extraVariableEdges++; 
-	      }
-	      else { 
-		// the absorbing edge is already variable, no need to worry
-	      } 
-	      break; 
-	    }
-	  }
-	  if (absorb_tiei == tie_end){ 
-	    // this is variable fill-in 
-	    extraVariableEdges++; 
-	  }
+	else { // fill-in
+	  if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange++;
+	  // unit awareness: if either is nonunit, the fill-in is nonunit
+	  else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e] != UNIT_EDGE || eType[*iei] != UNIT_EDGE)) nontrivialEdgeChange++;
+	  // constant awareness: if either is variable, the fill-in is variable
+	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
 	}
-      }
-      if (extraVariableEdges<2)
-	// we are eliminating a variable edge
-	bev2.push_back (bev1[c]);
-    } 
-#else
-    // select edge elimination objects that would isolate the target vertex
-    // (for forward eliminations) or source vertex (for back eliminations)
-    vector<c_graph_t::vertex_t> v_v;
-    if (isFront) {
-      predecessor_set (target (e, cg), cg, v_v);
-      if (v_v.size() == 1) {
-	bev2.push_back (bev1[c]);
-	continue;
-      }
-    }
-    else {
-      successor_set (source (e, cg), cg, v_v);
-      if (v_v.size() == 1) {
-	bev2.push_back (bev1[c]);
-	continue;
-      }
-    }
-    // select eliminations that result in no fill-in (strict reduction of edge count)
-    int fill = isFront ? new_out_edges (e,cg)
-                       : new_in_edges (e,cg);
-    if (fill <= 0) 
-      bev2.push_back (bev1[c]);
-#endif 
-  }
+      } // end all predecessors of src(e)
+    } // end back-elimination
+
+#ifndef NDEBUG
+      cout << "nontrivialEdgeChange determined to be " << nontrivialEdgeChange << endl;
+#endif
+
+    
+    if (nontrivialEdgeChange < 0) bev2.push_back (bev1[c]);
+    else if (allowMaintainingFlag && nontrivialEdgeChange == 0) bev2.push_back (bev1[c]);
+
+  } // end for all in bev1
+
   return bev2.size();
-}
-
-// -------------------------------------------------------------------------
-// Scarcity preserving edge eliminations
-// -------------------------------------------------------------------------
-int scarce_pres_edge_eliminations (vector<edge_ij_elim_t>& ev1,
-                                   const c_graph_t& cg,
-                                   vector<edge_ij_elim_t>& ev2) {
-  ev2.resize (0);
-  if (ev1.size() == 0) return 0;
-
-  for (size_t c = 0; c < ev1.size(); c++) {
-    // select edge elimination objects that would isolate the target vertex
-    // (for forward eliminations) or source vertex (for back eliminations),
-    // and eliminations that create a one or fewer fill-ins
-    vector<c_graph_t::vertex_t> v_v;
-    if (ev1[c].front) {
-      predecessor_set (ev1[c].j, cg, v_v);
-      if (v_v.size() == 1) { ev2.push_back(ev1[c]); continue; }
-      //if (new_out_edges(ev1[c], cg) < 2) { ev2.push_back (ev1[c]); continue; }
-    }
-    else {
-      successor_set (ev1[c].i, cg, v_v);
-      if (v_v.size() == 1) { ev2.push_back (ev1[c]); continue; }
-      //if (new_in_edges(edge(ev1[c]., cg) < 2) { ev2.push_back (ev1[c]); continue; }
-    }
-  } // for all elims in ev1
-  return ev2.size();
 }
 
 } // namespace angel

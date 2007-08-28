@@ -1,13 +1,5 @@
-
-// $Id: angel_types.hpp,v 1.24 2004/10/16 04:18:17 jean_utke Exp $ 
-
 #ifndef 	_angel_types_include_
 #define 	_angel_types_include_
-
-
-//
-//
-//
 
 #include <vector>
 #include <string>
@@ -40,18 +32,22 @@ enum vertex_type_t {independent,   ///< Independent vertex
 		    undefined_vertex ///< Undefined, e.g. out of range
 };
 
-struct EdgeIsUnitType { 
+enum Edge_Type_E { VARIABLE_EDGE,
+		   UNIT_EDGE,
+		   CONSTANT_EDGE };
+
+struct EdgeType { 
   enum { num = 129 };
   typedef boost::edge_property_tag kind;
 }; // end struct
 
-typedef boost::property<boost::edge_weight_t, int>			  edge_weight_property;
-typedef boost::property<boost::edge_index_t, int, edge_weight_property>   edge_index_weight_property;
-typedef boost::property<EdgeIsUnitType, bool, edge_index_weight_property> edge_isUnit_index_weight_property;
+typedef boost::property<boost::edge_weight_t, int>			edge_weight_property;
+typedef boost::property<boost::edge_index_t, int, edge_weight_property>	edge_index_weight_property;
+typedef boost::property<EdgeType, int, edge_index_weight_property>	edge_type_index_weight_property;
 
 /// Pure BGL type definition of c-graph
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, 
-			boost::no_property, edge_isUnit_index_weight_property> pure_c_graph_t;
+			boost::no_property, edge_type_index_weight_property> pure_c_graph_t;
 
 // some forward declarations
 class graph_package_t; 
@@ -86,9 +82,9 @@ public:
   /// Type of property edge index for non-const c_graph_t
   typedef boost::property_map<pure_c_graph_t, boost::edge_index_t>::type	eind_t;
   /// Type of property edge isUnit for const c_graph_t
-  typedef boost::property_map<pure_c_graph_t, EdgeIsUnitType>::const_type	const_eisunit_t;
+  typedef boost::property_map<pure_c_graph_t, EdgeType>::const_type		const_etype_t;
   /// Type of property edge isUnit for non-const c_graph_t
-  typedef boost::property_map<pure_c_graph_t, EdgeIsUnitType>::type		eisunit_t;
+  typedef boost::property_map<pure_c_graph_t, EdgeType>::type			etype_t;
 
   int          next_edge_number;   ///< useful for insertion of new edges
 

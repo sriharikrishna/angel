@@ -1,22 +1,16 @@
-// $Id: eliminations.hpp,v 1.18 2004/03/23 03:41:20 gottschling Exp $
-
 #ifndef 	_eliminations_include_
 #define 	_eliminations_include_
-
-
-//
-//
-//
 
 #include "angel_types.hpp"
 #include "angel_io.hpp"
 
-namespace angel {
-
 #ifdef USEXAIFBOOSTER
+  #include "xaifBooster/algorithms/CrossCountryInterface/inc/Elimination.hpp"
   using namespace xaifBoosterCrossCountryInterface;
   using std::list;
 #endif
+
+  namespace angel {
 
   using std::vector;
   using std::cout;
@@ -788,11 +782,12 @@ void removeRef (const c_graph_t::edge_t e,
     If there's fill-in, a new edge is created and a new edge reference points it to the new JAE.
     If there's absorption, the existing edge has its reference updated to point to the new JAE.
  */
-void multiply_edge_pair_directly (const c_graph_t::edge_t e1,
-				  const c_graph_t::edge_t e2,
-				  c_graph_t& angelLCG,
-				  list<EdgeRef_t>& edge_ref_list,
-				  JacobianAccumulationExpressionList& jae_list);
+unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
+					  const c_graph_t::edge_t e2,
+					  c_graph_t& angelLCG,
+					  const xaifBoosterCrossCountryInterface::Elimination::AwarenessLevel_E ourAwarenessLevel,
+					  list<EdgeRef_t>& edge_ref_list,
+					  JacobianAccumulationExpressionList& jae_list);
 
 /** Front eliminate an edge from an angel c_graph_t but go directly to a
     xaifBoosterCrossCountryInterface::JacobianAccumulationExpression, rather
@@ -812,6 +807,7 @@ void multiply_edge_pair_directly (const c_graph_t::edge_t e1,
  */
 unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 					    c_graph_t& angelLCG,
+					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					    list<EdgeRef_t>& edge_ref_list,
 					    JacobianAccumulationExpressionList& jae_list);
 
@@ -833,6 +829,7 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
  */
 unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   c_graph_t& angelLCG,
+					   const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					   list<EdgeRef_t>& edge_ref_list,
 					   JacobianAccumulationExpressionList& jae_list);
 
