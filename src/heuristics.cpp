@@ -1115,118 +1115,138 @@ int minimal_distance_face_t::operator() (const vector<line_graph_t::face_t>& fv1
 // -------------------------------------------------------------------------
 // Scarcity preserving edge eliminations
 // -------------------------------------------------------------------------
-unsigned int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
-					    const c_graph_t& angelLCG,
-					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
-					    const bool allowMaintainingFlag,
-					    vector<edge_bool_t>& bev2) {
-  bev2.resize (0);
-  if (bev1.empty()) return 0;
-
-#ifndef NDEBUG
-  cout << "------Determining which edge eliminations reduce the nontrivial edge count------" << endl;
-#endif
+int edge_elim_effect (edge_bool_t be,
+		      const c_graph_t& angelLCG,
+		      const Elimination::AwarenessLevel_E ourAwarenessLevel) {
   
   boost::property_map<c_graph_t, EdgeType>::const_type eType = get(EdgeType(), angelLCG);
   c_graph_t::oei_t oei, oe_end;
   c_graph_t::iei_t iei, ie_end;
   c_graph_t::edge_t absorb_e;
   bool found_absorb;
-  int nontrivialEdgeChange;
 
-  for (size_t c = 0; c < bev1.size(); c++) {
-    c_graph_t::edge_t e = bev1[c].first;
-    bool isFront = bev1[c].second;
-    nontrivialEdgeChange = 0;
+  c_graph_t::edge_t e = be.first;
+  bool isFront = be.second;
+  int nontrivialEdgeChange = 0;
 
-    // No awareness: removal of e decreases edge count
-    if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
-    // unit awareness: e must be nonunit for its removal to decrease nontrivial edges
-    else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[e] != UNIT_EDGE) nontrivialEdgeChange--;
-    // constant awareness: e must be variable for its removal to decrease nontrivial edges
-    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[e] == VARIABLE_EDGE) nontrivialEdgeChange--;
+  // No awareness: removal of e decreases edge count
+  if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
+  // unit awareness: e must be nonunit for its removal to decrease nontrivial edges
+  else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[e] != UNIT_EDGE) nontrivialEdgeChange--;
+  // constant awareness: e must be variable for its removal to decrease nontrivial edges
+  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[e] == VARIABLE_EDGE) nontrivialEdgeChange--;
 
-    if (isFront) { // front-elimination
+  if (isFront) { // front-elimination
 #ifndef NDEBUG
-      cout << "examining front-elimination of " << e << "... ";
+    cout << "examining front-elimination of " << e << "... ";
 #endif
-      // if tgt(e) is isolated by the elimination
-      if (in_degree (target (e, angelLCG), angelLCG) == 1) {
-	for (tie (oei, oe_end) = out_edges (target (e, angelLCG), angelLCG); oei != oe_end; ++oei) {
-	  // all the outedges of tgt(e) will go away.  we need to see how this affects nontrivial edge count
-	  if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
-	  else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*oei] != UNIT_EDGE) nontrivialEdgeChange--;
-	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*oei] == VARIABLE_EDGE) nontrivialEdgeChange--;
-	} // end all outedges of tgt(e)
-      }
-	      
-      // determine effect of absorption/fill-in
+    // if tgt(e) is isolated by the elimination
+    if (in_degree (target (e, angelLCG), angelLCG) == 1) {
       for (tie (oei, oe_end) = out_edges (target (e, angelLCG), angelLCG); oei != oe_end; ++oei) {
-	tie (absorb_e, found_absorb) = edge (source (e, angelLCG), target (*oei, angelLCG), angelLCG);
-	if (found_absorb) { // absorption
-	  //no awareness: no increase in edge count
-	  //unit awareness: absorb_e will be nonunit afterwards.  increase only if absorb_e was previously unit 
-	  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE) nontrivialEdgeChange++;
-	  // constant awareness: increase if absorb edge is nonvariable and either e or *oei is variable
-	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS)
-	    if (eType[absorb_e] != VARIABLE_EDGE && (eType[e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
-	}
-	else { // fill-in
-	  if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange++;
-	  // unit awareness: if either is nonunit, the fill-in is nonunit
-	  else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e] != UNIT_EDGE || eType[*oei] != UNIT_EDGE)) nontrivialEdgeChange++;
-	  // constant awareness: if either is variable, the fill-in is variable
-	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
-	}
-      } // end all successors of tgt(e)
+	// all the outedges of tgt(e) will go away.  we need to see how this affects nontrivial edge count
+	if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
+	else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*oei] != UNIT_EDGE) nontrivialEdgeChange--;
+	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*oei] == VARIABLE_EDGE) nontrivialEdgeChange--;
+      } // end all outedges of tgt(e)
     }
-    else { // back-elimination
-#ifndef NDEBUG
-      cout << "examining back-elimination of " << e << "... ";
-#endif
-      // if src(e) is isolated by the elimination
-      if (out_degree (source (e, angelLCG), angelLCG) == 1) {
-	for (tie (iei, ie_end) = in_edges (source (e, angelLCG), angelLCG); iei != ie_end; ++iei) {
-	  // all the inedges of src(e) will go away.  we need to see how this affects nontrivial edge count
-	  if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
-	  else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*iei] != UNIT_EDGE) nontrivialEdgeChange--;
-	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*iei] == VARIABLE_EDGE) nontrivialEdgeChange--;
-	} // end all inedges of src(e)
+
+    // determine effect of absorption/fill-in
+    for (tie (oei, oe_end) = out_edges (target (e, angelLCG), angelLCG); oei != oe_end; ++oei) {
+      tie (absorb_e, found_absorb) = edge (source (e, angelLCG), target (*oei, angelLCG), angelLCG);
+      if (found_absorb) { // absorption
+	//no awareness: no increase in edge count
+	//unit awareness: absorb_e will be nonunit afterwards.  increase only if absorb_e was previously unit 
+	if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE) nontrivialEdgeChange++;
+	// constant awareness: increase if absorb edge is nonvariable and either e or *oei is variable
+	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS)
+	  if (eType[absorb_e] != VARIABLE_EDGE && (eType[e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
       }
-	      
-      // determine effect of absorption/fill-in
+      else { // fill-in
+	if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange++;
+	// unit awareness: if either is nonunit, the fill-in is nonunit
+	else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e] != UNIT_EDGE || eType[*oei] != UNIT_EDGE)) nontrivialEdgeChange++;
+	// constant awareness: if either is variable, the fill-in is variable
+	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
+      }
+    } // end all successors of tgt(e)
+  }
+  else { // back-elimination
+#ifndef NDEBUG
+    cout << "examining back-elimination of " << e << "... ";
+#endif
+    // if src(e) is isolated by the elimination
+    if (out_degree (source (e, angelLCG), angelLCG) == 1) {
       for (tie (iei, ie_end) = in_edges (source (e, angelLCG), angelLCG); iei != ie_end; ++iei) {
-	tie (absorb_e, found_absorb) = edge (source (*iei, angelLCG), target (e, angelLCG), angelLCG);
-	if (found_absorb) { // absorption
-	  //no awareness: no increase in edge count
-	  //unit awareness: absorb_e will be nonunit afterwards.  increase only if absorb_e was previously unit
-	  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE) nontrivialEdgeChange++;
-	  // constant awareness: increase if absorb edge is nonvariable and either e or *oei is variable
-	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS)
-	    if (eType[absorb_e] != VARIABLE_EDGE && (eType[e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
-	}
-	else { // fill-in
-	  if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange++;
-	  // unit awareness: if either is nonunit, the fill-in is nonunit
-	  else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e] != UNIT_EDGE || eType[*iei] != UNIT_EDGE)) nontrivialEdgeChange++;
-	  // constant awareness: if either is variable, the fill-in is variable
-	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
-	}
-      } // end all predecessors of src(e)
-    } // end back-elimination
+	// all the inedges of src(e) will go away.  we need to see how this affects nontrivial edge count
+	if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
+	else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*iei] != UNIT_EDGE) nontrivialEdgeChange--;
+	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*iei] == VARIABLE_EDGE) nontrivialEdgeChange--;
+      } // end all inedges of src(e)
+    }
+	      
+    // determine effect of absorption/fill-in
+    for (tie (iei, ie_end) = in_edges (source (e, angelLCG), angelLCG); iei != ie_end; ++iei) {
+      tie (absorb_e, found_absorb) = edge (source (*iei, angelLCG), target (e, angelLCG), angelLCG);
+      if (found_absorb) { // absorption
+	//no awareness: no increase in edge count
+	//unit awareness: absorb_e will be nonunit afterwards.  increase only if absorb_e was previously unit
+	if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE) nontrivialEdgeChange++;
+	// constant awareness: increase if absorb edge is nonvariable and either e or *oei is variable
+	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS)
+	  if (eType[absorb_e] != VARIABLE_EDGE && (eType[e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
+      }
+      else { // fill-in
+	if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange++;
+	 // unit awareness: if either is nonunit, the fill-in is nonunit
+	else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e] != UNIT_EDGE || eType[*iei] != UNIT_EDGE)) nontrivialEdgeChange++;
+	// constant awareness: if either is variable, the fill-in is variable
+	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
+      }
+    } // end all predecessors of src(e)
+  } // end back-elimination
 
 #ifndef NDEBUG
-      cout << "nontrivialEdgeChange determined to be " << nontrivialEdgeChange << endl;
+  cout << "nontrivialEdgeChange determined to be " << nontrivialEdgeChange << endl;
 #endif
 
-    
-    if (nontrivialEdgeChange < 0) bev2.push_back (bev1[c]);
-    else if (allowMaintainingFlag && nontrivialEdgeChange == 0) bev2.push_back (bev1[c]);
+  return nontrivialEdgeChange;
+}
 
-  } // end for all in bev1
+unsigned int count_maintain_edge_eliminations (vector<edge_bool_t>& bev1,
+					       const c_graph_t& angelLCG,
+					       const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					       vector<edge_bool_t>& bev2) {
+  bev2.resize (0);
+  if (bev1.empty()) return 0;
+
+#ifndef NDEBUG
+  cout << "------Determining which edge eliminations maintain the nontrivial edge count------" << endl;
+#endif
+
+  for (size_t c = 0; c < bev1.size(); c++)
+    if (edge_elim_effect (bev1[c], angelLCG, ourAwarenessLevel) <= 0)
+      bev2.push_back (bev1[c]);
 
   return bev2.size();
-}
+} // end count_maintain_edge_eliminations()
+
+unsigned int count_reduce_edge_eliminations (vector<edge_bool_t>& bev1,
+					     const c_graph_t& angelLCG,
+					     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					     vector<edge_bool_t>& bev2) {
+  bev2.resize (0);
+  if (bev1.empty()) return 0;
+
+#ifndef NDEBUG
+  cout << "------Determining which edge eliminations reduce the nontrivial edge count------" << endl;
+#endif
+
+  for (size_t c = 0; c < bev1.size(); c++)
+    if (edge_elim_effect (bev1[c], angelLCG, ourAwarenessLevel) <= -1)
+      bev2.push_back (bev1[c]);
+
+  return bev2.size();
+} // end count_maintain_edge_eliminations()
 
 } // namespace angel
 

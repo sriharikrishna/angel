@@ -593,7 +593,9 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 					  c_graph_t& angelLCG,
 					  const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					  list<EdgeRef_t>& edge_ref_list,
+					  const list< std::pair<unsigned int,unsigned int> >& refillCheck,
 					  JacobianAccumulationExpressionList& jae_list) {
+
   // Create JAE with vertices for multiply and for the two edges being multiplied
   JacobianAccumulationExpression& new_jae = jae_list.addExpression();
   JacobianAccumulationExpressionVertex& jaev_mult = new_jae.addVertex();
@@ -638,6 +640,11 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
     if (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE)	eType[fill_or_absorb_e] = VARIABLE_EDGE;
     else if (eType[e1] == UNIT_EDGE && eType[e2] == UNIT_EDGE)		eType[fill_or_absorb_e] = UNIT_EDGE;
     else								eType[fill_or_absorb_e] = CONSTANT_EDGE;
+
+    // check whether we're causing refill
+    for (std::list< std::pair<unsigned int,unsigned int> >::const_iterator re_i = refillCheck.begin(); re_i != refillCheck.end(); re_i++)
+      if (source (e1, angelLCG) == re_i->first && target (e2, angelLCG) == re_i->second)
+	cout << "!!!!!! refill of edge (" << re_i->first << "," << re_i->second << ") !!!!!" << endl;
   }
   
   // determine cost based on awareness level
@@ -653,18 +660,22 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 					    c_graph_t& angelLCG,
 					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					    list<EdgeRef_t>& edge_ref_list,
+					    list< std::pair<unsigned int,unsigned int> >& refillCheck,
 					    JacobianAccumulationExpressionList& jae_list) {
   unsigned int cost = 0;
   c_graph_t::vertex_t tgt = target (e, angelLCG);
   vector<c_graph_t::edge_t> tgtOutEdges;
   c_graph_t::oei_t oei, oe_end;
+
+  refillCheck.push_back(std::pair<unsigned int,unsigned int>(source (e, angelLCG), target (e,angelLCG)));
+
   // save out-edges of tgt in a vector, as pointers become invalidated
   for (tie (oei, oe_end) = out_edges (tgt, angelLCG); oei != oe_end; ++oei)
     tgtOutEdges.push_back(*oei);
 
   // multiply all edge pairs
   for (size_t i = 0; i < tgtOutEdges.size(); i++)
-    cost += multiply_edge_pair_directly (e, tgtOutEdges[i], angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+    cost += multiply_edge_pair_directly (e, tgtOutEdges[i], angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
 
   if (in_degree (tgt, angelLCG) == 1) // if front elimination of e isolates the target
     for (size_t i = 0; i < tgtOutEdges.size(); i++) {
@@ -680,18 +691,22 @@ unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   c_graph_t& angelLCG,
 					   const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					   list<EdgeRef_t>& edge_ref_list,
+					   list< std::pair<unsigned int,unsigned int> >& refillCheck,
 					   JacobianAccumulationExpressionList& jae_list) {
   unsigned int cost = 0;
   c_graph_t::vertex_t src = source (e, angelLCG);
   vector<c_graph_t::edge_t> srcInEdges;
   c_graph_t::iei_t iei, ie_end;  
+
+  refillCheck.push_back(std::pair<unsigned int,unsigned int>(source (e, angelLCG), target (e,angelLCG)));
+
   // save in-edges of src in a vector, as pointers become invalidated
   for (tie (iei, ie_end) = in_edges (src, angelLCG); iei != ie_end; ++iei)
       srcInEdges.push_back(*iei);
 
   // multiply all edge pairs
   for (size_t i = 0; i < srcInEdges.size(); i++)
-    cost += multiply_edge_pair_directly (srcInEdges[i], e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+    cost += multiply_edge_pair_directly (srcInEdges[i], e, angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
 
   if (out_degree (src, angelLCG) == 1) // if back elimination of e isolates the source
     for (size_t i = 0; i < srcInEdges.size(); i++) {

@@ -95,12 +95,14 @@ unsigned int preroute_edge_directly (edge_reroute_t er,
 				     c_graph_t& angelLCG,
 				     const Elimination::AwarenessLevel_E ourAwarenessLevel,
 				     list<EdgeRef_t>& edge_ref_list,
+				     list< std::pair<unsigned int,unsigned int> >& refillCheck,
 				     JacobianAccumulationExpressionList& jae_list);
 
 unsigned int postroute_edge_directly (edge_reroute_t er,
 				      c_graph_t& angelLCG,
 				      const Elimination::AwarenessLevel_E ourAwarenessLevel,
 				      list<EdgeRef_t>& edge_ref_list,
+				      list< std::pair<unsigned int,unsigned int> >& refillCheck,
 				      JacobianAccumulationExpressionList& jae_list);
 
 } // namespace angel

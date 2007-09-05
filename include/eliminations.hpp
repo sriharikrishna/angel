@@ -787,6 +787,7 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 					  c_graph_t& angelLCG,
 					  const xaifBoosterCrossCountryInterface::Elimination::AwarenessLevel_E ourAwarenessLevel,
 					  list<EdgeRef_t>& edge_ref_list,
+					  const list< std::pair<unsigned int,unsigned int> >& refillCheck,
 					  JacobianAccumulationExpressionList& jae_list);
 
 /** Front eliminate an edge from an angel c_graph_t but go directly to a
@@ -809,6 +810,7 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 					    c_graph_t& angelLCG,
 					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					    list<EdgeRef_t>& edge_ref_list,
+					    list< std::pair<unsigned int,unsigned int> >& refillCheck,
 					    JacobianAccumulationExpressionList& jae_list);
 
 /** Back eliminate an edge from an angel c_graph_t but go directly to a
@@ -831,6 +833,7 @@ unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   c_graph_t& angelLCG,
 					   const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					   list<EdgeRef_t>& edge_ref_list,
+					   list< std::pair<unsigned int,unsigned int> >& refillCheck,
 					   JacobianAccumulationExpressionList& jae_list);
 
 #endif // USEXAIFBOOSTER

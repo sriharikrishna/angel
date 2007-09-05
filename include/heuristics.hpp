@@ -1358,23 +1358,40 @@ int find_best_subset (const vector<Object_t>& v1, const Ad_graph_t& adg,
 // scarcity preserving eliminations
 // =====================================================
 
-/** \brief Receives a vector of edge elimination objects \p bev1 and a c-graph \p cg and returns a vector \p bev2 which contains only scarcity preserving edge eliminations.
+/** \brief Determines the effect, in terms of nontrivial edge count, of performing edge elimination \p be
 
-    This function selects edge eliminations that preserve scarcity in the
-    Jacobian, in that their elimination does not result in an overall
-    increase in the number of edges in the computational graph.  We fail to
-    consider unit edges in this implementation.
+    \param be edge elimination target under consideration
+    \param angelLCG c-graph
+    \param ourAwarenessLevel setting such as unit aware, constant aware, or no awareness
+    \return net effect on nontrivial edge count
+*/
+int edge_elim_effect (edge_bool_t be,
+		      const c_graph_t& angelLCG,
+		      const Elimination::AwarenessLevel_E ourAwarenessLevel);
+
+/** \brief Filter that selects edge elimination targets that don't increase the nontrivial edge count
 
     \param bev1 set of edges that can be eliminated
-    \param cg c-graph
-    \param bev2 Set of scarcity preserving edge elimination objects
+    \param angelLCG c-graph
+    \param bev2 set of edge elims that don't increase the nontrivial edge count
     \return size of bev2
 */
-unsigned int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
-					    const c_graph_t& cg,
-					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
-					    const bool allowMaintainingFlag,
-					    vector<edge_bool_t>& bev2);
+unsigned int count_maintain_edge_eliminations (vector<edge_bool_t>& bev1,
+					       const c_graph_t& angelLCG,
+					       const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					       vector<edge_bool_t>& bev2);
+
+/** \brief Filter that selects edge elimination targets that decrease the nontrivial edge count
+
+    \param bev1 set of edges that can be eliminated
+    \param angelLCG c-graph
+    \param bev2 set of edge elims that decrease the nontrivial edge count
+    \return size of bev2
+*/
+unsigned int count_reduce_edge_eliminations (vector<edge_bool_t>& bev1,
+					     const c_graph_t& angelLCG,
+					     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					     vector<edge_bool_t>& bev2);
 
 #ifdef USE_MPI
 /// Build a parallel heuristic out of a sequential 

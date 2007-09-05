@@ -373,12 +373,15 @@ unsigned int preroute_edge_directly (edge_reroute_t er,
 				     c_graph_t& angelLCG,
 				     const Elimination::AwarenessLevel_E ourAwarenessLevel,
 				     list<EdgeRef_t>& edge_ref_list,
+				     list< std::pair<unsigned int,unsigned int> >& refillCheck,
 				     JacobianAccumulationExpressionList& jae_list) {
   unsigned int cost = 0;
   vector<c_graph_t::edge_t> v_succ;
   boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), angelLCG);
   c_graph_t::iei_t iei, ie_end; 
   c_graph_t::oei_t oei, oe_end; 
+
+  refillCheck.push_back(std::pair<unsigned int,unsigned int>(source (er.e, angelLCG), target (er.e,angelLCG)));
 
   // Increment the edge from the source of e to to v by the quotient e/pivot_e (create it if it doesnt exist)
   JacobianAccumulationExpression& new_jae = jae_list.addExpression();
@@ -425,6 +428,11 @@ unsigned int preroute_edge_directly (edge_reroute_t er,
     if (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE)	eType[increment_e] = VARIABLE_EDGE;
     else if (eType[er.e] == UNIT_EDGE && eType[er.pivot_e] == UNIT_EDGE)	eType[increment_e] = UNIT_EDGE;
     else									eType[increment_e] = CONSTANT_EDGE;
+
+    // check whether we're causing refill
+    for (std::list< std::pair<unsigned int,unsigned int> >::const_iterator re_i = refillCheck.begin(); re_i != refillCheck.end(); re_i++)
+      if (source (er.e, angelLCG) == re_i->first && source (er.pivot_e, angelLCG) == re_i->second)
+	cout << "!!!!!! refill of edge (" << re_i->first << "," << re_i->second << ") !!!!!" << endl;
   }
 
   if (ourAwarenessLevel == Elimination::NO_AWARENESS)
@@ -521,11 +529,14 @@ unsigned int postroute_edge_directly (edge_reroute_t er,
 				     c_graph_t& angelLCG,
 				     const Elimination::AwarenessLevel_E ourAwarenessLevel,
 				     list<EdgeRef_t>& edge_ref_list,
+				     list< std::pair<unsigned int,unsigned int> >& refillCheck,
 				     JacobianAccumulationExpressionList& jae_list) {
   unsigned int cost = 1;
   boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), angelLCG);
   c_graph_t::iei_t iei, ie_end; 
   c_graph_t::oei_t oei, oe_end; 
+
+  refillCheck.push_back(std::pair<unsigned int,unsigned int>(source (er.e, angelLCG), target (er.e,angelLCG)));
 
   // Increment the edge from the source of e to to v by the quotient e/pivot_e (create it if it doesnt exist)
   JacobianAccumulationExpression& new_jae = jae_list.addExpression();
@@ -563,7 +574,7 @@ unsigned int postroute_edge_directly (edge_reroute_t er,
     else if (eType[increment_e] != VARIABLE_EDGE)				eType[increment_e] = CONSTANT_EDGE;
 
   }
-  else { //no increment edge was already present
+  else { //no increment edge was already present (fill-in)
     // point the new edge at the divide operation in the new JAE
     tie (increment_e, found_increment_e) = add_edge (target (er.pivot_e, angelLCG), target (er.e, angelLCG), angelLCG.next_edge_number++, angelLCG);
     EdgeRef_t new_increment_e_ref (increment_e, &jaev_divide);
@@ -573,6 +584,11 @@ unsigned int postroute_edge_directly (edge_reroute_t er,
     if (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE)	eType[increment_e] = VARIABLE_EDGE;
     else if (eType[er.e] == UNIT_EDGE && eType[er.pivot_e] == UNIT_EDGE)	eType[increment_e] = UNIT_EDGE;
     else									eType[increment_e] = CONSTANT_EDGE;
+
+    // check whether we're causing refill
+    for (std::list< std::pair<unsigned int,unsigned int> >::const_iterator re_i = refillCheck.begin(); re_i != refillCheck.end(); re_i++)
+      if (target (er.pivot_e, angelLCG) == re_i->first && target (er.e, angelLCG) == re_i->second)
+	cout << "!!!!!! refill of edge (" << re_i->first << "," << re_i->second << ") !!!!!" << endl;
   }
 
   if (ourAwarenessLevel == Elimination::NO_AWARENESS)
