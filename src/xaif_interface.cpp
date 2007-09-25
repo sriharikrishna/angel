@@ -163,6 +163,10 @@ void perform_total_elim_seq (list<edge_bool_t>& elims_performed,
 			     const bool allowMaintainingFlag,
 			     const Elimination::AwarenessLevel_E ourAwarenessLevel,
 			     const c_graph_t& angelLCG) {
+  cout << endl << endl;
+  cout << "*************************************" << endl; 
+  cout << "Performing total elimination sequence on angelLCG_total" << endl;
+  cout << "*************************************" << endl; 
   c_graph_t angelLCG_total (angelLCG);
   vector<edge_bool_t> bev1, bev2, bev3, bev4;
   best_num_edges = num_edges(angelLCG_total);
@@ -318,36 +322,11 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   cout << "*************************************" << endl; 
 
   unsigned int cost_of_elim_seq = 0;
-  vector<edge_bool_t> bev1, bev2, bev3, bev4;
 
-  eliminatable_objects (angelLCG, bev1);
-  if (count_reduce_edge_eliminations (bev1, angelLCG, ourAwarenessLevel, bev2) == 0 && allowMaintainingFlag)
-    count_maintain_edge_eliminations (bev1, angelLCG, ourAwarenessLevel, bev2);
-#ifndef NDEBUG
-  cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " pass the scarcity filter.  ";
-#endif
-  if (!bev2.empty()) lowest_markowitz_edge (bev2, angelLCG, bev3);
-  else lowest_markowitz_edge (bev1, angelLCG, bev3);
-  reverse_mode_edge (bev3, angelLCG, bev4);
-
-  while(!bev4.empty()) {
-    c_graph_t::edge_t e = bev4[0].first;
-    bool isFront = bev4[0].second;
-
-#ifndef NDEBUG
-    if (isFront) cout << "Front-eliminating edge " << e << "..." << endl; else cout << "Back-eliminating edge " << e << "..." << endl;
-#endif
-    cost_of_elim_seq += isFront ? front_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list)
-				: back_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
-//    cout << num_edges(angelLCG_total) << endl;
-#ifndef NDEBUG
-    cout << "There are currently " << num_edges(angelLCG) <<  " edges in angelLCG" << endl;
-#endif
-    if (num_edges(angelLCG) == best_num_edges) {
-      cout << "We have achieved the desired edge count of " << best_num_edges << endl;
-      break;
-    }
-
+  if (num_edges(angelLCG) == best_num_edges)
+    cout << "No eliminations necessary to reach the desired edge count of " << best_num_edges << endl;
+  else {
+    vector<edge_bool_t> bev1, bev2, bev3, bev4;
     eliminatable_objects (angelLCG, bev1);
     if (count_reduce_edge_eliminations (bev1, angelLCG, ourAwarenessLevel, bev2) == 0 && allowMaintainingFlag)
       count_maintain_edge_eliminations (bev1, angelLCG, ourAwarenessLevel, bev2);
@@ -357,6 +336,35 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
     if (!bev2.empty()) lowest_markowitz_edge (bev2, angelLCG, bev3);
     else lowest_markowitz_edge (bev1, angelLCG, bev3);
     reverse_mode_edge (bev3, angelLCG, bev4);
+
+    while(!bev4.empty()) {
+      c_graph_t::edge_t e = bev4[0].first;
+      bool isFront = bev4[0].second;
+
+#ifndef NDEBUG
+      if (isFront) cout << "Front-eliminating edge " << e << "..." << endl; else cout << "Back-eliminating edge " << e << "..." << endl;
+#endif
+      cost_of_elim_seq += isFront ? front_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list)
+				: back_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
+//      cout << num_edges(angelLCG_total) << endl;
+#ifndef NDEBUG
+      cout << "There are currently " << num_edges(angelLCG) <<  " edges in angelLCG" << endl;
+#endif
+      if (num_edges(angelLCG) == best_num_edges) {
+        cout << "We have achieved the desired edge count of " << best_num_edges << endl;
+        break;
+      }
+
+      eliminatable_objects (angelLCG, bev1);
+      if (count_reduce_edge_eliminations (bev1, angelLCG, ourAwarenessLevel, bev2) == 0 && allowMaintainingFlag)
+        count_maintain_edge_eliminations (bev1, angelLCG, ourAwarenessLevel, bev2);
+#ifndef NDEBUG
+      cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " pass the scarcity filter.  ";
+#endif
+      if (!bev2.empty()) lowest_markowitz_edge (bev2, angelLCG, bev3);
+      else lowest_markowitz_edge (bev1, angelLCG, bev3);
+      reverse_mode_edge (bev3, angelLCG, bev4);
+    }
   }
 
 /*
@@ -460,6 +468,19 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
     LinearizedComputationalGraphEdge& new_redge = remainderLCG.addEdge(*remainder_src_p, *remainder_tgt_p);
     EdgeCorrelationEntry new_edge_correlation;
     new_edge_correlation.myRemainderGraphEdge_p = &new_redge;
+
+    // set the edge type (unit/const/variable)
+    switch (eType[*ei]) { 
+    case UNIT_EDGE:
+      new_redge.setEdgeLabelType(LinearizedComputationalGraphEdge::UNIT_LABEL);
+      break;
+    case CONSTANT_EDGE:
+      new_redge.setEdgeLabelType(LinearizedComputationalGraphEdge::CONSTANT_LABEL);
+      break;
+    case VARIABLE_EDGE:
+      new_redge.setEdgeLabelType(LinearizedComputationalGraphEdge::VARIABLE_LABEL);
+      break;
+    }
 
     // derive contents of correlation entry from the internal edge reference list
     EdgeRefType_E new_remainder_edge_ref_t = getRefType (*ei, angelLCG, edge_ref_list);
