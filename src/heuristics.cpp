@@ -1174,10 +1174,12 @@ int edge_elim_effect (edge_bool_t be,
 #ifndef NDEBUG
     cout << "examining back-elimination of " << e << "... ";
 #endif
-    // if src(e) is isolated by the elimination
-    if (out_degree (source (e, angelLCG), angelLCG) == 1) {
+    // if src(e) is isolated by the elimination (requires src(e) is not dependent)
+    // all the inedges of src(e) will go away.  we need to see how this affects nontrivial edge count
+    if (out_degree (source (e, angelLCG), angelLCG) == 1
+	&&
+	vertex_type (source (e, angelLCG), angelLCG) != dependent) {
       for (tie (iei, ie_end) = in_edges (source (e, angelLCG), angelLCG); iei != ie_end; ++iei) {
-	// all the inedges of src(e) will go away.  we need to see how this affects nontrivial edge count
 	if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
 	else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*iei] != UNIT_EDGE) nontrivialEdgeChange--;
 	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*iei] == VARIABLE_EDGE) nontrivialEdgeChange--;

@@ -708,7 +708,8 @@ unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
   for (size_t i = 0; i < srcInEdges.size(); i++)
     cost += multiply_edge_pair_directly (srcInEdges[i], e, angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
 
-  if (out_degree (src, angelLCG) == 1) // if back elimination of e isolates the source
+  // remove src of e and incident edges if it becomes isolated and isn't a dependent
+  if (out_degree (src, angelLCG) == 1 && vertex_type (src, angelLCG) != dependent)
     for (size_t i = 0; i < srcInEdges.size(); i++) {
       removeRef (srcInEdges[i], angelLCG, edge_ref_list);
       remove_edge (srcInEdges[i], angelLCG);
