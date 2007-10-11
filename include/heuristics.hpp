@@ -1354,6 +1354,8 @@ int find_best_subset (const vector<Object_t>& v1, const Ad_graph_t& adg,
   return v2.size();
 }
 
+#ifdef USEXAIFBOOSTER
+
 // =====================================================
 // scarcity preserving eliminations
 // =====================================================
@@ -1365,7 +1367,7 @@ int find_best_subset (const vector<Object_t>& v1, const Ad_graph_t& adg,
     \param ourAwarenessLevel setting such as unit aware, constant aware, or no awareness
     \return net effect on nontrivial edge count
 */
-int edge_elim_effect (edge_bool_t be,
+int edge_elim_effect (const edge_bool_t be,
 		      const c_graph_t& angelLCG,
 		      const Elimination::AwarenessLevel_E ourAwarenessLevel);
 
@@ -1373,10 +1375,11 @@ int edge_elim_effect (edge_bool_t be,
 
     \param bev1 set of edges that can be eliminated
     \param angelLCG c-graph
+    \param ourAwarenessLevel needed to assess costs of eliminations
     \param bev2 set of edge elims that don't increase the nontrivial edge count
     \return size of bev2
 */
-unsigned int count_maintain_edge_eliminations (vector<edge_bool_t>& bev1,
+unsigned int count_maintain_edge_eliminations (const vector<edge_bool_t>& bev1,
 					       const c_graph_t& angelLCG,
 					       const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					       vector<edge_bool_t>& bev2);
@@ -1385,13 +1388,28 @@ unsigned int count_maintain_edge_eliminations (vector<edge_bool_t>& bev1,
 
     \param bev1 set of edges that can be eliminated
     \param angelLCG c-graph
+    \param ourAwarenessLevel needed to assess costs of eliminations
     \param bev2 set of edge elims that decrease the nontrivial edge count
     \return size of bev2
 */
-unsigned int count_reduce_edge_eliminations (vector<edge_bool_t>& bev1,
+unsigned int count_reduce_edge_eliminations (const vector<edge_bool_t>& bev1,
 					     const c_graph_t& angelLCG,
 					     const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					     vector<edge_bool_t>& bev2);
+
+/** \brief Filter that selects edge elimination targets whose refill dependences (a possibly empty set of vertices)
+ * have been met (meaning that there is no alternate path for the edge through the vertex
+
+    \param bev1 set of edges that can be eliminated
+    \param angelLCG c-graph
+    \param bev2 set of edge elims that dont violate refill dependences (returned by reference)
+    \return size of bev2
+*/
+unsigned int refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
+						const c_graph_t& angelLCG,
+						const refillDependenceMap_t refillDependences,
+						vector<edge_bool_t>& bev2);
+#endif // USEXAIFBOOSTER
 
 #ifdef USE_MPI
 /// Build a parallel heuristic out of a sequential 

@@ -593,7 +593,6 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 					  c_graph_t& angelLCG,
 					  const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					  list<EdgeRef_t>& edge_ref_list,
-					  const list< std::pair<unsigned int,unsigned int> >& refillCheck,
 					  JacobianAccumulationExpressionList& jae_list) {
 
   // Create JAE with vertices for multiply and for the two edges being multiplied
@@ -640,11 +639,6 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
     if (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE)	eType[fill_or_absorb_e] = VARIABLE_EDGE;
     else if (eType[e1] == UNIT_EDGE && eType[e2] == UNIT_EDGE)		eType[fill_or_absorb_e] = UNIT_EDGE;
     else								eType[fill_or_absorb_e] = CONSTANT_EDGE;
-
-    // check whether we're causing refill
-    for (std::list< std::pair<unsigned int,unsigned int> >::const_iterator re_i = refillCheck.begin(); re_i != refillCheck.end(); re_i++)
-      if (source (e1, angelLCG) == re_i->first && target (e2, angelLCG) == re_i->second)
-	cout << "!!!!!! refill of edge (" << re_i->first << "," << re_i->second << ") !!!!!" << endl;
   }
   
   // determine cost based on awareness level
@@ -660,14 +654,11 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 					    c_graph_t& angelLCG,
 					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					    list<EdgeRef_t>& edge_ref_list,
-					    list< std::pair<unsigned int,unsigned int> >& refillCheck,
 					    JacobianAccumulationExpressionList& jae_list) {
   unsigned int cost = 0;
   c_graph_t::vertex_t tgt = target (e, angelLCG);
   vector<c_graph_t::edge_t> tgtOutEdges;
   c_graph_t::oei_t oei, oe_end;
-
-  refillCheck.push_back(std::pair<unsigned int,unsigned int>(source (e, angelLCG), target (e,angelLCG)));
 
   // save out-edges of tgt in a vector, as pointers become invalidated
   for (tie (oei, oe_end) = out_edges (tgt, angelLCG); oei != oe_end; ++oei)
@@ -675,13 +666,15 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 
   // multiply all edge pairs
   for (size_t i = 0; i < tgtOutEdges.size(); i++)
-    cost += multiply_edge_pair_directly (e, tgtOutEdges[i], angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
+    cost += multiply_edge_pair_directly (e, tgtOutEdges[i], angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
 
-  if (in_degree (tgt, angelLCG) == 1) // if front elimination of e isolates the target
+  // remove tgt of e and incident edges if it becomes isolated
+  if (in_degree (tgt, angelLCG) == 1)
     for (size_t i = 0; i < tgtOutEdges.size(); i++) {
       removeRef (tgtOutEdges[i], angelLCG, edge_ref_list);
       remove_edge (tgtOutEdges[i], angelLCG);
     }
+
   removeRef (e, angelLCG, edge_ref_list);
   remove_edge (e, angelLCG);
   return cost;
@@ -691,14 +684,11 @@ unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   c_graph_t& angelLCG,
 					   const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					   list<EdgeRef_t>& edge_ref_list,
-					   list< std::pair<unsigned int,unsigned int> >& refillCheck,
 					   JacobianAccumulationExpressionList& jae_list) {
   unsigned int cost = 0;
   c_graph_t::vertex_t src = source (e, angelLCG);
   vector<c_graph_t::edge_t> srcInEdges;
   c_graph_t::iei_t iei, ie_end;  
-
-  refillCheck.push_back(std::pair<unsigned int,unsigned int>(source (e, angelLCG), target (e,angelLCG)));
 
   // save in-edges of src in a vector, as pointers become invalidated
   for (tie (iei, ie_end) = in_edges (src, angelLCG); iei != ie_end; ++iei)
@@ -706,7 +696,7 @@ unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 
   // multiply all edge pairs
   for (size_t i = 0; i < srcInEdges.size(); i++)
-    cost += multiply_edge_pair_directly (srcInEdges[i], e, angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
+    cost += multiply_edge_pair_directly (srcInEdges[i], e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
 
   // remove src of e and incident edges if it becomes isolated and isn't a dependent
   if (out_degree (src, angelLCG) == 1 && vertex_type (src, angelLCG) != dependent)
@@ -714,10 +704,127 @@ unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
       removeRef (srcInEdges[i], angelLCG, edge_ref_list);
       remove_edge (srcInEdges[i], angelLCG);
     }
+
   removeRef (e, angelLCG, edge_ref_list);
   remove_edge (e, angelLCG);
   return cost;
 } // end back_eliminate_edge_directly()
+
+unsigned int pair_elim (c_graph_t::edge_t e1,
+			c_graph_t::edge_t e2,
+			c_graph_t& angelLCG,
+			const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			const elimSeq_cost_t& currentElimSeq,
+			refillDependenceMap_t& refillDependences) {
+  boost::property_map<c_graph_t, EdgeType>::type eType = get (EdgeType(), angelLCG);
+  c_graph_t::edge_t fill_or_absorb_e;
+  bool found_absorb_e;
+
+  // determine whether absorption edge is present
+  tie (fill_or_absorb_e, found_absorb_e) = edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG);
+  if (found_absorb_e) { // absorption - all we have to do is set the edge type for the absorption edge
+    if (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE)	eType[fill_or_absorb_e] = VARIABLE_EDGE;
+    else if (eType[fill_or_absorb_e] != VARIABLE_EDGE)			eType[fill_or_absorb_e] = CONSTANT_EDGE;
+  }
+  else { // fill-in
+    
+    // check for refill.  If found, add tgt to dependence vertex set for respective edge (from src to succ of tgt)
+    for (size_t c = 0; c < currentElimSeq.edgeElimVector.size(); c++) {
+      unsigned int i = currentElimSeq.edgeElimVector[c].i;
+      unsigned int j = currentElimSeq.edgeElimVector[c].j;
+      if (source (e1, angelLCG) == i && target (e2, angelLCG) == j) {
+	cout << endl << "**************** refill of edge (" << i << "," << j << "), adding this information to the refillDependences map..." << endl << endl;
+
+	// add vertex to the refill dependence set for the refilled edge
+	refillDependenceMap_t::iterator depMap_i = refillDependences.find(make_pair(i, j));
+	if (depMap_i == refillDependences.end()) {
+	  cout << "the edge was not found as a map key.  Creating new map key and empty set..." << endl;
+	  // add the edge to the map if it isnt there
+	  depMap_i = refillDependences.insert( std::make_pair(make_pair(i, j), vertex_set_t()) ).first;
+	  currentElimSeq.revealedNewDependence = true;
+	}
+	bool wasntPresent = (depMap_i->second).insert(target (e1, angelLCG)).second; // add the vertex to the depSet for the current edge
+	if (wasntPresent) currentElimSeq.revealedNewDependence = true;
+	// refill has already been found for this edge, so break
+	break;
+      } // end if fill edge is found to have been previously eliminated (refill)
+    } // end all previous elims in current sequence
+
+    // create the fill-in edge and set it's edge type
+    tie (fill_or_absorb_e, found_absorb_e) = add_edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG.next_edge_number++, angelLCG);
+    if (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE)	eType[fill_or_absorb_e] = VARIABLE_EDGE;
+    else if (eType[e1] == UNIT_EDGE && eType[e2] == UNIT_EDGE)		eType[fill_or_absorb_e] = UNIT_EDGE;
+    else								eType[fill_or_absorb_e] = CONSTANT_EDGE;
+  } // end fill-in
+
+/*
+  cout << "current contents of refillDependences: " << endl;
+  for (refillDependenceMap_t::const_iterator di = refillDependences.begin(); di != refillDependences.end(); di++) {
+    cout <<  "(" << di->first.first << "," << di->first.second << ") -> { ";
+    for (vertex_set_t::const_iterator vsi = di->second.begin(); vsi != di->second.end(); vsi++)
+      cout << *vsi << " ";
+    cout << "}" << endl;
+  }
+*/
+
+  // determine cost based on awareness level and return it
+  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE))
+    return 0;
+  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE))
+    return 0;
+  else
+    return 1;
+} // end pair_elim()
+
+unsigned int front_elim (c_graph_t::edge_t e,
+			 c_graph_t& angelLCG,
+			 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			 const elimSeq_cost_t& currentElimSeq,
+			 refillDependenceMap_t& refillDependences) {
+  unsigned int cost = 0;
+  c_graph_t::oei_t oei, oe_end;
+  vector<c_graph_t::edge_t> tgtOutEdges;
+
+  // save out-edges of tgt in a vector, as pointers become invalidated
+  for (tie (oei, oe_end) = out_edges (target (e, angelLCG), angelLCG); oei != oe_end; ++oei)
+    tgtOutEdges.push_back(*oei);
+
+  for (size_t i = 0; i < tgtOutEdges.size(); i++)
+    cost += pair_elim (e, tgtOutEdges[i], angelLCG, ourAwarenessLevel, currentElimSeq, refillDependences);
+ 
+  // if elimination isolates the target, remove vertex and incident edges
+  if (in_degree (target (e, angelLCG), angelLCG) == 1)
+    for (size_t i = 0; i < tgtOutEdges.size(); i++)
+      remove_edge (tgtOutEdges[i], angelLCG);
+
+  remove_edge (e, angelLCG);
+  return cost;
+} // end front_elim() 
+
+unsigned int back_elim (c_graph_t::edge_t e,
+			c_graph_t& angelLCG,
+			const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			const elimSeq_cost_t& currentElimSeq,
+			refillDependenceMap_t& refillDependences) {
+  unsigned int cost = 0;
+  c_graph_t::iei_t iei, ie_end;
+  vector<c_graph_t::edge_t> srcInEdges;
+
+  // save in-edges of src in a vector, as pointers become invalidated
+  for (tie (iei, ie_end) = in_edges (source (e, angelLCG), angelLCG); iei != ie_end; ++iei)
+    srcInEdges.push_back(*iei);
+
+  for (size_t i = 0; i < srcInEdges.size(); i++)
+    cost += pair_elim (srcInEdges[i], e, angelLCG, ourAwarenessLevel, currentElimSeq, refillDependences);
+
+  // remove src of e and incident edges if it becomes isolated and isn't a dependent
+  if (out_degree (source (e, angelLCG), angelLCG) == 1 && vertex_type (source (e, angelLCG), angelLCG) != dependent)
+    for (size_t i = 0; i < srcInEdges.size(); i++)
+      remove_edge (srcInEdges[i], angelLCG);
+
+  remove_edge (e, angelLCG);
+  return cost;
+} // end back_elim()
 
 #endif // USEXAIFBOOSTER
 

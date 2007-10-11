@@ -202,6 +202,16 @@ inline void sorted_predecessor_set (typename Ad_graph_t::vertex_descriptor v,
   std::sort (vec.begin(), vec.end());
 }
 
+/// Returns a set of vertices in \p adg that depend on \p v
+void vertex_upset (const c_graph_t::vertex_t v,
+		   const c_graph_t& angelLCG,
+		   vertex_set_t& upset);
+
+/// Returns a set of vertices in \p adg that \p v depends on
+void vertex_downset (const c_graph_t::vertex_t v,
+		     const c_graph_t& angelLCG,
+		     vertex_set_t& downset);
+
 /// Sorts arbitrary vector and removes double elements
 template <typename El_t>
 void unique_vector (std::vector<El_t>& v) {

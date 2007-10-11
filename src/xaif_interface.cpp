@@ -1,9 +1,12 @@
 #ifdef USEXAIFBOOSTER
 
+#include <set>
+
 #include "xaif_interface.hpp"
 #include "eliminations.hpp"
 #include "reroutings.hpp"
 #include "heuristics.hpp"
+#include "angel_tools.hpp"
 
 #include "angel_io.hpp"
 #include "sa.hpp"
@@ -158,53 +161,115 @@ void write_graph_xaif_booster (const accu_graph_t& ag,
   } // end expression
 } // end write_graph_xaif_booster()
 
-void perform_total_elim_seq (list<edge_bool_t>& elims_performed,
-			     unsigned int& best_num_edges,
-			     const bool allowMaintainingFlag,
-			     const Elimination::AwarenessLevel_E ourAwarenessLevel,
-			     const c_graph_t& angelLCG) {
-  cout << endl << endl;
-  cout << "*************************************" << endl; 
-  cout << "Performing total elimination sequence on angelLCG_total" << endl;
-  cout << "*************************************" << endl; 
-  c_graph_t angelLCG_total (angelLCG);
-  vector<edge_bool_t> bev1, bev2, bev3, bev4;
-  best_num_edges = num_edges(angelLCG_total);
+unsigned int num_nontrivial_edges (const c_graph_t& angelLCG,
+                                   const Elimination::AwarenessLevel_E ourAwarenessLevel) {
+  boost::property_map<c_graph_t, EdgeType>::const_type eType = get (EdgeType(), angelLCG);
+  unsigned int numNontrivialEdges = 0;
+  c_graph_t::ei_t ei, e_end;
+  for (tie (ei, e_end)= edges (angelLCG); ei != e_end; ++ei) {
+    if (ourAwarenessLevel == Elimination::NO_AWARENESS)
+      numNontrivialEdges++;
+    else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*ei] != UNIT_EDGE)
+      numNontrivialEdges++;
+    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*ei] == VARIABLE_EDGE)
+      numNontrivialEdges++;
+  }
+  return numNontrivialEdges;
+} // end of num_nontrivial_edges()
 
-  cout << "There are currently " << num_edges(angelLCG_total) << " edges in angelLCG_total" << endl;
-//  cout << num_edges(angelLCG_total) << endl;
+elimSeq_cost_t determine_elimination_sequence (const c_graph_t angelLCG,
+					       const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					       const bool allowMaintainingFlag) {
 
-  eliminatable_objects (angelLCG_total, bev1);
-  if (count_reduce_edge_eliminations (bev1, angelLCG_total, ourAwarenessLevel, bev2) == 0 && allowMaintainingFlag)
-    count_maintain_edge_eliminations (bev1, angelLCG_total, ourAwarenessLevel, bev2);
-  //cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " pass the scarcity filter.  ";
-  if (!bev2.empty()) lowest_markowitz_edge (bev2, angelLCG_total, bev3);
-  else lowest_markowitz_edge (bev1, angelLCG_total, bev3);
-  reverse_mode_edge (bev3, angelLCG_total, bev4);
+  elimSeq_cost_t bestElimSeqFound (num_nontrivial_edges(angelLCG, ourAwarenessLevel), 0, 0, 0);
+  // while I eliminate, build up list of refill dependences.  This is STATIC, because I store the vertex dependences
+  refillDependenceMap_t refillDependences;
+  vector<edge_bool_t> bev1, bev2, bev3, bev4, bev5;
 
-  while(!bev4.empty()) {
-    elims_performed.push_back(bev4[0]);
-    //if (isFront) cout << "Front-eliminating edge " << e << "..." << endl; else cout << "Back-eliminating edge " << e << "..." << endl;
-    edge_elimination (bev4[0], angelLCG_total);
-    //cout << "There are currently " << num_edges(angelLCG_total) <<  " edges in angelLCG_total" << endl;
-//    cout << num_edges(angelLCG_total) << endl;
-    if (num_edges(angelLCG_total) < best_num_edges) {
-      best_num_edges = num_edges(angelLCG_total);
-      cout << "new best_num_edges: " << best_num_edges << endl;
+  while (true) {
+
+    cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
+    cout << "TRYING A NEW COMPLETE ELIMINATION SEQUENCE" << endl;
+    cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
+
+    c_graph_t angelLCG_copy (angelLCG);
+    elimSeq_cost_t currentElimSeq (num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel), 0, 0, 0);
+
+    // perform a complete elimination sequence that preserves scarcity and tries to avoid refill
+    while(true) {
+      // run through the heuristics pipeline
+      eliminatable_objects (angelLCG_copy, bev1);
+
+      if (count_reduce_edge_eliminations (bev1, angelLCG_copy, ourAwarenessLevel, bev2) == 0 && allowMaintainingFlag)
+	count_maintain_edge_eliminations (bev1, angelLCG_copy, ourAwarenessLevel, bev2);
+
+      if (!bev2.empty())
+	refill_avoiding_edge_eliminations (bev2, angelLCG_copy, refillDependences, bev3);
+      else
+	refill_avoiding_edge_eliminations (bev1, angelLCG_copy, refillDependences, bev3);
+
+      if (!bev3.empty()) // there are some refill avoiding elims
+	lowest_markowitz_edge (bev3, angelLCG_copy, bev4);
+      else if (!bev2.empty()) // there are no refill avoiding elims, but there are scarcity-preserving elims
+	lowest_markowitz_edge (bev2, angelLCG_copy, bev4);
+      else // there are no refill avoiding elims, and no scarcity-preserving elims
+	lowest_markowitz_edge (bev1, angelLCG_copy, bev4);
+
+      reverse_mode_edge (bev4, angelLCG_copy, bev5);
+
+      if (bev5.empty()) break;
+
+      c_graph_t::edge_t e = bev5[0].first;
+      bool isFront = bev5[0].second;
+      edge_ij_elim_t thisElim (source (e, angelLCG), target (e, angelLCG), isFront);
+      currentElimSeq.edgeElimVector.push_back(thisElim);
+
+      if (isFront) cout << "Front-eliminating edge " << e << "..." << endl; else cout << "Back-eliminating edge " << e << "..." << endl;
+      currentElimSeq.cost += isFront ? front_elim (e, angelLCG_copy, ourAwarenessLevel, currentElimSeq, refillDependences)
+				     : back_elim (e, angelLCG_copy, ourAwarenessLevel, currentElimSeq, refillDependences);
+
+      //cout << "There are currently " << num_nontrivial_edges(angelLCG_total, ourAwarenessLevel) <<  " nontrivial edges in angelLCG_total" << endl; //cout << num_nontrivial_edges(angelLCG_total, ourAwarenessLevel) << endl;
+
+	if (!refillDependences.empty()) {
+          cout << endl << "current contents of refillDependences: " << endl;
+	  for (refillDependenceMap_t::const_iterator di = refillDependences.begin(); di != refillDependences.end(); di++) {
+	    cout <<  "(" << di->first.first << "," << di->first.second << ") -> { ";
+	    for (vertex_set_t::const_iterator vsi = di->second.begin(); vsi != di->second.end(); vsi++)
+	      cout << *vsi << " ";
+	    cout << "}" << endl;
+	  }
+	  cout << endl;
+	}
+
+      if (num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel) < currentElimSeq.bestNumNontrivialEdges) {
+        currentElimSeq.bestNumNontrivialEdges = num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel);
+        currentElimSeq.costAtBestEdgecount = currentElimSeq.cost;
+        currentElimSeq.lastDesiredElim = currentElimSeq.edgeElimVector.size();
+        cout << "** new best_num_edges for currentElimSeq: " << currentElimSeq.bestNumNontrivialEdges << endl;
+      }
+
+    } // end of elimination sequence
+
+    // determine whether current seq is best so far
+    if (currentElimSeq.bestNumNontrivialEdges < bestElimSeqFound.bestNumNontrivialEdges
+	// also prefer MATCHING best_num_edges with a fewer edge count
+	|| (currentElimSeq.bestNumNontrivialEdges == bestElimSeqFound.bestNumNontrivialEdges
+	    && currentElimSeq.costAtBestEdgecount < bestElimSeqFound.costAtBestEdgecount)) {
+      bestElimSeqFound = currentElimSeq;
+      cout << "New bestElimSeqFound" << endl;
     }
 
-    eliminatable_objects (angelLCG_total, bev1);
-    if (count_reduce_edge_eliminations (bev1, angelLCG_total, ourAwarenessLevel, bev2) == 0 && allowMaintainingFlag)
-      count_maintain_edge_eliminations (bev1, angelLCG_total, ourAwarenessLevel, bev2);
-    //cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " pass the scarcity filter.  ";
-    if (!bev2.empty()) lowest_markowitz_edge (bev2, angelLCG_total, bev3);
-    else lowest_markowitz_edge (bev1, angelLCG_total, bev3);
-    reverse_mode_edge (bev3, angelLCG_total, bev4);
-  }
-#ifndef NDEBUG
-  write_graph ("angelLCG_total (copy of angelLCG) after complete elimination sequence: ", angelLCG_total);
-#endif
-} // end perform_total_elim_seq()
+    cout << "complete elim sequence complete.  This sequence achieved " << currentElimSeq.bestNumNontrivialEdges << " edges and ";
+    if (currentElimSeq.revealedNewDependence) cout << "DID"; else cout << "DID NOT";
+    cout << " add new dependence information to the dependence map" << endl;
+
+    // determine whether it's time to stop
+    if (!currentElimSeq.revealedNewDependence) break;
+
+  } // end all elim sequences
+
+  return bestElimSeqFound;
+} // end of determine_elimination_sequence()
 
 } // end namespace angel
 
@@ -291,79 +356,51 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
     edge_ref_list.push_back(new_edge_ref);
   } // end for all LCG edges
 
+#ifndef NDEBUG
+  write_graph ("angelLCG (constructed from ourLCG): ", angelLCG);
+#endif
 // END READ GRAPH
 //****************************************************************************************************************
 
-#ifndef NDEBUG
-  write_graph ("angelLCG (constructed from ourLCG): ", angelLCG);
-  cout << "\n###############################################################################"
-       << "\n####################################### Performing complete edge elimination sequence on copy of angelLCG...\n";
-#endif
+  cout << endl << "******************************************************************" << endl; 
+  cout << "Performing total elimination sequences and building up refill dependence information..." << endl;
 
-  // store our elim. sequence here
-  list< std::pair<unsigned int,unsigned int> > refillCheck;
-  list<edge_bool_t> elims_performed;
-  unsigned int best_num_edges;
+  // Perform full elim sequences that attempt to avoid refill.
 
-  perform_total_elim_seq (elims_performed, best_num_edges, allowMaintainingFlag, ourAwarenessLevel, angelLCG);
+  elimSeq_cost_t bestElimSeqFound = determine_elimination_sequence (angelLCG, ourAwarenessLevel, allowMaintainingFlag);
 
 #ifndef NDEBUG
-  cout << "total elimination sequence complete.  best_num_edges = " << best_num_edges << endl << endl;
-  cout << "contents of elims_performed list:" << endl;
-  for (list<edge_bool_t>::const_iterator pi = elims_performed.begin(); pi != elims_performed.end(); pi++)
-    cout << " (" << pi->first << "," << pi->second << ") ";
+  cout << "heuristic phase complete.  bestElimSeqFound achieves a nontrivial edge count of " << bestElimSeqFound.bestNumNontrivialEdges << endl;
+  cout << "contents of bestElimSeqFound.edgeElimVector: " << endl;
+  for (size_t c = 0; c < bestElimSeqFound.edgeElimVector.size(); c++)
+    cout << "((" << bestElimSeqFound.edgeElimVector[c].i << "," << bestElimSeqFound.edgeElimVector[c].j << ")," << bestElimSeqFound.edgeElimVector[c].front << ") ";
   cout << endl;
 #endif
 
   // Now re-perform the sequence until we reach the best edge count
-  cout << endl << endl;
-  cout << "*************************************" << endl; 
-  cout << "Now re-performing the elimination sequence until we reach our edge goal of " << best_num_edges << " edges" << endl;
-  cout << "*************************************" << endl; 
+  cout << endl << "******************************************************************************************" << endl; 
+  cout << "Now re-performing bestElimSeqFound until we reach our edge goal of " << bestElimSeqFound.bestNumNontrivialEdges << " edges" << endl;
+  cout << "******************************************************************************************" << endl; 
 
   unsigned int cost_of_elim_seq = 0;
 
-  if (num_edges(angelLCG) == best_num_edges)
-    cout << "No eliminations necessary to reach the desired edge count of " << best_num_edges << endl;
-  else {
-    vector<edge_bool_t> bev1, bev2, bev3, bev4;
-    eliminatable_objects (angelLCG, bev1);
-    if (count_reduce_edge_eliminations (bev1, angelLCG, ourAwarenessLevel, bev2) == 0 && allowMaintainingFlag)
-      count_maintain_edge_eliminations (bev1, angelLCG, ourAwarenessLevel, bev2);
-#ifndef NDEBUG
-    cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " pass the scarcity filter.  ";
-#endif
-    if (!bev2.empty()) lowest_markowitz_edge (bev2, angelLCG, bev3);
-    else lowest_markowitz_edge (bev1, angelLCG, bev3);
-    reverse_mode_edge (bev3, angelLCG, bev4);
-
-    while(!bev4.empty()) {
-      c_graph_t::edge_t e = bev4[0].first;
-      bool isFront = bev4[0].second;
-
-#ifndef NDEBUG
-      if (isFront) cout << "Front-eliminating edge " << e << "..." << endl; else cout << "Back-eliminating edge " << e << "..." << endl;
-#endif
-      cost_of_elim_seq += isFront ? front_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list)
-				: back_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
-//      cout << num_edges(angelLCG_total) << endl;
-#ifndef NDEBUG
-      cout << "There are currently " << num_edges(angelLCG) <<  " edges in angelLCG" << endl;
-#endif
-      if (num_edges(angelLCG) == best_num_edges) {
-        cout << "We have achieved the desired edge count of " << best_num_edges << endl;
-        break;
+  if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestElimSeqFound.bestNumNontrivialEdges)
+    cout << "No eliminations necessary to reach the desired edge count of " << bestElimSeqFound.bestNumNontrivialEdges << endl;
+  else { //replay the elimination sequence until we reach edge count goal
+    c_graph_t::edge_t e;
+    bool found_e;
+    for (size_t c = 0; c < bestElimSeqFound.edgeElimVector.size(); c++) {
+      bool isFront = bestElimSeqFound.edgeElimVector[c].front;
+      // find the edge from i,j representation
+      tie (e, found_e) = edge (bestElimSeqFound.edgeElimVector[c].i, bestElimSeqFound.edgeElimVector[c].j, angelLCG);
+      throw_exception (!found_e, consistency_exception, "edge in elims_performed could not be found in angelLCG for elimination");
+      if (bestElimSeqFound.edgeElimVector[c].front) cout << "Front-eliminating edge " << e << "..." << endl; else cout << "Back-eliminating edge " << e << "..." << endl;
+      cost_of_elim_seq += isFront ? front_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list)
+				  : back_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+      if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestElimSeqFound.bestNumNontrivialEdges) {
+	cout << "Goal of " << bestElimSeqFound.bestNumNontrivialEdges << " reached" << endl;
+	break;
       }
-
-      eliminatable_objects (angelLCG, bev1);
-      if (count_reduce_edge_eliminations (bev1, angelLCG, ourAwarenessLevel, bev2) == 0 && allowMaintainingFlag)
-        count_maintain_edge_eliminations (bev1, angelLCG, ourAwarenessLevel, bev2);
-#ifndef NDEBUG
-      cout << "of " << bev1.size() << " edge elimination objects, " << bev2.size() << " pass the scarcity filter.  ";
-#endif
-      if (!bev2.empty()) lowest_markowitz_edge (bev2, angelLCG, bev3);
-      else lowest_markowitz_edge (bev1, angelLCG, bev3);
-      reverse_mode_edge (bev3, angelLCG, bev4);
     }
   }
 

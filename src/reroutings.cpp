@@ -8,40 +8,6 @@ using namespace xaifBoosterCrossCountryInterface;
 
 namespace angel {
 
-void vertex_upset (const c_graph_t::vertex_t v,
-		   const c_graph_t& angelLCG,
-		   list<c_graph_t::vertex_t>& upset) {
-  upset.clear();
-  if (out_degree (v, angelLCG) == 0)
-    upset.push_back(v); // base case: v is a dependent vertex
-  else {
-    vector<c_graph_t::vertex_t> succs_vec;
-    sorted_successor_set (v, angelLCG, succs_vec);
-    for (size_t i = 0; i < succs_vec.size(); i++) {
-      list<c_graph_t::vertex_t> upset_of_succ;
-      vertex_upset (succs_vec[i], angelLCG, upset_of_succ); // <-- recursion call
-      upset.merge(upset_of_succ); // merge this succ's upset into upset
-    }
-  }
-} // end up_vertex_set()
-
-void vertex_downset (const c_graph_t::vertex_t v,
-		     const c_graph_t& angelLCG,
-		     list<c_graph_t::vertex_t>& downset) {
-  downset.clear();
-  if (in_degree (v, angelLCG) == 0)
-    downset.push_back(v); // base case: v is an independent vertex
-  else {
-    vector<c_graph_t::vertex_t> preds_vec;
-    sorted_predecessor_set (v, angelLCG, preds_vec);
-    for (size_t i = 0; i < preds_vec.size(); i++) {
-      list<c_graph_t::vertex_t> downset_of_pred;
-      vertex_downset (preds_vec[i], angelLCG, downset_of_pred); // <-- recursion call
-      downset.merge(downset_of_pred); // merge this pred's downset into downset
-    }
-  }
-} // end down_vertex_set()
-
 void reroutable_edges (const c_graph_t& angelLCG,
                        vector<edge_reroute_t>& erv) {
 #ifndef NDEBUG
@@ -49,63 +15,76 @@ void reroutable_edges (const c_graph_t& angelLCG,
 #endif
   
   erv.clear();
-  list<c_graph_t::vertex_t> downset, upset;
+  set<c_graph_t::vertex_t> downset, upset;
   c_graph_t::ei_t ei, e_end;
   c_graph_t::iei_t iei, ie_end;
   c_graph_t::oei_t oei, oe_end;
-  list<c_graph_t::vertex_t>::iterator vli, vl_end;
 
   for (tie (ei, e_end) = edges (angelLCG); ei != e_end; ++ei) {
+    c_graph_t::edge_t e = *ei;
 
 #ifndef NDEBUG
-    cout << "checking edge " << *ei << "...";
+    cout << "checking edge " << e << "...";
 #endif
 
     // check for preroutability
-    if (in_degree (target (*ei, angelLCG), angelLCG) > 1) {
-      vertex_downset (source (*ei, angelLCG), angelLCG, downset);
-      // iterate over inedges of edges target (possible pivots)
+    if (in_degree (target (e, angelLCG), angelLCG) > 1) {
+      vertex_downset (source (e, angelLCG), angelLCG, downset);
+
+      // iterate over possible pivots (inedges of tgt(e))
       for (tie (iei, ie_end) = in_edges (target (*ei, angelLCG), angelLCG); iei != ie_end; ++iei) {
-	// skip the edge we're considering
-	if (source (*iei, angelLCG) == source (*ei, angelLCG)) continue;
+	c_graph_t::edge_t pivot_e = *iei;
+
+	// skip the edge we're considering for rerouting
+	if (source (pivot_e, angelLCG) == source (e, angelLCG)) continue;
+
 	// the source of the pivot edge can't be an independent (we add an edge into it)
-	if (in_degree (source (*iei, angelLCG), angelLCG) == 0) continue;
-	// ensure that the source of the pivot isnt in the down set of the source of the edge (would create cycle)
-	for (vli = downset.begin(); vli != downset.end(); vli++)
-	  if (*vli == source (*iei, angelLCG)) break;
-	if (vli == downset.end()) { // source(pivot) is not in the downset of source(ei)
+	if (in_degree (source (pivot_e, angelLCG), angelLCG) == 0) continue;
+
+	// ensure that src(pivot) isn't in the downset of src(e) (would create cycle)
+	vertex_set_t::const_iterator downset_i = downset.find(source (pivot_e, angelLCG));
+	if (downset_i != downset.end()) {
 #ifndef NDEBUG
-	  cout << " -> viable prerouting with pivot edge " << *iei;
+	  cout << "can't reroute " << e << " about pivot edge " << pivot_e << " because " << source (pivot_e, angelLCG) << " is in the downset of " << source (e, angelLCG) << endl;
 #endif
-	  erv.push_back (edge_reroute_t (*ei, *iei, true));
+	  continue;
 	}
+
 #ifndef NDEBUG
-	else cout << " -> no viable prerouting";
+	cout << " -> viable prerouting about pivot edge " << pivot_e;
 #endif
+	erv.push_back (edge_reroute_t (e, pivot_e, true));
+
       } // end all pivot candidates
     } // end if possible pivots exist
 
     // check for postroutability
-    if (out_degree (source (*ei, angelLCG), angelLCG) > 1) {
-      vertex_upset (target (*ei, angelLCG), angelLCG, upset);
-      // iterate over outedges of source(ei) (possible pivots)
-      for (tie (oei, oe_end) = out_edges (source (*ei, angelLCG), angelLCG); oei != oe_end; ++oei) {
+    if (out_degree (source (e, angelLCG), angelLCG) > 1) {
+      vertex_upset (target (e, angelLCG), angelLCG, upset);
+
+      // iterate over possible pivots (outedges of src(e))
+      for (tie (oei, oe_end) = out_edges (source (e, angelLCG), angelLCG); oei != oe_end; ++oei) {
+	c_graph_t::edge_t pivot_e = *oei;
+
 	// skip the edge we're considering for rerouting
-	if (target (*oei, angelLCG) == target (*ei, angelLCG)) continue;
-	// the target of the pivot edge cant be a dependent vertex (we add an edge out of it)
-	if (out_degree (target (*oei, angelLCG), angelLCG) == 0) continue;
-	// ensure that the target of the pivot isnt in the upset of target(ei) (would create cycle)
-	for (vli = upset.begin(); vli != upset.end(); vli++)
-	  if (*vli == target (*oei, angelLCG)) break;
-	if (vli == upset.end()) { // target(pivot) is not in the upset of target(ei)
+	if (target (pivot_e, angelLCG) == target (e, angelLCG)) continue;
+
+	// tgt(pivot_e) can't be a dependent vertex (we add an edge out of it)
+	if (out_degree (target (pivot_e, angelLCG), angelLCG) == 0) continue;
+
+	// ensure that tgt(pivot_e) isn't in the upset of tgt(e) (would create cycle)
+	vertex_set_t::const_iterator upset_i = upset.find(target (pivot_e, angelLCG));
+	if (upset_i != upset.end()) {
 #ifndef NDEBUG
-	  cout << " -> viable postrouting with pivot edge " << *oei;
+	  cout << "can't reroute " << e << " about pivot edge " << pivot_e << " because " << source (pivot_e, angelLCG) << " is in the downset of " << source (e, angelLCG) << endl;
 #endif
-	  erv.push_back (edge_reroute_t (*ei, *oei, false));
 	}
+	else {
 #ifndef NDEBUG
-	else cout << " -> no viable postrouting";
+	  cout << " -> viable postrouting about pivot edge " << pivot_e;
 #endif
+	  erv.push_back (edge_reroute_t (e, pivot_e, false));
+	}
       } // end all pivot candidates
     } // end if possible pivots exist
 
@@ -114,6 +93,7 @@ void reroutable_edges (const c_graph_t& angelLCG,
 #endif
     
   } // end all edges in angelLCG
+
 #ifndef NDEBUG
   cout << endl;
 #endif

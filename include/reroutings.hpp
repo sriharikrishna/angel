@@ -14,32 +14,6 @@ using namespace xaifBoosterCrossCountryInterface;
 
 namespace angel {
 
-/** Populates a list of vertices that are above (reachable from) an LCG vertex v.
-
-    \param v the LCG vertex whose upset will be populated. 
-    \param angelLCG the c_graph_t (passed by reference) that the operation is performed on.
-    \param upset an STL list of LCG vertices in the upset of \p v.
-    \return List (\p upset) of vertices in the upset of \p v (by reference).
-
-    This function works recursively by merging the upsets of all successors of \p v.
- */
-void vertex_upset (const c_graph_t::vertex_t v,
-		   const c_graph_t& angelLCG,
-		   list<c_graph_t::vertex_t>& upset);
-
-/** Populates a list of vertices that \p v depends on (transitively).
-
-    \param v the LCG vertex whose downset will be populated. 
-    \param angelLCG the c_graph_t (passed by reference) that the operation is performed on.
-    \param downset an STL list of LCG vertices in the downset of \p v.
-    \return List of vertices in the downset of \p v (by reference).
-
-    This function works recursively by merging the downsets of all predecessors of \p v.
- */
-void vertex_downset (const c_graph_t::vertex_t v,
-		     const c_graph_t& angelLCG,
-		     list<c_graph_t::vertex_t>& downset);
-
 /** Populates a list of all viable edge reroutings in \p angelLCG.
 
     \param angelLCG the c_graph_t (passed by reference) that the operation is performed on.

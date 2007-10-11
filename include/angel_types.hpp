@@ -11,6 +11,8 @@
 #include <boost/property_map.hpp>
 
 #ifdef USEXAIFBOOSTER
+#include <map>
+#include <set>
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/LinearizedComputationalGraph.hpp"
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/JacobianAccumulationExpressionList.hpp"
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/GraphCorrelations.hpp"
@@ -690,6 +692,29 @@ struct edge_reroute_t {
                   bool _isPre) :
     e (_e), pivot_e (_pivot_e), isPre (_isPre) {}
 };
+
+struct elimSeq_cost_t {
+  std::vector<edge_ij_elim_t> edgeElimVector;
+  unsigned int bestNumNontrivialEdges;
+  unsigned int cost;
+  unsigned int costAtBestEdgecount;
+  size_t lastDesiredElim;
+  mutable bool revealedNewDependence;
+
+  elimSeq_cost_t (unsigned int _bestNumNontrivialEdges,
+		  unsigned int _cost,
+		  unsigned int _costAtBestEdgecount,
+		  size_t _lastDesiredElim) :
+    bestNumNontrivialEdges (_bestNumNontrivialEdges),
+    cost (_cost),
+    costAtBestEdgecount (_costAtBestEdgecount),
+    lastDesiredElim (_lastDesiredElim),
+    revealedNewDependence (false) {};
+};
+
+typedef std::pair<unsigned int,unsigned int> 	uint_pair_t;
+typedef std::set<c_graph_t::vertex_t>		vertex_set_t;
+typedef std::map< uint_pair_t, vertex_set_t >	refillDependenceMap_t;
 
 #endif // USEXAIFBOOSTER
 

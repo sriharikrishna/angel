@@ -476,8 +476,8 @@ int forward_mode_edge_t::operator() (const vector<edge_bool_t>& ev1,
   ev2.push_back (ev1[0]);
 
   for (size_t c= 1; c < ev1.size(); c++) {
-    throw_debug_exception (fme_obj (ev1[c], cg) < fme_obj (ev2[0], cg) != lex_less (ev1[c], ev2[0], cg),
-			   consistency_exception, "objective function and comparator does not match");
+//    throw_debug_exception (fme_obj (ev1[c], cg) < fme_obj (ev2[0], cg) != lex_less (ev1[c], ev2[0], cg),
+//			   consistency_exception, "objective function and comparator does not match");
     if (lex_less (ev1[c], ev2[0], cg)) ev2[0]= ev1[c]; }
   set_objective (fme_obj (ev2[0], cg));
   return 1;
@@ -529,8 +529,8 @@ int reverse_mode_edge_t::operator() (const vector<edge_bool_t>& ev1,
   ev2.push_back (ev1[0]);
 
   for (size_t c= 1; c < ev1.size(); c++) {
-    throw_debug_exception ((rme_obj (ev1[c], cg) > rme_obj (ev2[0], cg)) != lex_greater (ev1[c], ev2[0], cg),
-			   consistency_exception, "objective function and comparator does not match");
+//    throw_debug_exception ((rme_obj (ev1[c], cg) > rme_obj (ev2[0], cg)) != lex_greater (ev1[c], ev2[0], cg),
+//			   consistency_exception, "objective function and comparator does not match");
     if (lex_greater (ev1[c], ev2[0], cg)) ev2[0]= ev1[c]; }
     set_objective (rme_obj (ev2[0], cg));
   return 1;
@@ -881,8 +881,8 @@ int forward_mode_face_t::operator() (const vector<line_graph_t::face_t>& fv1,
   fv2.push_back (fv1[0]);
 
   for (size_t c= 1; c < fv1.size(); c++) {
-    throw_debug_exception (fmf_obj (fv1[c], lg) < fmf_obj (fv2[0], lg) != lex_less_face (fv1[c], fv2[0], lg),
-			   consistency_exception, "objective function and comparator does not match");
+//    throw_debug_exception (fmf_obj (fv1[c], lg) < fmf_obj (fv2[0], lg) != lex_less_face (fv1[c], fv2[0], lg),
+//			   consistency_exception, "objective function and comparator does not match");
     if (lex_less_face (fv1[c], fv2[0], lg)) fv2[0]= fv1[c]; }
   set_objective (fmf_obj (fv2[0], lg));
   return 1;
@@ -902,8 +902,8 @@ int reverse_mode_face_t::operator() (const vector<line_graph_t::face_t>& fv1,
   fv2.push_back (fv1[0]);
 
   for (size_t c= 1; c < fv1.size(); c++) {
-    throw_debug_exception (fmf_obj (fv1[c], lg) < fmf_obj (fv2[0], lg) != lex_less_face (fv1[c], fv2[0], lg),
-			   consistency_exception, "objective function and comparator does not match");
+//    throw_debug_exception (fmf_obj (fv1[c], lg) < fmf_obj (fv2[0], lg) != lex_less_face (fv1[c], fv2[0], lg),
+//			   consistency_exception, "objective function and comparator does not match");
     if (!lex_less_face (fv1[c], fv2[0], lg)) fv2[0]= fv1[c]; }
   set_objective (fmf_obj (fv2[0], lg));
   return 1;
@@ -1112,10 +1112,12 @@ int minimal_distance_face_t::operator() (const vector<line_graph_t::face_t>& fv1
   return standard_heuristic_op (fv1, lg, fv2, distf_op_t(), *this);
 }
 
+#ifdef USEXAIFBOOSTER
+
 // -------------------------------------------------------------------------
 // Scarcity preserving edge eliminations
 // -------------------------------------------------------------------------
-int edge_elim_effect (edge_bool_t be,
+int edge_elim_effect (const edge_bool_t be,
 		      const c_graph_t& angelLCG,
 		      const Elimination::AwarenessLevel_E ourAwarenessLevel) {
   
@@ -1137,9 +1139,6 @@ int edge_elim_effect (edge_bool_t be,
   else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[e] == VARIABLE_EDGE) nontrivialEdgeChange--;
 
   if (isFront) { // front-elimination
-#ifndef NDEBUG
-    cout << "examining front-elimination of " << e << "... ";
-#endif
     // if tgt(e) is isolated by the elimination
     if (in_degree (target (e, angelLCG), angelLCG) == 1) {
       for (tie (oei, oe_end) = out_edges (target (e, angelLCG), angelLCG); oei != oe_end; ++oei) {
@@ -1171,9 +1170,6 @@ int edge_elim_effect (edge_bool_t be,
     } // end all successors of tgt(e)
   }
   else { // back-elimination
-#ifndef NDEBUG
-    cout << "examining back-elimination of " << e << "... ";
-#endif
     // if src(e) is isolated by the elimination (requires src(e) is not dependent)
     // all the inedges of src(e) will go away.  we need to see how this affects nontrivial edge count
     if (out_degree (source (e, angelLCG), angelLCG) == 1
@@ -1208,47 +1204,103 @@ int edge_elim_effect (edge_bool_t be,
   } // end back-elimination
 
 #ifndef NDEBUG
-  cout << "nontrivialEdgeChange determined to be " << nontrivialEdgeChange << endl;
+  //cout << "nontrivialEdgeChange determined to be " << nontrivialEdgeChange << endl;
 #endif
 
   return nontrivialEdgeChange;
 }
 
-unsigned int count_maintain_edge_eliminations (vector<edge_bool_t>& bev1,
+unsigned int count_maintain_edge_eliminations (const vector<edge_bool_t>& bev1,
 					       const c_graph_t& angelLCG,
 					       const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					       vector<edge_bool_t>& bev2) {
   bev2.resize (0);
   if (bev1.empty()) return 0;
 
-#ifndef NDEBUG
-  cout << "------Determining which edge eliminations maintain the nontrivial edge count------" << endl;
-#endif
-
   for (size_t c = 0; c < bev1.size(); c++)
     if (edge_elim_effect (bev1[c], angelLCG, ourAwarenessLevel) <= 0)
       bev2.push_back (bev1[c]);
 
+#ifndef NDEBUG
+  cout << "of " << bev1.size() << " edge elimiantions passed to the filter, " << bev2.size() << " maintain the nontrivial edge count" << endl;
+#endif
+
   return bev2.size();
 } // end count_maintain_edge_eliminations()
 
-unsigned int count_reduce_edge_eliminations (vector<edge_bool_t>& bev1,
+unsigned int count_reduce_edge_eliminations (const vector<edge_bool_t>& bev1,
 					     const c_graph_t& angelLCG,
 					     const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					     vector<edge_bool_t>& bev2) {
   bev2.resize (0);
   if (bev1.empty()) return 0;
 
-#ifndef NDEBUG
-  cout << "------Determining which edge eliminations reduce the nontrivial edge count------" << endl;
-#endif
-
   for (size_t c = 0; c < bev1.size(); c++)
     if (edge_elim_effect (bev1[c], angelLCG, ourAwarenessLevel) <= -1)
       bev2.push_back (bev1[c]);
 
+#ifndef NDEBUG
+  cout << "of " << bev1.size() << " edge eliminations passed to the filter, " << bev2.size() << " reduce the nontrivial edge count" << endl;
+#endif
   return bev2.size();
 } // end count_maintain_edge_eliminations()
+
+unsigned int refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
+						const c_graph_t& angelLCG,
+						const refillDependenceMap_t refillDependences,
+						vector<edge_bool_t>& bev2) {
+  bev2.resize (0);
+  if (bev1.empty()) return 0;
+
+  c_graph_t::iei_t iei, ie_end;
+  c_graph_t::oei_t oei, oe_end;
+  refillDependenceMap_t::const_iterator depMap_i;
+
+  // the direction of elimination (front/back) doesn't matter
+  for (size_t c = 0; c < bev1.size(); c++) {
+    c_graph_t::edge_t e = bev1[c].first;
+
+    //cout << "checking edge " << e << " for refill dependences..." << endl;
+
+    depMap_i = refillDependences.find(make_pair(source (e, angelLCG), target(e, angelLCG)));
+    if (depMap_i != refillDependences.end()) { // we have refill dependences to consider for e
+
+      cout << "edge " << e << " has some refill dependences. Checking them..." << endl;
+      vertex_set_t vDepSet = depMap_i->second; // extract the vertex dependence set for e
+      vertex_set_t upset, downset;
+      vertex_upset (source (e, angelLCG), angelLCG, upset);
+      vertex_downset (target (e, angelLCG), angelLCG, downset);
+
+      vertex_set_t::const_iterator vDepSet_i;
+      for (vDepSet_i = vDepSet.begin(); vDepSet_i != vDepSet.end(); vDepSet_i++) {
+	// the dependence vertex can't be both below tgt(e) and above src(e)
+	vertex_set_t::const_iterator downset_i = downset.find(*vDepSet_i);
+	vertex_set_t::const_iterator upset_i = upset.find(*vDepSet_i);	
+	
+	if (downset_i != downset.end() && upset_i != upset.end()) { // this edge elimination has unmet refill dependences
+	  cout << "edge " << e << " has an unmet refill dependence on vertex " << *vDepSet_i << endl;
+	  break;
+	}
+      } // end all vertex dependences
+
+      // all vertex dependences for this edge have been met
+      if (vDepSet_i == vDepSet.end()) bev2.push_back(bev1[c]);
+
+    } // end if vertex dependences exist
+    else { // no vertex dependences exist
+      //cout << "edge " << e << " has no refill dependences to consider" << endl;
+      bev2.push_back(bev1[c]);
+    }
+
+  } // end iterate over bev1
+
+#ifndef NDEBUG
+  cout << "of " << bev1.size() << " edge eliminations passed to the filter, " << bev2.size() << " don't violate refill dependences" << endl;
+#endif
+  return bev2.size();
+} // end refill_avoiding_edge_eliminations()
+
+#endif // USEXAIFBOOSTER
 
 } // namespace angel
 
