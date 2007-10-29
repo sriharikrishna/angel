@@ -24,22 +24,6 @@ void reroutable_edges (const c_graph_t& angelLCG,
 		       vector<edge_reroute_t>& erv);
 
 /** Filters edge reroutings from \p erv1.  Those reroutings that reduce the
-    nonunit edge count in \p angelLCG are placed into \p erv2.
-
-    \param erv1 vector of edge reroutings in \p angelLCG
-    \param angelLCG the c_graph_t (passed by reference) that the operation is
-	   performed on.
-    \param erv2 empty list that will hold all nonunit edge count reducing pre-
-	   or post-routings in \p angelLCG.
-    \return List of edge reroutings \p erv2 (by reference).
- */
-unsigned int edge_reducing_reroutings (vector<edge_reroute_t>& erv1,
-				       const c_graph_t& angelLCG,
-				       const Elimination::AwarenessLevel_E ourAwarenessLevel,
-				       const bool allowMaintainingFlag,
-				       vector<edge_reroute_t>& erv2);
-
-/** Filters edge reroutings from \p erv1.  Those reroutings that reduce the
     nonunit edge count in \p angelLCG when followed by an edge elimination
     are placed into \p erv2.
 
