@@ -687,10 +687,13 @@ struct edge_reroute_t {
   c_graph_t::edge_t pivot_e;
   bool isPre;
 
+  mutable bool pivot_eliminatable;
+  mutable bool increment_eliminatable;
+
   edge_reroute_t (c_graph_t::edge_t _e,
                   c_graph_t::edge_t _pivot_e,
                   bool _isPre) :
-    e (_e), pivot_e (_pivot_e), isPre (_isPre) {}
+    e (_e), pivot_e (_pivot_e), isPre (_isPre), pivot_eliminatable (0), increment_eliminatable (0) {}
 };
 
 struct elimSeq_cost_t {

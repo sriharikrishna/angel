@@ -1265,7 +1265,9 @@ unsigned int refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
     depMap_i = refillDependences.find(make_pair(source (e, angelLCG), target(e, angelLCG)));
     if (depMap_i != refillDependences.end()) { // we have refill dependences to consider for e
 
+#ifndef NDEBUG
       cout << "edge " << e << " has some refill dependences. Checking them..." << endl;
+#endif
       vertex_set_t vDepSet = depMap_i->second; // extract the vertex dependence set for e
       vertex_set_t upset, downset;
       vertex_upset (source (e, angelLCG), angelLCG, upset);
@@ -1278,7 +1280,9 @@ unsigned int refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
 	vertex_set_t::const_iterator upset_i = upset.find(*vDepSet_i);	
 	
 	if (downset_i != downset.end() && upset_i != upset.end()) { // this edge elimination has unmet refill dependences
+#ifndef NDEBUG
 	  cout << "edge " << e << " has an unmet refill dependence on vertex " << *vDepSet_i << endl;
+#endif
 	  break;
 	}
       } // end all vertex dependences

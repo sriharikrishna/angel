@@ -162,7 +162,7 @@ void write_graph_xaif_booster (const accu_graph_t& ag,
 } // end write_graph_xaif_booster()
 
 unsigned int num_nontrivial_edges (const c_graph_t& angelLCG,
-                                   const Elimination::AwarenessLevel_E ourAwarenessLevel) {
+				   const Elimination::AwarenessLevel_E ourAwarenessLevel) {
   boost::property_map<c_graph_t, EdgeType>::const_type eType = get (EdgeType(), angelLCG);
   unsigned int numNontrivialEdges = 0;
   c_graph_t::ei_t ei, e_end;
@@ -186,17 +186,25 @@ elimSeq_cost_t determine_elimination_sequence (const c_graph_t angelLCG,
   refillDependenceMap_t refillDependences;
   vector<edge_bool_t> bev1, bev2, bev3, bev4, bev5;
 
+  unsigned int seqNum = 0;
+
   while (true) {
 
+#ifndef NDEBUG
     cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
     cout << "TRYING A NEW COMPLETE ELIMINATION SEQUENCE" << endl;
     cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
+#endif
 
     c_graph_t angelLCG_copy (angelLCG);
     elimSeq_cost_t currentElimSeq (num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel), 0, 0, 0);
 
+    unsigned int elimNum = 0;
+
     // perform a complete elimination sequence that preserves scarcity and tries to avoid refill
     while(true) {
+      //cout << "datapoint:" << seqNum << ":" << elimNum << ":" << num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel) << endl;
+
       // run through the heuristics pipeline
       eliminatable_objects (angelLCG_copy, bev1);
 
@@ -224,12 +232,23 @@ elimSeq_cost_t determine_elimination_sequence (const c_graph_t angelLCG,
       edge_ij_elim_t thisElim (source (e, angelLCG), target (e, angelLCG), isFront);
       currentElimSeq.edgeElimVector.push_back(thisElim);
 
+#ifndef NDEBUG
       if (isFront) cout << "Front-eliminating edge " << e << "..." << endl; else cout << "Back-eliminating edge " << e << "..." << endl;
+#endif
       currentElimSeq.cost += isFront ? front_elim (e, angelLCG_copy, ourAwarenessLevel, currentElimSeq, refillDependences)
 				     : back_elim (e, angelLCG_copy, ourAwarenessLevel, currentElimSeq, refillDependences);
 
-      //cout << "There are currently " << num_nontrivial_edges(angelLCG_total, ourAwarenessLevel) <<  " nontrivial edges in angelLCG_total" << endl; //cout << num_nontrivial_edges(angelLCG_total, ourAwarenessLevel) << endl;
+      // check whether we've beaten our CURRENT best
+      if (num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel) < currentElimSeq.bestNumNontrivialEdges) {
+        currentElimSeq.bestNumNontrivialEdges = num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel);
+        currentElimSeq.costAtBestEdgecount = currentElimSeq.cost;
+        currentElimSeq.lastDesiredElim = currentElimSeq.edgeElimVector.size();
+#ifndef NDEBUG
+        cout << "** new best_num_edges for currentElimSeq: " << currentElimSeq.bestNumNontrivialEdges << endl;
+#endif
+      }
 
+#ifndef NDEBUG
 	if (!refillDependences.empty()) {
           cout << endl << "current contents of refillDependences: " << endl;
 	  for (refillDependenceMap_t::const_iterator di = refillDependences.begin(); di != refillDependences.end(); di++) {
@@ -240,36 +259,122 @@ elimSeq_cost_t determine_elimination_sequence (const c_graph_t angelLCG,
 	  }
 	  cout << endl;
 	}
+#endif
 
-      if (num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel) < currentElimSeq.bestNumNontrivialEdges) {
-        currentElimSeq.bestNumNontrivialEdges = num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel);
-        currentElimSeq.costAtBestEdgecount = currentElimSeq.cost;
-        currentElimSeq.lastDesiredElim = currentElimSeq.edgeElimVector.size();
-        cout << "** new best_num_edges for currentElimSeq: " << currentElimSeq.bestNumNontrivialEdges << endl;
-      }
+    elimNum++;
 
     } // end of elimination sequence
 
-    // determine whether current seq is best so far
+    // check whether we've beaten our OVERALL best
     if (currentElimSeq.bestNumNontrivialEdges < bestElimSeqFound.bestNumNontrivialEdges
 	// also prefer MATCHING best_num_edges with a fewer edge count
 	|| (currentElimSeq.bestNumNontrivialEdges == bestElimSeqFound.bestNumNontrivialEdges
 	    && currentElimSeq.costAtBestEdgecount < bestElimSeqFound.costAtBestEdgecount)) {
       bestElimSeqFound = currentElimSeq;
+#ifndef NDEBUG
       cout << "New bestElimSeqFound" << endl;
+#endif
     }
 
+#ifndef NDEBUG
     cout << "complete elim sequence complete.  This sequence achieved " << currentElimSeq.bestNumNontrivialEdges << " edges and ";
     if (currentElimSeq.revealedNewDependence) cout << "DID"; else cout << "DID NOT";
     cout << " add new dependence information to the dependence map" << endl;
+#endif
 
     // determine whether it's time to stop
     if (!currentElimSeq.revealedNewDependence) break;
+
+  seqNum++;
 
   } // end all elim sequences
 
   return bestElimSeqFound;
 } // end of determine_elimination_sequence()
+
+unsigned int perform_reroutings (c_graph_t& angelLCG,
+				 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				 const bool allowMaintainingFlag,
+				 list<EdgeRef_t>& edge_ref_list,
+				 JacobianAccumulationExpressionList& jae_list,
+				 unsigned int& numReroutings) {
+  unsigned int cost = 0;
+  vector<edge_reroute_t> erv1, erv2;
+  reroutable_edges (angelLCG, erv1);
+  edge_reducing_rerouteElims (erv1, angelLCG, ourAwarenessLevel, allowMaintainingFlag, erv2);
+#ifndef NDEBUG
+  cout << "There are currently " << num_nontrivial_edges (angelLCG, ourAwarenessLevel) << " nontrivial edges in angelLCG" << endl;
+  cout << "\n\nOf " << erv1.size() << " possible edge reroutings, " << erv2.size() << " reduce the edge count when followed by an edge elimination" << endl;
+#endif
+
+  while (!erv2.empty()) {
+    throw_exception (!erv2[0].pivot_eliminatable && !erv2[0].increment_eliminatable, consistency_exception, "rerouting allows neither pivot nor increment to be eliminated");
+    c_graph_t::edge_t increment_e;
+    bool found_increment_e;
+
+    if (erv2[0].isPre) { // pre-routing
+#ifndef NDEBUG
+      cout << "prerouting edge " << erv2[0].e << " about pivot edge " << erv2[0].pivot_e;
+#endif
+      cost += preroute_edge_directly (erv2[0], angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+
+      if (erv2[0].increment_eliminatable) { // increment elimination
+#ifndef NDEBUG
+        cout << ", followed by back elimination of increment edge (" << source (erv2[0].e, angelLCG) << "," << source (erv2[0].pivot_e, angelLCG) << ")";
+#endif
+        tie (increment_e, found_increment_e) = edge (source (erv2[0].e, angelLCG), source (erv2[0].pivot_e, angelLCG), angelLCG);
+        throw_exception (!found_increment_e, consistency_exception, "increment edge could not be found for back-elimination");
+        back_eliminate_edge_directly (increment_e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+      }
+
+      if (erv2[0].pivot_eliminatable) { // pivot elimination
+#ifndef NDEBUG
+        cout << ", followed by front-elimination of pivot edge " << erv2[0].pivot_e;
+#endif
+        front_eliminate_edge_directly (erv2[0].pivot_e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+      }
+#ifndef NDEBUG
+      cout << endl;
+#endif
+    } // end pre-routing
+    else { // post-routing
+#ifndef NDEBUG
+      cout << "postrouting edge " << erv2[0].e << " about pivot edge " << erv2[0].pivot_e;
+#endif
+      cost += postroute_edge_directly (erv2[0], angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+
+      if (erv2[0].increment_eliminatable) { // increment elimination
+#ifndef NDEBUG
+        cout << ", followed by front elimination of increment edge (" << target (erv2[0].pivot_e, angelLCG) << "," << target (erv2[0].e, angelLCG) << ")";
+#endif
+        tie (increment_e, found_increment_e) = edge (target (erv2[0].pivot_e, angelLCG), target (erv2[0].e, angelLCG), angelLCG);
+        throw_exception (!found_increment_e, consistency_exception, "increment edge could not be found for front elimination");
+        front_eliminate_edge_directly (increment_e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+      }
+
+      if (erv2[0].pivot_eliminatable) { // pivot elimination
+#ifndef NDEBUG
+        cout << ", followed by back-elimination of pivot edge " << erv2[0].pivot_e;
+#endif
+        back_eliminate_edge_directly (erv2[0].pivot_e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+      }
+#ifndef NDEBUG
+      cout << endl;
+#endif
+    } // end post-routing
+
+    numReroutings++;
+
+    reroutable_edges (angelLCG, erv1);
+    edge_reducing_rerouteElims (erv1, angelLCG, ourAwarenessLevel, allowMaintainingFlag, erv2);
+#ifndef NDEBUG
+    cout << "There are currently " << num_nontrivial_edges (angelLCG, ourAwarenessLevel) << " nontrivial edges in angelLCG" << endl;
+    cout << "\n\nOf " << erv1.size() << " possible edge reroutings, " << erv2.size() << " reduce the edge count when followed by an edge elimination" << endl;
+#endif
+  }
+
+  return cost;
+} // end perform_reroutings()
 
 } // end namespace angel
 
@@ -291,8 +396,9 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   cout << "Creating internal angel LCG...." << endl;
 #endif
 
-//**************************************************************************************************
-// Process LCG from xaifBooster into an angel c_graph_t
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * BUILD ANGELLCG FROM XAIFBOOSTER LCG
+ * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
   c_graph_t angelLCG;
 
@@ -348,8 +454,10 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
     pair<c_graph_t::edge_t, bool> new_edge = add_edge (source, target, edge_number++, angelLCG);
     if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::UNIT_LABEL)
       eType[new_edge.first] = UNIT_EDGE;
-    else if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::CONSTANT_LABEL)
+    else if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::CONSTANT_LABEL) {
+      //cout << "---------------------------------------------------------------- FOUND A CONSTANT EDGE ------------------------------------------" << endl;
       eType[new_edge.first] = CONSTANT_EDGE;
+    }
     else
       eType[new_edge.first] = VARIABLE_EDGE;
     EdgeRef_t new_edge_ref (new_edge.first, &*ei);
@@ -362,11 +470,13 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 // END READ GRAPH
 //****************************************************************************************************************
 
-  cout << endl << "******************************************************************" << endl; 
-  cout << "Performing total elimination sequences and building up refill dependence information..." << endl;
+#ifndef NDEBUG
+  cout << endl << "*************************************************************************************" << endl; 
+  cout << "Performing total elim sequences and building up refill dependence information..." << endl;
+  cout << "*************************************************************************************" << endl; 
+#endif
 
   // Perform full elim sequences that attempt to avoid refill.
-
   elimSeq_cost_t bestElimSeqFound = determine_elimination_sequence (angelLCG, ourAwarenessLevel, allowMaintainingFlag);
 
 #ifndef NDEBUG
@@ -375,17 +485,20 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   for (size_t c = 0; c < bestElimSeqFound.edgeElimVector.size(); c++)
     cout << "((" << bestElimSeqFound.edgeElimVector[c].i << "," << bestElimSeqFound.edgeElimVector[c].j << ")," << bestElimSeqFound.edgeElimVector[c].front << ") ";
   cout << endl;
-#endif
 
   // Now re-perform the sequence until we reach the best edge count
-  cout << endl << "******************************************************************************************" << endl; 
+  cout << endl << "*************************************************************************************" << endl; 
   cout << "Now re-performing bestElimSeqFound until we reach our edge goal of " << bestElimSeqFound.bestNumNontrivialEdges << " edges" << endl;
-  cout << "******************************************************************************************" << endl; 
+  cout << "*************************************************************************************" << endl; 
+#endif
 
   unsigned int cost_of_elim_seq = 0;
 
-  if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestElimSeqFound.bestNumNontrivialEdges)
+  if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestElimSeqFound.bestNumNontrivialEdges) {
+#ifndef NDEBUG
     cout << "No eliminations necessary to reach the desired edge count of " << bestElimSeqFound.bestNumNontrivialEdges << endl;
+#endif
+  }
   else { //replay the elimination sequence until we reach edge count goal
     c_graph_t::edge_t e;
     bool found_e;
@@ -394,74 +507,35 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
       // find the edge from i,j representation
       tie (e, found_e) = edge (bestElimSeqFound.edgeElimVector[c].i, bestElimSeqFound.edgeElimVector[c].j, angelLCG);
       throw_exception (!found_e, consistency_exception, "edge in elims_performed could not be found in angelLCG for elimination");
+#ifndef NDEBUG
       if (bestElimSeqFound.edgeElimVector[c].front) cout << "Front-eliminating edge " << e << "..." << endl; else cout << "Back-eliminating edge " << e << "..." << endl;
+#endif
       cost_of_elim_seq += isFront ? front_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list)
 				  : back_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+
       if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestElimSeqFound.bestNumNontrivialEdges) {
+#ifndef NDEBUG
 	cout << "Goal of " << bestElimSeqFound.bestNumNontrivialEdges << " reached" << endl;
+#endif
 	break;
       }
     }
   }
 
-/*
-  cout << "\n********* No more scarcity-preserving edge eliminations remain.  Now Performing edge reroutings..." << endl;
-  vector<edge_reroute_t> erv1, erv2, erv3;
-  reroutable_edges (angelLCG, erv1);
-  edge_reducing_reroutings (erv1, angelLCG, ourAwarenessLevel, allowMaintainingFlag, erv2);
-  edge_reducing_rerouteElims (erv1, angelLCG, ourAwarenessLevel, allowMaintainingFlag, erv3);
-  cout << "\n\nOf " << erv1.size() << " possible edge reroutings, " << erv2.size() << " reduce the edge count "
-       << "and " << erv3.size() << " reduce the edge count when followed by an edge elimination" << endl;
-
-  while (!erv2.empty() || !erv3.empty()) {
-    if (!erv2.empty()) { // an edge count reducing edge elimination can be performed
-      if (erv2[0].isPre) cout << "pre"; else cout << "post";
-      cout << "routing edge " << erv2[0].e << " about pivot edge " << erv2[0].pivot_e << "..." << endl;
-
-      cost_of_elim_seq += erv2[0].isPre ? preroute_edge_directly (erv2[0], angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list)
-					: postroute_edge_directly (erv2[0], angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
-    }
-    else { //rerouting followed by edge elim
-      c_graph_t::edge_t increment_e;
-      bool found_increment_e;
-
-      if (erv3[0].isPre) {
-	cout << "prerouting edge " << erv3[0].e << " about pivot edge " << erv3[0].pivot_e << endl;
-	cout << "followed by back elimination of edge (" << source (erv3[0].e, angelLCG) << ","
-							 << source (erv3[0].pivot_e, angelLCG) << ")" << endl;
-
-	cost_of_elim_seq += preroute_edge_directly (erv3[0], angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
-	tie (increment_e, found_increment_e) = edge (source (erv3[0].e, angelLCG), source (erv3[0].pivot_e, angelLCG), angelLCG);
-	throw_exception (!found_increment_e, consistency_exception, "increment edge could not be found for back-elimination");
-	back_eliminate_edge_directly (increment_e, angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
-      }
-      else {
-	cout << "postrouting edge " << erv3[0].e << " about pivot edge " << erv3[0].pivot_e << "...";
-	cout << "followed by front elimination of edge (" << target (erv3[0].pivot_e, angelLCG) << ","
-							  << target (erv3[0].e, angelLCG) << ")" << endl;
-	cost_of_elim_seq += postroute_edge_directly (erv3[0], angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
-	tie (increment_e, found_increment_e) = edge (target (erv3[0].pivot_e, angelLCG), target (erv3[0].e, angelLCG), angelLCG);
-	throw_exception (!found_increment_e, consistency_exception, "increment edge could not be found for front elimination");
-	cout << "Now performing the front-elimination of " << increment_e << "..." << endl;
-	front_eliminate_edge_directly (increment_e, angelLCG, ourAwarenessLevel, edge_ref_list, refillCheck, jae_list);
-      }
 #ifndef NDEBUG
-    write_graph ("current contents of angelLCG: ", angelLCG);
+  cout << endl << "*************************************************************************************" << endl; 
+  cout << "Edge eliminations complete.  Now Performing scarcity-preserving edge reroutings..." << endl;
+  cout << "*************************************************************************************" << endl; 
 #endif
-    }
-    numReroutings++;
 
-    reroutable_edges (angelLCG, erv1);
-    edge_reducing_reroutings (erv1, angelLCG, ourAwarenessLevel, allowMaintainingFlag, erv2);
-    edge_reducing_rerouteElims (erv1, angelLCG, ourAwarenessLevel, allowMaintainingFlag, erv3);
-    cout << "\n\nOf " << erv1.size() << " possible edge reroutings, " << erv2.size() << " reduce the edge count "
-         << "and " << erv3.size() << " reduce the edge count when followed by an edge elimination" << endl;
-  }
+  // perform the desired reroutings
+  //cost_of_elim_seq += perform_reroutings (angelLCG, ourAwarenessLevel, allowMaintainingFlag, edge_ref_list, jae_list, numReroutings);
 
-  cout << "No more scarcity-preserving edge reroutings remain.  Now building the remainder graph..." << endl;
-*/
 #ifndef NDEBUG
-  write_graph ("angelLCG after partial edge elimination sequence (G prime): ", angelLCG);
+  write_graph ("angelLCG after partial edge elimination (and rerouting) sequence (G prime): ", angelLCG);
+  cout << endl << "*************************************************************************************" << endl; 
+  cout << "Rerouting phase complete.  Now building the remainder graph..." << endl;
+  cout << "*************************************************************************************" << endl; 
 #endif
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -535,7 +609,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   } // end all edges in angelLCG
 
   cout << "compute_partial_elimination_sequence: cost " << cost_of_elim_seq << endl;
-}
+} // end compute_partial_elimination_sequence()
 
  /* 	END DIRECT ELIMINATION
  * #####################################################################################################################################

@@ -733,12 +733,15 @@ unsigned int pair_elim (c_graph_t::edge_t e1,
       unsigned int i = currentElimSeq.edgeElimVector[c].i;
       unsigned int j = currentElimSeq.edgeElimVector[c].j;
       if (source (e1, angelLCG) == i && target (e2, angelLCG) == j) {
+#ifndef NDEBUG
 	cout << endl << "**************** refill of edge (" << i << "," << j << "), adding this information to the refillDependences map..." << endl << endl;
-
+#endif
 	// add vertex to the refill dependence set for the refilled edge
 	refillDependenceMap_t::iterator depMap_i = refillDependences.find(make_pair(i, j));
 	if (depMap_i == refillDependences.end()) {
+#ifndef NDEBUG
 	  cout << "the edge was not found as a map key.  Creating new map key and empty set..." << endl;
+#endif
 	  // add the edge to the map if it isnt there
 	  depMap_i = refillDependences.insert( std::make_pair(make_pair(i, j), vertex_set_t()) ).first;
 	  currentElimSeq.revealedNewDependence = true;
