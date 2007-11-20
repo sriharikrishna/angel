@@ -1,5 +1,3 @@
-// $Id: angel_tools.cpp,v 1.3 2003/06/11 16:28:54 gottschling Exp $
-
 #include "angel_tools.hpp"
 
 #include <queue>
@@ -12,6 +10,23 @@ namespace angel {
 
 using namespace std;
 using namespace boost;
+
+bool reachable (const c_graph_t::vertex_t src,
+                const c_graph_t::vertex_t tgt,
+                c_graph_t& angelLCG) {
+  property_map<pure_c_graph_t, VertexVisited>::type visited = get(VertexVisited(), angelLCG);
+
+  c_graph_t::oei_t oei, oe_end;
+  for (tie (oei, oe_end) = out_edges (src, angelLCG); oei != oe_end; ++oei) {
+    if (target(*oei, angelLCG) == tgt) return true;
+    if (!visited[target(*oei, angelLCG)]) { // call recursively on unvisited successors
+      visited[target(*oei, angelLCG)] = true;
+      if (reachable (target(*oei, angelLCG), tgt, angelLCG)) return true;
+    }
+  } // end all outedges
+
+  return false;
+} // end
 
 void vertex_upset (const c_graph_t::vertex_t v,
                    const c_graph_t& angelLCG,

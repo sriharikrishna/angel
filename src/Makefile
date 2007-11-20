@@ -6,6 +6,7 @@
 #CXXFLAGS+= -O3 
 CXXFLAGS+= -DNDEBUG
 #CXXFLAGS+= -g
+#CXXFLAGS+= -pg
 
 #CPPFLAGS+= -DGNUPLOT # generate output for gnuplot (maybe part of output must be set as comment)
 #CPPFLAGS+= -DWRITE_COSTS # write costs for instance in LSA.hpp

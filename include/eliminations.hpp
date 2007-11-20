@@ -850,6 +850,25 @@ unsigned int back_elim (c_graph_t::edge_t e,
 			const elimSeq_cost_t& currentElimSeq,
 			refillDependenceMap_t& refillDependences);
 
+unsigned int pairElim_noJAE (c_graph_t::edge_t e1,
+			     c_graph_t::edge_t e2,
+			     c_graph_t& angelLCG,
+			     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			     const transformationSeq_cost_t* currentTransformationSequence,
+			     refillDependenceMap_t& refillDependences);
+
+unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,
+					 c_graph_t& angelLCG,
+					 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					 const transformationSeq_cost_t* currentTransformationSequence,
+					 refillDependenceMap_t& refillDependences);
+
+unsigned int backEdgeElimination_noJAE (c_graph_t::edge_t e,
+					c_graph_t& angelLCG,
+					const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					const transformationSeq_cost_t* currentTransformationSequence,
+					refillDependenceMap_t& refillDependences);
+
 #endif // USEXAIFBOOSTER
 
 } // namespace angel

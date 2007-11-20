@@ -734,7 +734,7 @@ unsigned int pair_elim (c_graph_t::edge_t e1,
       unsigned int j = currentElimSeq.edgeElimVector[c].j;
       if (source (e1, angelLCG) == i && target (e2, angelLCG) == j) {
 #ifndef NDEBUG
-	cout << endl << "**************** refill of edge (" << i << "," << j << "), adding this information to the refillDependences map..." << endl << endl;
+	cout << endl << "refilledge (" << i << "," << j << "), adding this information to the refillDependences map..." << endl << endl;
 #endif
 	// add vertex to the refill dependence set for the refilled edge
 	refillDependenceMap_t::iterator depMap_i = refillDependences.find(make_pair(i, j));
@@ -828,6 +828,117 @@ unsigned int back_elim (c_graph_t::edge_t e,
   remove_edge (e, angelLCG);
   return cost;
 } // end back_elim()
+
+unsigned int pairElim_noJAE (c_graph_t::edge_t e1,
+			     c_graph_t::edge_t e2,
+			     c_graph_t& angelLCG,
+			     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			     const transformationSeq_cost_t* currentTransformationSequence,
+			     refillDependenceMap_t& refillDependences) {
+  boost::property_map<c_graph_t, EdgeType>::type eType = get (EdgeType(), angelLCG);
+  c_graph_t::edge_t fill_or_absorb_e;
+  bool found_absorb_e;
+
+  // check for refill.  If found, add tgt to dependence vertex set for respective edge (from src to succ of tgt)
+  for (size_t c = 0; c < currentTransformationSequence->transformationVector.size(); c++) {
+    if (currentTransformationSequence->transformationVector[c].isRerouting) continue; // ignore reroutings
+
+    unsigned int i = currentTransformationSequence->transformationVector[c].myElim.i;
+    unsigned int j = currentTransformationSequence->transformationVector[c].myElim.j;
+
+    // the fill/absorb edge was previously eliminated
+    if (source (e1, angelLCG) == i && target (e2, angelLCG) == j) {
+#ifndef NDEBUG
+      cout << endl << "refilledge (" << i << "," << j << "), adding this information to the refillDependences map..." << endl << endl;
+#endif
+      // add vertex to the refill dependence set for the refilled edge
+      refillDependenceMap_t::iterator depMap_i = refillDependences.find(make_pair(i, j));
+      if (depMap_i == refillDependences.end()) { // map doesn't contain a key for the refilled edge
+#ifndef NDEBUG
+	cout << "the edge was not found as a map key.  Creating new map key with empty vertex set..." << endl;
+#endif
+	// add the edge to the map if it isnt there
+	depMap_i = refillDependences.insert( std::make_pair(make_pair(i, j), vertex_set_t()) ).first;
+	currentTransformationSequence->revealedNewDependence = true; // edge newly added as map key
+      }
+
+      // add the vertex to the depSet for the current edge
+      if ((depMap_i->second).insert(target (e1, angelLCG)).second)
+	currentTransformationSequence->revealedNewDependence = true; // vertex newly added to dependence set for edge
+
+      break; // refill has already been found for this edge, so break
+    } // end if fill/absorb edge is found to have been previously eliminated (refill)
+  } // end all previous elims in current sequence
+
+  // determine whether absorption edge is present
+  tie (fill_or_absorb_e, found_absorb_e) = edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG);
+  if (found_absorb_e) { // absorption: all we have to do is set the edge type for the absorption edge
+    if (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE)	eType[fill_or_absorb_e] = VARIABLE_EDGE;
+    else if (eType[fill_or_absorb_e] != VARIABLE_EDGE)			eType[fill_or_absorb_e] = CONSTANT_EDGE;
+  } // end absorption
+  else { // fill-in: create new edge and set it's edge type
+    tie (fill_or_absorb_e, found_absorb_e) = add_edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG.next_edge_number++, angelLCG);
+    if (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE)	eType[fill_or_absorb_e] = VARIABLE_EDGE;
+    else if (eType[e1] == UNIT_EDGE && eType[e2] == UNIT_EDGE)		eType[fill_or_absorb_e] = UNIT_EDGE;
+    else								eType[fill_or_absorb_e] = CONSTANT_EDGE;
+  } // end fill-in
+
+  // determine cost based on awareness level and return it
+  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE)
+  || (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE)))
+    return 0;
+  else return 1;
+} // end pairElim_noJAE()
+
+unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,
+					 c_graph_t& angelLCG,
+					 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					 const transformationSeq_cost_t* currentTransformationSequence,
+					 refillDependenceMap_t& refillDependences) {
+  unsigned int cost = 0;
+  c_graph_t::oei_t oei, oe_end;
+  vector<c_graph_t::edge_t> tgtOutEdges;
+
+  // save out-edges of tgt in a vector, as pointers become invalidated
+  for (tie (oei, oe_end) = out_edges (target (e, angelLCG), angelLCG); oei != oe_end; ++oei)
+    tgtOutEdges.push_back(*oei);
+
+  for (size_t i = 0; i < tgtOutEdges.size(); i++)
+    cost += pairElim_noJAE (e, tgtOutEdges[i], angelLCG, ourAwarenessLevel, currentTransformationSequence, refillDependences);
+ 
+  // if elimination isolates the target, remove vertex and incident edges
+  if (in_degree (target (e, angelLCG), angelLCG) == 1)
+    for (size_t i = 0; i < tgtOutEdges.size(); i++)
+      remove_edge (tgtOutEdges[i], angelLCG);
+
+  remove_edge (e, angelLCG);
+  return cost;
+} // end frontEdgeElimination_noJAE()
+
+unsigned int backEdgeElimination_noJAE (c_graph_t::edge_t e,
+					 c_graph_t& angelLCG,
+					 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					 const transformationSeq_cost_t* currentTransformationSequence,
+					 refillDependenceMap_t& refillDependences) {
+  unsigned int cost = 0;
+  c_graph_t::iei_t iei, ie_end;
+  vector<c_graph_t::edge_t> srcInEdges;
+
+  // save in-edges of src in a vector, as pointers become invalidated
+  for (tie (iei, ie_end) = in_edges (source (e, angelLCG), angelLCG); iei != ie_end; ++iei)
+    srcInEdges.push_back(*iei);
+
+  for (size_t i = 0; i < srcInEdges.size(); i++)
+    cost += pairElim_noJAE (srcInEdges[i], e, angelLCG, ourAwarenessLevel, currentTransformationSequence, refillDependences);
+
+  // remove src of e and incident edges if it becomes isolated and isn't a dependent
+  if (out_degree (source (e, angelLCG), angelLCG) == 1 && vertex_type (source (e, angelLCG), angelLCG) != dependent)
+    for (size_t i = 0; i < srcInEdges.size(); i++)
+      remove_edge (srcInEdges[i], angelLCG);
+
+  remove_edge (e, angelLCG);
+  return cost;
+} // end backEdgeElimination_noJAE()
 
 #endif // USEXAIFBOOSTER
 

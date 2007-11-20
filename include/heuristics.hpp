@@ -19,6 +19,10 @@
 #include "angel_comm.hpp"
 #endif // USE_MPI
 
+#ifdef USEXAIFBOOSTER
+#include "reroutings.hpp"
+#endif // USEXAIFBOOSTER
+
 namespace angel {
 
   using std::vector;
@@ -1379,10 +1383,10 @@ int edge_elim_effect (const edge_bool_t be,
     \param bev2 set of edge elims that don't increase the nontrivial edge count
     \return size of bev2
 */
-unsigned int count_maintain_edge_eliminations (const vector<edge_bool_t>& bev1,
-					       const c_graph_t& angelLCG,
-					       const Elimination::AwarenessLevel_E ourAwarenessLevel,
-					       vector<edge_bool_t>& bev2);
+bool maintaining_edge_eliminations (const vector<edge_bool_t>& bev1,
+				    const c_graph_t& angelLCG,
+				    const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				    vector<edge_bool_t>& bev2);
 
 /** \brief Filter that selects edge elimination targets that decrease the nontrivial edge count
 
@@ -1392,10 +1396,10 @@ unsigned int count_maintain_edge_eliminations (const vector<edge_bool_t>& bev1,
     \param bev2 set of edge elims that decrease the nontrivial edge count
     \return size of bev2
 */
-unsigned int count_reduce_edge_eliminations (const vector<edge_bool_t>& bev1,
-					     const c_graph_t& angelLCG,
-					     const Elimination::AwarenessLevel_E ourAwarenessLevel,
-					     vector<edge_bool_t>& bev2);
+bool reducing_edge_eliminations (const vector<edge_bool_t>& bev1,
+				 const c_graph_t& angelLCG,
+				 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				 vector<edge_bool_t>& bev2);
 
 /** \brief Filter that selects edge elimination targets whose refill dependences (a possibly empty set of vertices)
  * have been met (meaning that there is no alternate path for the edge through the vertex
@@ -1405,10 +1409,69 @@ unsigned int count_reduce_edge_eliminations (const vector<edge_bool_t>& bev1,
     \param bev2 set of edge elims that dont violate refill dependences (returned by reference)
     \return size of bev2
 */
-unsigned int refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
-						const c_graph_t& angelLCG,
-						const refillDependenceMap_t refillDependences,
-						vector<edge_bool_t>& bev2);
+bool refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
+					const c_graph_t& angelLCG,
+					const refillDependenceMap_t refillDependences,
+					vector<edge_bool_t>& bev2);
+
+bool rerouting_considerate_edge_eliminations (const vector<edge_bool_t>& bev,
+					      const c_graph_t& angelLCG,
+					      const std::vector<Transformation_t>& transformationsPerformedV,
+					      vector<edge_bool_t>& reroutingConsiderateEdgeElimsV);
+
+// ------------------------------------------------------------------------------
+// |			FILTERS FOR REROUTINGS					|
+// ------------------------------------------------------------------------------
+
+/*
+bool maintaining_reroutings (const vector<edge_reroute_t>& erv,
+			     const c_graph_t& angelLCG,
+			     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			     vector<edge_reroute_t>& maintainReroutingsV);
+*/
+
+bool reducing_reroutings (const vector<edge_reroute_t>& erv,
+			  const c_graph_t& angelLCG,
+			  const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			  vector<edge_reroute_t>& reducingReroutingsV);
+
+// ------------------------------------------------------------------------------
+// |		FILTERS FOR ELIMINATIONS AND REROUTINGS	(TRANSFORMATIONS)	|
+// ------------------------------------------------------------------------------
+
+bool all_viable_transformations (c_graph_t& angelLCG,
+				 const std::vector<Transformation_t>& transformationsPerformedV,
+				 vector<Transformation_t>& allViableTransformationsV);
+
+bool maintaining_transformations (const vector<Transformation_t>& tv,
+				  const c_graph_t& angelLCG,
+				  const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				  vector<Transformation_t>& maintainingTransformationsV);
+
+bool reducing_transformations (const vector<Transformation_t>& tv,
+			       c_graph_t& angelLCG,
+			       const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			       vector<Transformation_t>& reducingTransformationsV);
+
+bool refill_avoiding_transformations (const vector<Transformation_t>& tv,
+				      c_graph_t& angelLCG,
+				      const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				      const refillDependenceMap_t& refillDependences,
+				      vector<Transformation_t>& reducingTransformationsV);
+
+bool rerouting_considerate_transformations (const vector<Transformation_t>& tv,
+					    const c_graph_t& angelLCG,
+					    const std::vector<Transformation_t>& transformationsPerformedV,
+					    vector<Transformation_t>& reroutingConsiderateTransformationsV); 
+
+bool lowest_markowitz_transformations (const vector<Transformation_t>& tv,
+				       const c_graph_t& angelLCG,
+				       vector<Transformation_t>& lowestMarkowitzTransformationsV);
+
+bool reverse_mode_transformations (const vector<Transformation_t>& tv,
+				   const c_graph_t& angelLCG,
+				   vector<Transformation_t>& reverseModeTransformationsV);
+
 #endif // USEXAIFBOOSTER
 
 #ifdef USE_MPI
