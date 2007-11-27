@@ -1410,7 +1410,7 @@ bool reducing_edge_eliminations (const vector<edge_bool_t>& bev1,
     \return size of bev2
 */
 bool refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
-					const c_graph_t& angelLCG,
+					c_graph_t& angelLCG,
 					const refillDependenceMap_t refillDependences,
 					vector<edge_bool_t>& bev2);
 

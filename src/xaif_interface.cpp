@@ -774,7 +774,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 #ifndef NDEBUG
     cout << "Goal of " << bestTransformationSequence->bestNumNontrivialEdges << " reached" << endl;
 #endif
- 
+
   delete bestTransformationSequence; 
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
