@@ -175,6 +175,14 @@ unsigned int num_nontrivial_edges (const c_graph_t& angelLCG,
   return numNontrivialEdges;
 } // end of num_nontrivial_edges()
 
+unsigned int numIntermediateVertices (const c_graph_t& angelLCG) {
+  unsigned int numIntermediates = 0;
+  c_graph_t::vi_t vi, v_end;
+  for (tie (vi, v_end) = vertices (angelLCG); vi != v_end; ++vi)
+    if (vertex_type (*vi, angelLCG) == intermediate) numIntermediates++;
+  return numIntermediates;
+} // end numIntermediateVertices()
+
 /*
 elimSeq_cost_t determine_edge_elimination_sequence (const c_graph_t angelLCG,
 						    const Elimination::AwarenessLevel_E ourAwarenessLevel,
@@ -584,7 +592,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 #endif
 
   // To begin with, the best transformation sequence is NO transformation sequence
-  transformationSeq_cost_t *bestTransformationSequence = new transformationSeq_cost_t (num_nontrivial_edges(angelLCG, ourAwarenessLevel), 0, 0, 0);
+  transformationSeq_cost_t *bestTransformationSequence = new transformationSeq_cost_t (num_nontrivial_edges(angelLCG, ourAwarenessLevel), 0, 0, numIntermediateVertices(angelLCG), 0);
   transformationSeq_cost_t *currentTransformationSequence;
 
   refillDependenceMap_t refillDependences;
@@ -600,7 +608,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   unsigned int seqNum = 0;
   while (true) {
     c_graph_t angelLCG_copy (angelLCG);
-    currentTransformationSequence = new transformationSeq_cost_t (num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel), 0, 0, 0);
+    currentTransformationSequence = new transformationSeq_cost_t (num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel), 0, 0, numIntermediateVertices(angelLCG_copy), 0);
 
 #ifndef NDEBUG
     cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl << "TRYING A NEW COMPLETE ELIMINATION SEQUENCE" << endl;
@@ -682,6 +690,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
       if (num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel) < currentTransformationSequence->bestNumNontrivialEdges) {
         currentTransformationSequence->bestNumNontrivialEdges = num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel);
         currentTransformationSequence->costAtBestEdgecount = currentTransformationSequence->cost;
+	currentTransformationSequence->numIntermediatesAtBestEdgecount = numIntermediateVertices(angelLCG_copy);
         currentTransformationSequence->lastDesiredTransformation = currentTransformationSequence->transformationVector.size();
 #ifndef NDEBUG
         cout << "** new best_num_edges for currentTransformationSequence: " << currentTransformationSequence->bestNumNontrivialEdges << endl;
@@ -723,6 +732,8 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 
     seqNum++;
   } // end determine a best transformation sequence
+
+  cout << "The best transformation sequence achieves a nontrivial edge count of " << bestTransformationSequence->bestNumNontrivialEdges << ", at which point there are " << bestTransformationSequence->numIntermediatesAtBestEdgecount << " intermediate vertices" << endl;
 
 #ifndef NDEBUG
   cout << endl << "*************************************************************************************" << endl; 
