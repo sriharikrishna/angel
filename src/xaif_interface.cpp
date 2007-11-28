@@ -282,7 +282,9 @@ elimSeq_cost_t determine_edge_elimination_sequence (const c_graph_t angelLCG,
 
     // perform a complete elimination sequence that preserves scarcity and tries to avoid refill
     while(true) {
-      //cout << "datapoint:" << seqNum << ":" << elimNum << ":" << num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel) << endl;
+#ifndef NDEBUG
+      cout << "datapoint:" << seqNum << ":" << elimNum << ":" << num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel) << endl;
+#endif
 
       // run through the heuristics pipeline
       eliminatable_objects (angelLCG_copy, bev1);
