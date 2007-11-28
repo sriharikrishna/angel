@@ -23,14 +23,6 @@ namespace angel {
 void reroutable_edges (c_graph_t& angelLCG,
 		       vector<edge_reroute_t>& erv);
 
-/** populates \p noncyclicReroutingsV with (strictly) those reroutings that have not
-    already been performed, based on \p transformationsPerformedV
-*/
-size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
-			    const std::vector<Transformation_t>& transformationsPerformedV,
-			    const c_graph_t& angelLCG,
-			    vector<edge_reroute_t>& noncyclicReroutingsV);
-
 /** Calculates the change in nontrivial edge count from \p er
     without actually performing it.  In addition,
     incrementIsTrivial is returned by reference

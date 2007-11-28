@@ -183,7 +183,79 @@ unsigned int numIntermediateVertices (const c_graph_t& angelLCG) {
   return numIntermediates;
 } // end numIntermediateVertices()
 
-/*
+void ourLCG_to_angelLCG (const LinearizedComputationalGraph& ourLCG,
+			 vector<const LinearizedComputationalGraphVertex*>& ourLCG_verts,
+			 c_graph_t& angelLCG,
+			 list<EdgeRef_t>& edge_ref_list) {
+  angelLCG.clear();
+
+  // COPY VERTICES
+  const LinearizedComputationalGraph::VertexPointerList& ourLCG_indeps = ourLCG.getIndependentList ();
+  const LinearizedComputationalGraph::VertexPointerList& ourLCG_deps = ourLCG.getDependentList ();
+  LinearizedComputationalGraph::VertexPointerList::const_iterator LCGvi;
+
+  // Add pointers to independent vertices to vector ourLCG_verts
+  for (LCGvi = ourLCG_indeps.begin(); LCGvi != ourLCG_indeps.end(); LCGvi++)
+    ourLCG_verts.push_back (*LCGvi);
+
+  // remaining are sorted topologically
+  int nv = ourLCG.numVertices ();
+  LinearizedComputationalGraph::ConstVertexIteratorPair vip (ourLCG.vertices());
+  while ((int) ourLCG_verts.size() < nv) {
+    for (LinearizedComputationalGraph::ConstVertexIterator topi (vip.first), top_end (vip.second); topi != top_end; ++topi) {
+      if (which_index (&*topi, ourLCG_verts) != ourLCG_verts.size()) continue;
+      bool all_num = true; // all predecessors numbered
+      LinearizedComputationalGraph::ConstInEdgeIteratorPair inedges (ourLCG.getInEdgesOf (*topi));
+      for (LinearizedComputationalGraph::ConstInEdgeIterator ie = inedges.first, iend = inedges.second; ie != iend; ++ie)
+	if (which_index (&(ourLCG.getSourceOf (*ie)), ourLCG_verts) == ourLCG_verts.size()) {
+	  all_num = false;
+	  break;
+	}
+      if (all_num) ourLCG_verts.push_back (&*topi);
+    } // end all vertices
+  }
+
+  // populate vectors of independent and dependent vertices
+  vector<c_graph_t::vertex_t> indeps, deps;
+  for (LCGvi = ourLCG_indeps.begin(); LCGvi != ourLCG_indeps.end(); LCGvi++)
+    indeps.push_back (which_index (*LCGvi, ourLCG_verts));
+  angelLCG.x(int (indeps.size()));
+  for (LCGvi = ourLCG_deps.begin(); LCGvi != ourLCG_deps.end(); LCGvi++)
+    deps.push_back (which_index (*LCGvi, ourLCG_verts)); 
+  angelLCG.dependents = deps;
+
+  // ensure that indeps occur in the beginning
+  for (size_t c = 0; c < indeps.size(); c++)
+    throw_exception (indeps[c] >= indeps.size(), consistency_exception, "Independent not at the beginning");
+
+  // COPY EDGES ----------------------------------------------------------------
+  int edge_number = 0;
+  boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), angelLCG);
+  LinearizedComputationalGraph::ConstEdgeIteratorPair eip (ourLCG.edges());
+  for (LinearizedComputationalGraph::ConstEdgeIterator ei (eip.first), e_end (eip.second); ei != e_end; ++ei) {
+    // locate source and target of edge in angelLCG
+    c_graph_t::vertex_t source = which_index (& (ourLCG.getSourceOf (*ei)), ourLCG_verts);
+    c_graph_t::vertex_t	target = which_index (& (ourLCG.getTargetOf (*ei)), ourLCG_verts);
+    pair<c_graph_t::edge_t, bool> new_edge = add_edge (source, target, edge_number++, angelLCG);
+    if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::UNIT_LABEL)
+      eType[new_edge.first] = UNIT_EDGE;
+    else if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::CONSTANT_LABEL) {
+      //cout << "---------------------------------------------------------------- FOUND A CONSTANT EDGE ------------------------------------------" << endl;
+      eType[new_edge.first] = CONSTANT_EDGE;
+    }
+    else
+      eType[new_edge.first] = VARIABLE_EDGE;
+    EdgeRef_t new_edge_ref (new_edge.first, &*ei);
+    edge_ref_list.push_back(new_edge_ref);
+  } // end for all LCG edges
+
+#ifndef NDEBUG
+  write_graph ("angelLCG (constructed from ourLCG): ", angelLCG);
+#endif
+
+} // end ourLCG_to_angelLCG()
+
+
 elimSeq_cost_t determine_edge_elimination_sequence (const c_graph_t angelLCG,
 						    const Elimination::AwarenessLevel_E ourAwarenessLevel,
 						    const bool allowMaintainingFlag) {
@@ -296,8 +368,8 @@ elimSeq_cost_t determine_edge_elimination_sequence (const c_graph_t angelLCG,
   } // end all elim sequences
 
   return bestElimSeqFound;
-} // end of determine_elimination_sequence()
-*/
+  } // end of determine_elimination_sequence()
+
 
 /*
 unsigned int perform_reroutings (c_graph_t& angelLCG,
@@ -388,6 +460,81 @@ unsigned int perform_reroutings (c_graph_t& angelLCG,
 } // end perform_reroutings()
 */
 
+void populate_remainderGraph_and_correlationLists (const c_graph_t& angelLCG,
+						   const vector<const LinearizedComputationalGraphVertex*> ourLCG_verts,
+						   const list<EdgeRef_t>& edge_ref_list,
+						   LinearizedComputationalGraph& remainderLCG,
+						   VertexCorrelationList& v_cor_list,
+						   EdgeCorrelationList& e_cor_list) {
+  remainderLCG.clear();
+
+  // copy and correlate vertices
+  v_cor_list.resize(0);
+  c_graph_t::vi_t vi, v_end;
+  for (tie (vi, v_end) = vertices (angelLCG); vi != v_end; ++vi) {
+    // since vertices aren't removed from angelLCG, only copy non-isolated vertices
+    if (in_degree (*vi, angelLCG) != 0 || out_degree (*vi, angelLCG) != 0) {
+      LinearizedComputationalGraphVertex& new_rvert = remainderLCG.addVertex();
+      // add a new correlation entry to the list
+      VertexCorrelationEntry new_rvert_cor;
+      new_rvert_cor.myOriginalVertex_p = ourLCG_verts[*vi];
+      new_rvert_cor.myRemainderVertex_p = &new_rvert;
+      v_cor_list.push_back(new_rvert_cor);
+    }
+  } // end all vertices
+
+  // copy and correlate edges
+  boost::property_map<c_graph_t, EdgeType>::const_type eType = get(EdgeType(), angelLCG);
+  e_cor_list.resize(0);
+  c_graph_t::ei_t ei, e_end;
+  for (tie(ei, e_end) = edges(angelLCG); ei != e_end; ++ei) {
+    // Find source and target in remainder LCG
+    const LinearizedComputationalGraphVertex* original_src_p = ourLCG_verts[source(*ei, angelLCG)];
+    const LinearizedComputationalGraphVertex* original_tgt_p = ourLCG_verts[target(*ei, angelLCG)];
+    LinearizedComputationalGraphVertex* remainder_src_p = NULL;
+    LinearizedComputationalGraphVertex* remainder_tgt_p = NULL;
+    for (VertexCorrelationList::iterator vcori = v_cor_list.begin(); vcori != v_cor_list.end(); vcori++) {
+      if (vcori->myOriginalVertex_p == original_src_p) remainder_src_p = vcori->myRemainderVertex_p;
+      else if (vcori->myOriginalVertex_p == original_tgt_p) remainder_tgt_p = vcori->myRemainderVertex_p;
+    } // end all vertex correlation entries
+    throw_exception (remainder_src_p == NULL || remainder_tgt_p == NULL, consistency_exception,
+					"Vertex in remainder graph could not be correlated");
+
+    // create the edge and its correlation entry
+    LinearizedComputationalGraphEdge& new_redge = remainderLCG.addEdge(*remainder_src_p, *remainder_tgt_p);
+    EdgeCorrelationEntry new_edge_correlation;
+    new_edge_correlation.myRemainderGraphEdge_p = &new_redge;
+
+    // set the edge type (unit/const/variable)
+    switch (eType[*ei]) { 
+    case UNIT_EDGE:
+      new_redge.setEdgeLabelType(LinearizedComputationalGraphEdge::UNIT_LABEL);
+      break;
+    case CONSTANT_EDGE:
+      new_redge.setEdgeLabelType(LinearizedComputationalGraphEdge::CONSTANT_LABEL);
+      break;
+    case VARIABLE_EDGE:
+      new_redge.setEdgeLabelType(LinearizedComputationalGraphEdge::VARIABLE_LABEL);
+      break;
+    }
+
+    // derive contents of correlation entry from the internal edge reference list
+    EdgeRefType_E new_remainder_edge_ref_t = getRefType (*ei, angelLCG, edge_ref_list);
+    if(new_remainder_edge_ref_t == LCG_EDGE) {
+      new_edge_correlation.myEliminationReference.myOriginalEdge_p = getLCG_p (*ei, angelLCG, edge_ref_list);
+      new_edge_correlation.myType = EdgeCorrelationEntry::LCG_EDGE;
+    }
+    else if (new_remainder_edge_ref_t == JAE_VERT) {
+      new_edge_correlation.myEliminationReference.myJAEVertex_p = getJAE_p (*ei, angelLCG, edge_ref_list);
+      new_edge_correlation.myType = EdgeCorrelationEntry::JAE_VERT;
+    }
+    else throw_exception (true, consistency_exception, "Edge reference type neither LCG_EDGE nor JAE_VERT");
+
+    e_cor_list.push_back(new_edge_correlation);
+  } // end all edges in angelLCG
+
+} // end populate_remainderGraph_and_correlationLists()
+
 } // end namespace angel
 
 using namespace angel;
@@ -400,88 +547,20 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 					   JacobianAccumulationExpressionList& jae_list,
 					   LinearizedComputationalGraph& remainderLCG,
 					   VertexCorrelationList& v_cor_list,
-					   EdgeCorrelationList& e_cor_list,
-					   unsigned int& numReroutings) {
+					   EdgeCorrelationList& e_cor_list) {
 #ifndef NDEBUG
   cout << "allowMaintainingFlag is set to "; if (allowMaintainingFlag) cout << "true"; else cout << "false";
   cout << ", and ourAwarenessLevel is set to " << Elimination::AwarenessLevelToString(ourAwarenessLevel) << endl;
   cout << "Creating internal angel LCG...." << endl;
 #endif
 
-/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- * BUILD ANGELLCG FROM XAIFBOOSTER LCG
- * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-
-  c_graph_t angelLCG;
-
-  // COPY VERTICES -------------------------------------------------------------
   vector<const LinearizedComputationalGraphVertex*> ourLCG_verts;
-  const LinearizedComputationalGraph::VertexPointerList& ourLCG_indeps = ourLCG.getIndependentList ();
-  const LinearizedComputationalGraph::VertexPointerList& ourLCG_deps = ourLCG.getDependentList ();
-  LinearizedComputationalGraph::VertexPointerList::const_iterator LCGvi;
-
-  // Add pointers to independent vertices to vector ourLCG_verts
-  for (LCGvi = ourLCG_indeps.begin(); LCGvi != ourLCG_indeps.end(); LCGvi++)
-    ourLCG_verts.push_back (*LCGvi);
-
-  // remaining are sorted topologically
-  int nv = ourLCG.numVertices ();
-  LinearizedComputationalGraph::ConstVertexIteratorPair vip (ourLCG.vertices());
-  while ((int) ourLCG_verts.size() < nv) {
-    for (LinearizedComputationalGraph::ConstVertexIterator topi (vip.first), top_end (vip.second); topi != top_end; ++topi) {
-      if (which_index (&*topi, ourLCG_verts) != ourLCG_verts.size()) continue;
-      bool all_num = true; // all predecessors numbered
-      LinearizedComputationalGraph::ConstInEdgeIteratorPair inedges (ourLCG.getInEdgesOf (*topi));
-      for (LinearizedComputationalGraph::ConstInEdgeIterator ie = inedges.first, iend = inedges.second; ie != iend; ++ie)
-	if (which_index (&(ourLCG.getSourceOf (*ie)), ourLCG_verts) == ourLCG_verts.size()) {
-	  all_num = false;
-	  break;
-	}
-      if (all_num) ourLCG_verts.push_back (&*topi);
-    } // end all vertices
-  }
-
-  // populate vectors of independent and dependent vertices
-  vector<c_graph_t::vertex_t> indeps, deps;
-  for (LCGvi = ourLCG_indeps.begin(); LCGvi != ourLCG_indeps.end(); LCGvi++)
-    indeps.push_back (which_index (*LCGvi, ourLCG_verts));
-  angelLCG.x(int (indeps.size()));
-  for (LCGvi = ourLCG_deps.begin(); LCGvi != ourLCG_deps.end(); LCGvi++)
-    deps.push_back (which_index (*LCGvi, ourLCG_verts)); 
-  angelLCG.dependents = deps;
-
-  // ensure that indeps occur in the beginning
-  for (size_t c = 0; c < indeps.size(); c++)
-    throw_exception (indeps[c] >= indeps.size(), consistency_exception, "Independent not at the beginning");
-
-  // COPY EDGES ----------------------------------------------------------------
+  c_graph_t angelLCG;
   list<EdgeRef_t> edge_ref_list;
-  int edge_number = 0;
-  boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), angelLCG);
-  LinearizedComputationalGraph::ConstEdgeIteratorPair eip (ourLCG.edges());
-  for (LinearizedComputationalGraph::ConstEdgeIterator ei (eip.first), e_end (eip.second); ei != e_end; ++ei) {
-    // locate source and target of edge in angelLCG
-    c_graph_t::vertex_t source = which_index (& (ourLCG.getSourceOf (*ei)), ourLCG_verts);
-    c_graph_t::vertex_t	target = which_index (& (ourLCG.getTargetOf (*ei)), ourLCG_verts);
-    pair<c_graph_t::edge_t, bool> new_edge = add_edge (source, target, edge_number++, angelLCG);
-    if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::UNIT_LABEL)
-      eType[new_edge.first] = UNIT_EDGE;
-    else if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::CONSTANT_LABEL) {
-      //cout << "---------------------------------------------------------------- FOUND A CONSTANT EDGE ------------------------------------------" << endl;
-      eType[new_edge.first] = CONSTANT_EDGE;
-    }
-    else
-      eType[new_edge.first] = VARIABLE_EDGE;
-    EdgeRef_t new_edge_ref (new_edge.first, &*ei);
-    edge_ref_list.push_back(new_edge_ref);
-  } // end for all LCG edges
 
-#ifndef NDEBUG
-  write_graph ("angelLCG (constructed from ourLCG): ", angelLCG);
-#endif
-// END READ GRAPH
-//****************************************************************************************************************
-/*
+  // Create internal (angel) LCG from xaifBooster LCG
+  ourLCG_to_angelLCG (ourLCG, ourLCG_verts, angelLCG, edge_ref_list);
+
 #ifndef NDEBUG
   cout << endl << "*************************************************************************************" << endl; 
   cout << "Performing total elim sequences and building up refill dependence information..." << endl;
@@ -535,55 +614,40 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   }
 
 #ifndef NDEBUG
-  cout << endl << "*************************************************************************************" << endl; 
-  cout << "Edge eliminations complete.  Now Performing scarcity-preserving edge reroutings..." << endl;
-  cout << "*************************************************************************************" << endl; 
+  write_graph ("angelLCG after partial edge elimination sequence (G prime): ", angelLCG);
+//  cout << endl << "*************************************************************************************" << endl; 
+//  cout << "Edge eliminations complete.  Now Performing scarcity-preserving edge reroutings..." << endl;
+//  cout << "*************************************************************************************" << endl; 
 #endif
 
   // perform the desired reroutings
   //cost_of_elim_seq += perform_reroutings (angelLCG, ourAwarenessLevel, allowMaintainingFlag, edge_ref_list, jae_list, numReroutings);
 
+  populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
+
+  cout << "compute_partial_elimination_sequence: cost " << cost_of_elim_seq << endl;
+} // end compute_partial_elimination_sequence()
+
+void compute_partial_transformation_sequence (const LinearizedComputationalGraph& ourLCG,
+					      const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					      const bool allowMaintainingFlag,
+					      JacobianAccumulationExpressionList& jae_list,
+					      LinearizedComputationalGraph& remainderLCG,
+					      VertexCorrelationList& v_cor_list,
+					      EdgeCorrelationList& e_cor_list,
+					      unsigned int& numReroutings) {
 #ifndef NDEBUG
-  write_graph ("angelLCG after partial edge elimination (and rerouting) sequence (G prime): ", angelLCG);
-  cout << endl << "*************************************************************************************" << endl; 
-  cout << "Rerouting phase complete.  Now building the remainder graph..." << endl;
-  cout << "*************************************************************************************" << endl; 
+  cout << "allowMaintainingFlag is set to "; if (allowMaintainingFlag) cout << "true"; else cout << "false";
+  cout << ", and ourAwarenessLevel is set to " << Elimination::AwarenessLevelToString(ourAwarenessLevel) << endl;
+  cout << "Creating internal angel LCG...." << endl;
 #endif
-*/
 
-/*
-  cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl << "TESTING REACHABILITY QUERIES" << endl;
-  cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
+  vector<const LinearizedComputationalGraphVertex*> ourLCG_verts;
+  c_graph_t angelLCG;
+  list<EdgeRef_t> edge_ref_list;
 
-  property_map<pure_c_graph_t, VertexVisited>::type visited = get(VertexVisited(), angelLCG);
-  c_graph_t::vi_t srci, src_end, tgti, tgt_end, cleari, clear_end;
-  vertex_set_t upset;
-
-  for (tie(srci, src_end) = vertices(angelLCG); srci != src_end; ++srci) {
-    // generate upset
-    vertex_upset (*srci, angelLCG, upset);
-
-    // check every other vertex in the graph
-    for (tie(tgti, tgt_end) = vertices(angelLCG); tgti != tgt_end; ++tgti) {
-      if (*tgti == *srci) continue; // skip the src vertex we're considering
-
-      // clear visited flag for all vertices
-      for (tie(cleari, clear_end) = vertices(angelLCG); cleari != clear_end; ++cleari) visited[*cleari] = false;
-
-      vertex_set_t::const_iterator upset_i = upset.find(*tgti);
-      bool isReachable = reachable (*srci, *tgti, angelLCG);
-
-      if (upset_i != upset.end()) { // target IS reachable from src
-	if (isReachable) cout << "They agree that " << *tgti << " is reachable from " << *srci << endl;
-	else cout << "Upset says reachable, but reachable says not" << endl;
-      }
-      else { // target NOT reachable from src
-	if (!isReachable) cout << "They agree that " << *tgti << " is NOT reachable from " << *srci << endl;
-	else cout << "Upset says NOT reachable, but reachable says yes" << endl;
-      }
-    } // end every other vertex
-  } // end all vertices
-*/
+  // Create internal (angel) LCG from xaifBooster LCG
+  ourLCG_to_angelLCG (ourLCG, ourLCG_verts, angelLCG, edge_ref_list);
 
 #ifndef NDEBUG
   cout << endl << "*************************************************************************************" << endl; 
@@ -706,6 +770,16 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
     cout << "complete elim sequence complete.  This sequence achieved " << currentTransformationSequence->bestNumNontrivialEdges << " edges and ";
     if (currentTransformationSequence->revealedNewDependence) cout << "DID"; else cout << "DID NOT";
     cout << " add new dependence information to the dependence map" << endl;
+    if (!refillDependences.empty()) {
+      cout << endl << "current contents of refillDependences: " << endl;
+      for (refillDependenceMap_t::const_iterator di = refillDependences.begin(); di != refillDependences.end(); di++) {
+	cout <<  "(" << di->first.first << "," << di->first.second << ") -> { ";
+	for (vertex_set_t::const_iterator vsi = di->second.begin(); vsi != di->second.end(); vsi++)
+	  cout << *vsi << " ";
+	cout << "}" << endl;
+      }
+      cout << endl;
+    }
 #endif
      
     // check whether we've beaten our OVERALL best
@@ -778,88 +852,21 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 				  : back_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
     } // end just a single edge elimination
 
-    // check whether we've reached our goal
+    // break when we've reached our goal
     if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestTransformationSequence->bestNumNontrivialEdges) break;
   } // end iterate through 
 
 #ifndef NDEBUG
     cout << "Goal of " << bestTransformationSequence->bestNumNontrivialEdges << " reached" << endl;
 #endif
-
+ 
   delete bestTransformationSequence; 
 
-/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- * BUILD REMAINDER LCG AND CORRELATION LISTS FROM REDUCED ANGEL GRAPH
- * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+  populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
 
-  remainderLCG.clear();
+  cout << "compute_partial_transformation_sequence: cost " << cost_of_elim_seq << endl;
 
-  // copy and correlate vertices
-  v_cor_list.resize(0);
-  c_graph_t::vi_t vi, v_end;
-  for (tie (vi, v_end) = vertices (angelLCG); vi != v_end; ++vi) {
-    // since vertices aren't removed from angelLCG, only copy non-isolated vertices
-    if (in_degree (*vi, angelLCG) != 0 || out_degree (*vi, angelLCG) != 0) {
-      LinearizedComputationalGraphVertex& new_rvert = remainderLCG.addVertex();
-      // add a new correlation entry to the list
-      VertexCorrelationEntry new_rvert_cor;
-      new_rvert_cor.myOriginalVertex_p = ourLCG_verts[*vi];
-      new_rvert_cor.myRemainderVertex_p = &new_rvert;
-      v_cor_list.push_back(new_rvert_cor);
-    }
-  } // end all vertices
-
-  // copy and correlate edges
-  e_cor_list.resize(0);
-  c_graph_t::ei_t ei, e_end;
-  for (tie(ei, e_end) = edges(angelLCG); ei != e_end; ++ei) {
-    // Find source and target in remainder LCG
-    const LinearizedComputationalGraphVertex* original_src_p = ourLCG_verts[source(*ei, angelLCG)];
-    const LinearizedComputationalGraphVertex* original_tgt_p = ourLCG_verts[target(*ei, angelLCG)];
-    LinearizedComputationalGraphVertex* remainder_src_p = NULL;
-    LinearizedComputationalGraphVertex* remainder_tgt_p = NULL;
-    for (VertexCorrelationList::iterator vcori = v_cor_list.begin(); vcori != v_cor_list.end(); vcori++) {
-      if (vcori->myOriginalVertex_p == original_src_p) remainder_src_p = vcori->myRemainderVertex_p;
-      else if (vcori->myOriginalVertex_p == original_tgt_p) remainder_tgt_p = vcori->myRemainderVertex_p;
-    } // end all vertex correlation entries
-    throw_exception (remainder_src_p == NULL || remainder_tgt_p == NULL, consistency_exception,
-					"Vertex in remainder graph could not be correlated");
-
-    // create the edge and its correlation entry
-    LinearizedComputationalGraphEdge& new_redge = remainderLCG.addEdge(*remainder_src_p, *remainder_tgt_p);
-    EdgeCorrelationEntry new_edge_correlation;
-    new_edge_correlation.myRemainderGraphEdge_p = &new_redge;
-
-    // set the edge type (unit/const/variable)
-    switch (eType[*ei]) { 
-    case UNIT_EDGE:
-      new_redge.setEdgeLabelType(LinearizedComputationalGraphEdge::UNIT_LABEL);
-      break;
-    case CONSTANT_EDGE:
-      new_redge.setEdgeLabelType(LinearizedComputationalGraphEdge::CONSTANT_LABEL);
-      break;
-    case VARIABLE_EDGE:
-      new_redge.setEdgeLabelType(LinearizedComputationalGraphEdge::VARIABLE_LABEL);
-      break;
-    }
-
-    // derive contents of correlation entry from the internal edge reference list
-    EdgeRefType_E new_remainder_edge_ref_t = getRefType (*ei, angelLCG, edge_ref_list);
-    if(new_remainder_edge_ref_t == LCG_EDGE) {
-      new_edge_correlation.myEliminationReference.myOriginalEdge_p = getLCG_p (*ei, angelLCG, edge_ref_list);
-      new_edge_correlation.myType = EdgeCorrelationEntry::LCG_EDGE;
-    }
-    else if (new_remainder_edge_ref_t == JAE_VERT) {
-      new_edge_correlation.myEliminationReference.myJAEVertex_p = getJAE_p (*ei, angelLCG, edge_ref_list);
-      new_edge_correlation.myType = EdgeCorrelationEntry::JAE_VERT;
-    }
-    else throw_exception (true, consistency_exception, "Edge reference type neither LCG_EDGE nor JAE_VERT");
-
-    e_cor_list.push_back(new_edge_correlation);
-  } // end all edges in angelLCG
-
-  cout << "compute_partial_elimination_sequence: cost " << cost_of_elim_seq << endl;
-} // end compute_partial_elimination_sequence()
+} // end compute_partial_transformation_sequence()
 
  /* 	END DIRECT ELIMINATION
  * #####################################################################################################################################
@@ -1053,8 +1060,17 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
 					    getEliminationResult().myJAEList,
 					    getEliminationResult().myRemainderLCG,
 					    getEliminationResult().myVertexCorrelationList,
-					    getEliminationResult().myEdgeCorrelationList,
-					    getEliminationResult().myNumReroutings);
+					    getEliminationResult().myEdgeCorrelationList);
+    }
+    else if (myType == SCARCE_TRANSFORMATION_TYPE) {
+      compute_partial_transformation_sequence (getLCG(),
+					       ourAwarenessLevel,
+					       ourAllowMaintainingFlag,
+					       getEliminationResult().myJAEList,
+					       getEliminationResult().myRemainderLCG,
+					       getEliminationResult().myVertexCorrelationList,
+					       getEliminationResult().myEdgeCorrelationList,
+					       getEliminationResult().myNumReroutings);
     }
     else throw_exception (true, consistency_exception, "Missing or invalid elimination type");
   }
@@ -1066,12 +1082,5 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
 
 } // end namespace xaifBoosterCrossCountryInterface
 
-
-
 #endif // USEXAIFBOOSTER
-
-
-
-
-
 

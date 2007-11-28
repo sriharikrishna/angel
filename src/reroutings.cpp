@@ -101,31 +101,6 @@ void reroutable_edges (c_graph_t& angelLCG,
   
 } // end reroutable_edges()
 
-size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
-			    const std::vector<Transformation_t>& transformationsPerformedV,
-			    const c_graph_t& angelLCG,
-			    vector<edge_reroute_t>& noncyclicReroutingsV) {
-  noncyclicReroutingsV.clear();
-  if (erv.empty()) return 0;
-  size_t j;
-
-  // check each rerouting in erv to see whether it has already been performed
-  for (size_t i = 0; i < erv.size(); i++) {
-    // go through the history 
-    for (j = 0; j < transformationsPerformedV.size(); j++)
-      if (transformationsPerformedV[j].isRerouting
-       && source(transformationsPerformedV[j].myRerouteElim.e, angelLCG) == source(erv[i].e, angelLCG)
-       && target(transformationsPerformedV[j].myRerouteElim.e, angelLCG) == target(erv[i].e, angelLCG)
-       && source(transformationsPerformedV[j].myRerouteElim.pivot_e, angelLCG) == source(erv[i].pivot_e, angelLCG)
-       && target(transformationsPerformedV[j].myRerouteElim.pivot_e, angelLCG) == target(erv[i].pivot_e, angelLCG)) break;
-
-    // it it made it all the way through, the rerouting hasn't already been performed
-    if (j == transformationsPerformedV.size()) noncyclicReroutingsV.push_back(erv[i]);
-  } // end iterate over erv
-
-  return noncyclicReroutingsV.size();
-} // end noncyclicReroutings()
-
 bool edge_reducing_rerouteElims_types12 (const vector<edge_reroute_t>& erv1,
 					 const c_graph_t& angelLCG,
 					 const Elimination::AwarenessLevel_E ourAwarenessLevel,
