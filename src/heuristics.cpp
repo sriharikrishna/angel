@@ -1436,9 +1436,9 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
   if (edge_reducing_rerouteElims_type3 (erv, angelLCG, ourAwarenessLevel, false, reducingReroutingstype3V))
     for (i = 0; i < reducingReroutingstype3V.size(); i++)
       reducingReroutingsV.push_back(reducingReroutingstype3V[i]);
- 
+#ifndef NDEBUG
   cout << "	Of " << erv.size() << " reroutings passed to reducing_reroutings(), " << reducingReroutingsV.size() << " reduce the nontrivial edge count when followed by elimination" << endl;
- 
+#endif
   if (reducingReroutingsV.empty()) {
     //reducingReroutingsV = erv;
     return false;
@@ -1705,8 +1705,9 @@ bool reducing_reroutings_new (const vector<edge_reroute_t>& erv,
 
   } // end iterate through erv
 
+#ifndef NDEBUG
   cout << "	Of " << erv.size() << " reroutings passed to reducing_reroutings(), " << reducingReroutingsV.size() << " reduce the nontrivial edge count when followed by elimination" << endl;
-
+#endif
   if (reducingReroutingsV.empty()) {
     reducingReroutingsV = erv;
     return false;
@@ -1731,15 +1732,17 @@ bool all_viable_transformations (c_graph_t& angelLCG,
   for (i = 0; i < allEdgeElimsV.size(); i++)
     allViableTransformationsV.push_back(Transformation_t (allEdgeElimsV[i]));
 
-  cout << "	There are " << allEdgeElimsV.size() << " viable Edge eliminations in G" << endl;
-
   reroutable_edges (angelLCG, allReroutingsV);
   noncyclicReroutings (allReroutingsV, transformationsPerformedV, angelLCG, noncyclicReroutingsV);
-  cout << "	Of " << allReroutingsV.size() << " possible reroutings, " << noncyclicReroutingsV.size() << " are noncyclic" << endl;
+
   for (size_t i = 0; i < noncyclicReroutingsV.size(); i++)
     allViableTransformationsV.push_back(Transformation_t (noncyclicReroutingsV[i]));
 
+#ifndef NDEBUG
+  cout << "	There are " << allEdgeElimsV.size() << " viable Edge eliminations in G" << endl;
+  cout << "	Of " << allReroutingsV.size() << " possible reroutings, " << noncyclicReroutingsV.size() << " are noncyclic" << endl;
   cout << "There are " << allViableTransformationsV.size() << " viable transformations in G" << endl;
+#endif
 
   return !allViableTransformationsV.empty();
 } // end all_viable_transformations()
@@ -1776,7 +1779,9 @@ bool maintaining_transformations (const vector<Transformation_t>& tv,
   for (i = 0; i < tempReroutingsV.size(); i++)
     maintainingTransformationsV.push_back(Transformation_t (tempReroutingsV[i]));
 
+#ifndef NDEBUG
   cout << "Of " << tv.size() << " transformations passed to maintaining_transformations(), " << maintainingTransformationsV.size() << " maintain the nontrivial edge count" << endl;
+#endif
 
   // if there are neither edge elims nor reroutings, return the transformation vector we were passed
   if (maintainingTransformationsV.empty()) {
@@ -1819,8 +1824,9 @@ bool reducing_transformations (const vector<Transformation_t>& tv,
     for (i = 0; i < tempReducingReroutingsV.size(); i++)
       reducingTransformationsV.push_back(Transformation_t (tempReducingReroutingsV[i]));
 
+#ifndef NDEBUG
   cout << "Of " << tv.size() << " transformations passed to reducing_transformations(), " << reducingTransformationsV.size() << " reduce the nontrivial edge count" << endl;
-
+#endif
 
   // if there are neither edge elims nor reroutings, return only the edge elims
   if (reducingTransformationsV.empty()) {

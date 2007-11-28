@@ -704,16 +704,19 @@ struct elimSeq_cost_t {
   unsigned int bestNumNontrivialEdges;
   unsigned int cost;
   unsigned int costAtBestEdgecount;
+  unsigned int numIntermediatesAtBestEdgecount;
   size_t lastDesiredElim;		// unused for now
   mutable bool revealedNewDependence;
 
   elimSeq_cost_t (unsigned int _bestNumNontrivialEdges,
 		  unsigned int _cost,
 		  unsigned int _costAtBestEdgecount,
+		  unsigned int _numIntermediatesAtBestEdgecount,
 		  size_t _lastDesiredElim) :
     bestNumNontrivialEdges (_bestNumNontrivialEdges),
     cost (_cost),
     costAtBestEdgecount (_costAtBestEdgecount),
+    numIntermediatesAtBestEdgecount (_numIntermediatesAtBestEdgecount),
     lastDesiredElim (_lastDesiredElim),
     revealedNewDependence (false) {}
 };
