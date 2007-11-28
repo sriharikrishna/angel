@@ -369,7 +369,7 @@ elimSeq_cost_t determine_edge_elimination_sequence (const c_graph_t angelLCG,
   } // end all elim sequences
 
 #ifndef NDEBUG
-  cout << "The best partial edge elimination sequence achieves a nontrivial edge count of " << bestTransformationSequence->bestNumNontrivialEdges << ", at which point there are " << bestTransformationSequence->numIntermediatesAtBestEdgecount << " intermediate vertices" << endl;
+  cout << "The best partial edge elimination sequence achieves a nontrivial edge count of " << bestElimSeqFound.bestNumNontrivialEdges << ", at which point there are " << bestElimSeqFound.numIntermediatesAtBestEdgecount << " intermediate vertices" << endl;
 #endif
 
   return bestElimSeqFound;
