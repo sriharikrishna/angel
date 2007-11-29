@@ -1442,11 +1442,6 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 			  const Elimination::AwarenessLevel_E ourAwarenessLevel,
 			  vector<edge_reroute_t>& reducingReroutingsV);
 
-bool reducing_reroutings_new (const vector<edge_reroute_t>& erv,
-			  const c_graph_t& angelLCG,
-			  const Elimination::AwarenessLevel_E ourAwarenessLevel,
-			  vector<edge_reroute_t>& reducingReroutingsV);
-
 // ==============================================================================
 // |		FILTERS FOR ELIMINATIONS AND REROUTINGS	(TRANSFORMATIONS)	|
 // ==============================================================================

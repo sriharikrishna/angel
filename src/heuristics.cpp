@@ -1161,8 +1161,8 @@ int edge_elim_effect (const edge_bool_t be,
 	//unit awareness: absorb_e will be nonunit afterwards.  increase only if absorb_e was previously unit 
 	if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE) nontrivialEdgeChange++;
 	// constant awareness: increase if absorb edge is nonvariable and either e or *oei is variable
-	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS)
-	  if (eType[absorb_e] != VARIABLE_EDGE && (eType[e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
+	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
+	  if (eType[e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE) nontrivialEdgeChange++;
       }
       else { // fill-in
 	if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange++;
@@ -1194,8 +1194,8 @@ int edge_elim_effect (const edge_bool_t be,
 	//unit awareness: absorb_e will be nonunit afterwards.  increase only if absorb_e was previously unit
 	if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE) nontrivialEdgeChange++;
 	// constant awareness: increase if absorb edge is nonvariable and either e or *oei is variable
-	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS)
-	  if (eType[absorb_e] != VARIABLE_EDGE && (eType[e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
+	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
+	  if (eType[e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE) nontrivialEdgeChange++;
       }
       else { // fill-in
 	if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange++;
@@ -1206,10 +1206,6 @@ int edge_elim_effect (const edge_bool_t be,
       }
     } // end all predecessors of src(e)
   } // end back-elimination
-
-#ifndef NDEBUG
-  //cout << "nontrivialEdgeChange determined to be " << nontrivialEdgeChange << endl;
-#endif
 
   return nontrivialEdgeChange;
 }
@@ -1244,7 +1240,7 @@ bool reducing_edge_eliminations (const vector<edge_bool_t>& bev1,
   if (bev1.empty()) return 0;
 
   for (size_t c = 0; c < bev1.size(); c++)
-    if (edge_elim_effect (bev1[c], angelLCG, ourAwarenessLevel) <= -1)
+    if (edge_elim_effect (bev1[c], angelLCG, ourAwarenessLevel) < 0)
       bev2.push_back (bev1[c]);
 
 #ifndef NDEBUG
@@ -1419,6 +1415,7 @@ bool maintaining_reroutings (const vector<edge_reroute_t>& erv,
 } // end maintaining_reroutings()
 */
 
+/*
 bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 			  const c_graph_t& angelLCG,
 			  const Elimination::AwarenessLevel_E ourAwarenessLevel,
@@ -1445,8 +1442,9 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
   }
   else return true;
 } // end reducing_reroutings()
+*/
 
-bool reducing_reroutings_new (const vector<edge_reroute_t>& erv,
+bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 			  const c_graph_t& angelLCG,
 			  const Elimination::AwarenessLevel_E ourAwarenessLevel,
 			  vector<edge_reroute_t>& reducingReroutingsV) {
@@ -1457,7 +1455,7 @@ bool reducing_reroutings_new (const vector<edge_reroute_t>& erv,
   c_graph_t::iei_t iei, ie_end;
   c_graph_t::oei_t oei, oe_end;
   c_graph_t::edge_t absorb_e, increment_absorb_e, decrement_absorb_e;
-  bool found_absorb_e, found_increment_absorb_e, found_decrement_absorb_e;
+  bool found_absorb_e;
 
   for (size_t i = 0; i < erv.size(); i++) {
     // first record effect of the rerouting itself
@@ -1504,6 +1502,7 @@ bool reducing_reroutings_new (const vector<edge_reroute_t>& erv,
 	  } // end fill-in
         } // end all preds of src(e)
 	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimIncrement < 0) erv[i].increment_eliminatable = true;
+	//cout << "delta with increment elimination is " << nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimIncrement << endl;
       } // end if increment edge can be back-eliminated
       
       //------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1548,6 +1547,7 @@ bool reducing_reroutings_new (const vector<edge_reroute_t>& erv,
 
 	} // end all successors of tgt(e)=tgt(pe)
 	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimPivot < 0) erv[i].pivot_eliminatable = true;
+	//cout << "delta with pivot elimination is " << nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimPivot << endl;
       } // end determine nontrivialEdgeChange_elimPivot
 
       //------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1583,6 +1583,7 @@ bool reducing_reroutings_new (const vector<edge_reroute_t>& erv,
 	  }
 	} // end all inedges of tgt(e)
 	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_backElimination < 0) erv[i].type3EdgeElimVector.push_back(target(*oei, angelLCG));
+	//cout << "delta with back elimination is " << nontrivialEdgeChange_rerouting + nontrivialEdgeChange_backElimination << endl;
       } // end all outedges of tgt(e) (end type 3)
 
     } // end pre-routing
@@ -1619,8 +1620,8 @@ bool reducing_reroutings_new (const vector<edge_reroute_t>& erv,
 	      if (eType[*oei] == VARIABLE_EDGE || !incrementIsTrivial) nontrivialEdgeChange_elimIncrement++;
 	  } // end fill-in
         } // end all preds of src(e)
-
 	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimIncrement < 0) erv[i].increment_eliminatable = true;
+	//cout << "delta with increment elimination is " << nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimIncrement << endl;
       } // end if increment edge can be back-eliminated
 
       //------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1663,6 +1664,7 @@ bool reducing_reroutings_new (const vector<edge_reroute_t>& erv,
 
 	} // end all successors of tgt(e)=tgt(pe)
 	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimPivot < 0) erv[i].pivot_eliminatable = true;
+	//cout << "delta with pivot elimination is " << nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimPivot << endl;
       } // end determine nontrivialEdgeChange_elimPivot
 
       //------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1700,8 +1702,12 @@ bool reducing_reroutings_new (const vector<edge_reroute_t>& erv,
 	  } // end fill-in
 	} // end all outedges of src(e)
 	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_frontElimination < 0) erv[i].type3EdgeElimVector.push_back(source(*iei, angelLCG));
+	//cout << "delta with front elimination is " << nontrivialEdgeChange_rerouting + nontrivialEdgeChange_frontElimination << endl;
       } // end all inedges of src(e)
     } // end post-routing
+
+    if (erv[i].pivot_eliminatable || erv[i].increment_eliminatable || !erv[i].type3EdgeElimVector.empty())
+      reducingReroutingsV.push_back(erv[i]);
 
   } // end iterate through erv
 
@@ -1709,7 +1715,7 @@ bool reducing_reroutings_new (const vector<edge_reroute_t>& erv,
   cout << "	Of " << erv.size() << " reroutings passed to reducing_reroutings(), " << reducingReroutingsV.size() << " reduce the nontrivial edge count when followed by elimination" << endl;
 #endif
   if (reducingReroutingsV.empty()) {
-    reducingReroutingsV = erv;
+    //reducingReroutingsV = erv;
     return false;
   }
   else return true;
@@ -1830,9 +1836,10 @@ bool reducing_transformations (const vector<Transformation_t>& tv,
 
   // if there are neither edge elims nor reroutings, return only the edge elims
   if (reducingTransformationsV.empty()) {
-    for (i = 0; i < tempEdgeElimsV.size(); i++) reducingTransformationsV.push_back(Transformation_t (tempEdgeElimsV[i], angelLCG));
-     // if there are no edge elims that maintain or reduce, and no reroutings that reduce: push back all edge elims
-     if (reducingTransformationsV.empty()) {
+    for (i = 0; i < tempEdgeElimsV.size(); i++) // push back all the edge elims
+      reducingTransformationsV.push_back(Transformation_t (tempEdgeElimsV[i], angelLCG));
+    // if there are no edge elims that maintain or reduce, and no reroutings that reduce: push back all edge elims
+    if (reducingTransformationsV.empty()) {
       vector<edge_bool_t> allEdgeElimsV;
       eliminatable_objects(angelLCG, allEdgeElimsV);
       for (i = 0; i < allEdgeElimsV.size(); i++) reducingTransformationsV.push_back(Transformation_t (allEdgeElimsV[i], angelLCG));

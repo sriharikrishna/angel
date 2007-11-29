@@ -331,20 +331,17 @@ elimSeq_cost_t determine_edge_elimination_sequence (const c_graph_t angelLCG,
       }
 
 #ifndef NDEBUG
-	if (!refillDependences.empty()) {
-          cout << endl << "current contents of refillDependences: " << endl;
-	  for (refillDependenceMap_t::const_iterator di = refillDependences.begin(); di != refillDependences.end(); di++) {
-	    cout <<  "(" << di->first.first << "," << di->first.second << ") -> { ";
-	    for (vertex_set_t::const_iterator vsi = di->second.begin(); vsi != di->second.end(); vsi++)
-	      cout << *vsi << " ";
-	    cout << "}" << endl;
-	  }
-	  cout << endl;
-	}
+      cout << endl << "current contents of refillDependences: " << endl;
+      for (refillDependenceMap_t::const_iterator di = refillDependences.begin(); di != refillDependences.end(); di++) {
+	cout <<  "(" << di->first.first << "," << di->first.second << ") -> { ";
+	for (vertex_set_t::const_iterator vsi = di->second.begin(); vsi != di->second.end(); vsi++)
+	  cout << *vsi << " ";
+	cout << "}" << endl;
+      }
+      cout << endl;
 #endif
 
-    elimNum++;
-
+      elimNum++;
     } // end of elimination sequence
 
     // check whether we've beaten our OVERALL best
@@ -353,9 +350,6 @@ elimSeq_cost_t determine_edge_elimination_sequence (const c_graph_t angelLCG,
 	|| (currentElimSeq.bestNumNontrivialEdges == bestElimSeqFound.bestNumNontrivialEdges
 	    && currentElimSeq.costAtBestEdgecount < bestElimSeqFound.costAtBestEdgecount)) {
       bestElimSeqFound = currentElimSeq;
-#ifndef NDEBUG
-      cout << "New bestElimSeqFound" << endl;
-#endif
     }
 
 #ifndef NDEBUG
@@ -364,9 +358,7 @@ elimSeq_cost_t determine_edge_elimination_sequence (const c_graph_t angelLCG,
     cout << " add new dependence information to the dependence map" << endl;
 #endif
 
-    // determine whether it's time to stop
     if (!currentElimSeq.revealedNewDependence) break;
-
     seqNum++;
   } // end all elim sequences
 
@@ -558,7 +550,6 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 #ifndef NDEBUG
   cout << "allowMaintainingFlag is set to "; if (allowMaintainingFlag) cout << "true"; else cout << "false";
   cout << ", and ourAwarenessLevel is set to " << Elimination::AwarenessLevelToString(ourAwarenessLevel) << endl;
-  cout << "Creating internal angel LCG...." << endl;
 #endif
 
   vector<const LinearizedComputationalGraphVertex*> ourLCG_verts;
@@ -810,7 +801,9 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
 
 #ifndef NDEBUG
   cout << "The best transformation sequence achieves a nontrivial edge count of " << bestTransformationSequence->bestNumNontrivialEdges << ", at which point there are " << bestTransformationSequence->numIntermediatesAtBestEdgecount << " intermediate vertices" << endl;
-
+#endif
+/*
+#ifndef NDEBUG
   cout << endl << "*************************************************************************************" << endl; 
   cout << "Now performing the best partial sequence of transformations..." << endl;
   cout << "*************************************************************************************" << endl; 
@@ -860,14 +853,14 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
 #ifndef NDEBUG
     cout << "Goal of " << bestTransformationSequence->bestNumNontrivialEdges << " reached" << endl;
 #endif
- 
+*/ 
   delete bestTransformationSequence; 
 
   populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
 
-#ifndef NDEBUG
-  cout << "compute_partial_transformation_sequence: cost " << cost_of_elim_seq << endl;
-#endif
+//#ifndef NDEBUG
+//  cout << "compute_partial_transformation_sequence: cost " << cost_of_elim_seq << endl;
+//#endif
 
 } // end compute_partial_transformation_sequence()
 
