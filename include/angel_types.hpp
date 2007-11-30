@@ -741,18 +741,7 @@ struct edge_reroute_t {
     isPre (_isPre),
     pivot_eliminatable (0),
     increment_eliminatable (0) { type3EdgeElimVector.clear(); }
-
-/*
-  // copy constructor
-  edge_reroute_t (const edge_reroute_t& _rerouting) :
-    e (_rerouting.e),
-    pivot_e (_rerouting.pivot_e),
-    isPre (_rerouting.isPre),
-    pivot_eliminatable (_rerouting.pivot_eliminatable),
-    increment_eliminatable (_rerouting.increment_eliminatable),
-    type3EdgeElimVector (_rerouting.type3EdgeElimVector) {}
-*/
-};
+}; // end struct edge_reroute_t
 
 struct Transformation_t {
   bool isRerouting;
@@ -763,9 +752,6 @@ struct Transformation_t {
 		    const c_graph_t& angelLCG) :
 		      isRerouting (false) {
     myElim = edge_ij_elim_t (source(a_bool_elim_.first, angelLCG), target(a_bool_elim_.first, angelLCG), a_bool_elim_.second);
-    //myElim.i = source(a_bool_elim_.first, angelLCG);
-    //myElim.j = target(a_bool_elim_.first, angelLCG);
-    //myElim.front = a_bool_elim_.second;
   };
 
   Transformation_t (const edge_ij_elim_t& an_ij_elim_) :

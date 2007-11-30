@@ -539,7 +539,7 @@ unsigned int prerouteEdge_noJAE (edge_reroute_t er,
     }
     if (ourAwarenessLevel == Elimination::NO_AWARENESS) cost++;
     else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[er.e] != UNIT_EDGE || eType[er.pivot_e] != UNIT_EDGE || eType[*oei] != UNIT_EDGE)) cost++;
-    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE|| eType[*oei] == VARIABLE_EDGE)) cost++;
+    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE)) cost++;
   } // end all decrements
   remove_edge (er.e, angelLCG);
   return cost;
@@ -594,7 +594,7 @@ unsigned int postrouteEdge_noJAE (edge_reroute_t er,
     }
     if (ourAwarenessLevel == Elimination::NO_AWARENESS) cost++;
     else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[er.e] != UNIT_EDGE || eType[er.pivot_e] != UNIT_EDGE || eType[*iei] != UNIT_EDGE)) cost++;
-    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE|| eType[*iei] == VARIABLE_EDGE)) cost++;
+    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)) cost++;
   } // end all decrements
   remove_edge (er.e, angelLCG);
   return cost;

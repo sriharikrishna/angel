@@ -255,7 +255,6 @@ void ourLCG_to_angelLCG (const LinearizedComputationalGraph& ourLCG,
 
 } // end ourLCG_to_angelLCG()
 
-
 elimSeq_cost_t determine_edge_elimination_sequence (const c_graph_t angelLCG,
 						    const Elimination::AwarenessLevel_E ourAwarenessLevel,
 						    const bool allowMaintainingFlag) {
@@ -417,6 +416,9 @@ unsigned int perform_reroutings (c_graph_t& angelLCG,
 #ifndef NDEBUG
       cout << endl;
 #endif
+      if (!.type3EdgeElimVector.empty()) {
+	for (size_t bei = 0; bei < .type3EdgeElimVector.size(); bei++) { #ifndef NDEBUG cout << "   ...followed by back-elimination of edge " << .type3EdgeElimVector[bei] << endl; #endif
+	  back_elim (??, angelLCG_copy, ourAwarenessLevel, currentElimSeq, refillDependences); } }
     } // end pre-routing
     else { // post-routing
 #ifndef NDEBUG
@@ -552,11 +554,10 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   cout << ", and ourAwarenessLevel is set to " << Elimination::AwarenessLevelToString(ourAwarenessLevel) << endl;
 #endif
 
+  // Create internal (angel) LCG from xaifBooster LCG
   vector<const LinearizedComputationalGraphVertex*> ourLCG_verts;
   c_graph_t angelLCG;
   list<EdgeRef_t> edge_ref_list;
-
-  // Create internal (angel) LCG from xaifBooster LCG
   ourLCG_to_angelLCG (ourLCG, ourLCG_verts, angelLCG, edge_ref_list);
 
 #ifndef NDEBUG
@@ -642,11 +643,10 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
   cout << "Creating internal angel LCG...." << endl;
 #endif
 
+  // Create internal (angel) LCG from xaifBooster LCG
   vector<const LinearizedComputationalGraphVertex*> ourLCG_verts;
   c_graph_t angelLCG;
   list<EdgeRef_t> edge_ref_list;
-
-  // Create internal (angel) LCG from xaifBooster LCG
   ourLCG_to_angelLCG (ourLCG, ourLCG_verts, angelLCG, edge_ref_list);
 
 #ifndef NDEBUG
@@ -698,8 +698,7 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
       Transformation_t chosenTransformation = reverseModeTransformationsV[0];
       currentTransformationSequence->transformationVector.push_back(chosenTransformation);
 
-      // ELIMINATION
-      if (!chosenTransformation.isRerouting) {
+      if (!chosenTransformation.isRerouting) { // EDGE ELIMINATION
 	// recover edge from ij representation
 	c_graph_t::edge_t e;
 	bool found_e;
@@ -712,34 +711,25 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
 #endif
 	currentTransformationSequence->cost += isFront ? frontEdgeElimination_noJAE (e, angelLCG_copy, ourAwarenessLevel, currentTransformationSequence, refillDependences)
 						       : backEdgeElimination_noJAE (e, angelLCG_copy, ourAwarenessLevel, currentTransformationSequence, refillDependences);
-      }
+      } // end edge elimination
 
-      // REROUTING
-      else { // rerouting
+      else { // REROUTING
 	edge_reroute_t er = chosenTransformation.myRerouteElim;
-	if (er.isPre) {
+
+	cout << "Chosen rerouting:" << endl;
+	if (er.pivot_eliminatable) cout << "  -> is pivot eliminatable" << endl;
+	if (er.increment_eliminatable) cout << "  -> is increment eliminatable" << endl;
+	if (!er.type3EdgeElimVector.empty()) {
+	  cout << "  -> is type 3 eliminatable:" << endl;
+	  write_vector("type 3 edge elim vertices: ", er.type3EdgeElimVector);
+	}
+
 #ifndef NDEBUG
-	cout << "pre-routing edge " << er.e << " about pivot edge " << er.pivot_e << endl;
+	if (er.isPre) cout << "pre"; else cout << "post";
+	cout << "-routing edge " << er.e << " about pivot edge " << er.pivot_e << endl;
 #endif
-	  currentTransformationSequence->cost += prerouteEdge_noJAE (er, angelLCG_copy, ourAwarenessLevel);
-/*
-	  if (.pivot_eliminatable) {
-#ifndef NDEBUG cout << "   ...followed by front-elimination of pivot edge " << .pivot_e << endl #endif
-	      front_elim (??.pivot_e, angelLCG_copy, ourAwarenessLevel, currentElimSeq, refillDependences); }
-	    if (.increment_eliminatable) {
-#ifndef NDEBUG cout << "   ...followed by back-elimination of increment edge " << ?? << endl; #endif
-	      back_elim (??, angelLCG_copy, ourAwarenessLevel, currentElimSeq, refillDependences); }
-	    if (!.type3EdgeElimVector.empty()) {
-	      for (size_t bei = 0; bei < .type3EdgeElimVector.size(); bei++) { #ifndef NDEBUG cout << "   ...followed by back-elimination of edge " << .type3EdgeElimVector[bei] << endl; #endif
-		back_elim (??, angelLCG_copy, ourAwarenessLevel, currentElimSeq, refillDependences); } }
-*/
-	} // end pre-routing
-	else { //post-routing
-#ifndef NDEBUG
-	  cout << "post-routing edge " << er.e << " about pivot edge " << er.pivot_e << endl;
-#endif
-	  currentTransformationSequence->cost += postrouteEdge_noJAE (er, angelLCG_copy, ourAwarenessLevel);
-	} // end post-routing
+        currentTransformationSequence->cost += er.isPre ? prerouteEdge_noJAE (er, angelLCG_copy, ourAwarenessLevel)
+                                                        : postrouteEdge_noJAE (er, angelLCG_copy, ourAwarenessLevel);
       } // end rerouting
 
       // check whether we've beaten our CURRENT best

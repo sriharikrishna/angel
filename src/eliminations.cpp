@@ -760,16 +760,6 @@ unsigned int pair_elim (c_graph_t::edge_t e1,
     else								eType[fill_or_absorb_e] = CONSTANT_EDGE;
   } // end fill-in
 
-/*
-  cout << "current contents of refillDependences: " << endl;
-  for (refillDependenceMap_t::const_iterator di = refillDependences.begin(); di != refillDependences.end(); di++) {
-    cout <<  "(" << di->first.first << "," << di->first.second << ") -> { ";
-    for (vertex_set_t::const_iterator vsi = di->second.begin(); vsi != di->second.end(); vsi++)
-      cout << *vsi << " ";
-    cout << "}" << endl;
-  }
-*/
-
   // determine cost based on awareness level and return it
   if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE))
     return 0;
