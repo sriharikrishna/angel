@@ -705,6 +705,7 @@ struct elimSeq_cost_t {
   unsigned int cost;
   unsigned int costAtBestEdgecount;
   unsigned int numIntermediatesAtBestEdgecount;
+  unsigned int numIntermediatesWithoutUnitEdgeAtBestEdgecount;
   size_t lastDesiredElim;		// unused for now
   mutable bool revealedNewDependence;
 
@@ -712,11 +713,13 @@ struct elimSeq_cost_t {
 		  unsigned int _cost,
 		  unsigned int _costAtBestEdgecount,
 		  unsigned int _numIntermediatesAtBestEdgecount,
+		  unsigned int _numIntermediatesWithoutUnitEdgeAtBestEdgecount,
 		  size_t _lastDesiredElim) :
     bestNumNontrivialEdges (_bestNumNontrivialEdges),
     cost (_cost),
     costAtBestEdgecount (_costAtBestEdgecount),
     numIntermediatesAtBestEdgecount (_numIntermediatesAtBestEdgecount),
+    numIntermediatesWithoutUnitEdgeAtBestEdgecount (_numIntermediatesWithoutUnitEdgeAtBestEdgecount),
     lastDesiredElim (_lastDesiredElim),
     revealedNewDependence (false) {}
 };
@@ -772,6 +775,7 @@ struct transformationSeq_cost_t {
   unsigned int cost;
   unsigned int costAtBestEdgecount;
   unsigned int numIntermediatesAtBestEdgecount;
+  unsigned int numIntermediatesWithoutUnitEdgeAtBestEdgecount;
   size_t lastDesiredTransformation;	// unused for now
   mutable bool revealedNewDependence;
 
@@ -779,11 +783,13 @@ struct transformationSeq_cost_t {
 		  	    unsigned int _cost,
 			    unsigned int _costAtBestEdgecount,
 			    unsigned int _numIntermediatesAtBestEdgecount,
+			    unsigned int _numIntermediatesWithoutUnitEdgeAtBestEdgecount,
 			    size_t _lastDesiredTransformation) :
 			      bestNumNontrivialEdges (_bestNumNontrivialEdges),
 			      cost (_cost),
 			      costAtBestEdgecount (_costAtBestEdgecount),
 			      numIntermediatesAtBestEdgecount (_numIntermediatesAtBestEdgecount),
+			      numIntermediatesWithoutUnitEdgeAtBestEdgecount (_numIntermediatesWithoutUnitEdgeAtBestEdgecount),
 			      lastDesiredTransformation (_lastDesiredTransformation),
 			      revealedNewDependence (false) {}
 };
