@@ -383,8 +383,9 @@ elimSeq_cost_t determine_edge_elimination_sequence (const c_graph_t angelLCG,
 
 #ifndef NDEBUG
   cout << "The best partial edge elimination sequence achieves a nontrivial edge count of " << bestElimSeqFound.bestNumNontrivialEdges
-       << ", at which point " << bestElimSeqFound.numIntermediatesWithoutUnitEdgeAtBestEdgecount << " of "
-       << bestElimSeqFound.numIntermediatesAtBestEdgecount << " intermediate vertices have no incident unit edges" << endl;
+       << ", at which point there are " << bestElimSeqFound.numIntermediatesWithoutUnitEdgeAtBestEdgecount << " intermediate vertices" << endl;
+       //<< ", at which point " << bestElimSeqFound.numIntermediatesWithoutUnitEdgeAtBestEdgecount << " of "
+       //<< bestElimSeqFound.numIntermediatesAtBestEdgecount << " intermediate vertices have no incident unit edges" << endl;
 #endif
 
   return bestElimSeqFound;
@@ -630,7 +631,6 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
     }
   }
 
-/*
   c_graph_t::vi_t vi, v_end;
   for (tie (vi, v_end) = vertices(angelLCG); vi != v_end; ++vi) {
     cout << "vertex " << *vi;
@@ -646,7 +646,6 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
     else if (eType[*ei] == CONSTANT_EDGE) cout << "CONSTANT edge" << endl;
     else if (eType[*ei] == VARIABLE_EDGE) cout << "VARIABLE edge" << endl;
   }
-*/
 
 #ifndef NDEBUG
   write_graph ("angelLCG after partial edge elimination sequence (G prime): ", angelLCG);
@@ -836,8 +835,9 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
 
 #ifndef NDEBUG
   cout << "The best transformation sequence achieves a nontrivial edge count of " << bestTransformationSequence->bestNumNontrivialEdges
-       << ", at which point " << bestTransformationSequence->numIntermediatesWithoutUnitEdgeAtBestEdgecount << " of "
-       << bestTransformationSequence->numIntermediatesAtBestEdgecount << " intermediate vertices have no incident unit edges" << endl;
+       << ", at which point there are " << bestTransformationSequence->numIntermediatesWithoutUnitEdgeAtBestEdgecount << " intermediate vertices" << endl;
+       //<< ", at which point " << bestTransformationSequence->numIntermediatesWithoutUnitEdgeAtBestEdgecount << " of "
+       //<< bestTransformationSequence->numIntermediatesAtBestEdgecount << " intermediate vertices have no incident unit edges" << endl;
 #endif
 /*
 #ifndef NDEBUG
