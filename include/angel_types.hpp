@@ -21,6 +21,7 @@
 #ifdef USEXAIFBOOSTER
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/LinearizedComputationalGraph.hpp"
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/JacobianAccumulationExpressionList.hpp"
+#include "xaifBooster/algorithms/CrossCountryInterface/inc/GraphCorrelations.hpp"
 #endif // USEXAIFBOOSTER
 
 #include "angel_exceptions.hpp"
@@ -39,12 +40,18 @@ enum vertex_type_t {independent,   ///< Independent vertex
 		    undefined_vertex ///< Undefined, e.g. out of range
 };
 
-typedef boost::property<boost::edge_weight_t, int>                      edge_weight_property;
-typedef boost::property<boost::edge_index_t, int, edge_weight_property> edge_index_weight_property;
+struct EdgeIsUnitType { 
+  enum { num = 129 };
+  typedef boost::edge_property_tag kind;
+}; // end struct
+
+typedef boost::property<boost::edge_weight_t, int>			  edge_weight_property;
+typedef boost::property<boost::edge_index_t, int, edge_weight_property>   edge_index_weight_property;
+typedef boost::property<EdgeIsUnitType, bool, edge_index_weight_property> edge_isUnit_index_weight_property;
 
 /// Pure BGL type definition of c-graph
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, 
-                       boost::no_property, edge_index_weight_property> pure_c_graph_t;
+			boost::no_property, edge_isUnit_index_weight_property> pure_c_graph_t;
 
 // some forward declarations
 class graph_package_t; 
@@ -71,13 +78,17 @@ public:
   /// Iterator type of a vertex's outgoing edges
   typedef boost::graph_traits<pure_c_graph_t>::out_edge_iterator          oei_t;
   /// Type of property edge label for const c_graph_t
-  typedef boost::property_map<pure_c_graph_t, boost::edge_weight_t>::const_type  const_ew_t;
+  typedef boost::property_map<pure_c_graph_t, boost::edge_weight_t>::const_type	const_ew_t;
   /// Type of property edge label for non-const c_graph_t
-  typedef boost::property_map<pure_c_graph_t, boost::edge_weight_t>::type        ew_t;
+  typedef boost::property_map<pure_c_graph_t, boost::edge_weight_t>::type	ew_t;
   /// Type of property edge index for const c_graph_t
-  typedef boost::property_map<pure_c_graph_t, boost::edge_index_t>::const_type   const_eind_t;
+  typedef boost::property_map<pure_c_graph_t, boost::edge_index_t>::const_type	const_eind_t;
   /// Type of property edge index for non-const c_graph_t
-  typedef boost::property_map<pure_c_graph_t, boost::edge_index_t>::type         eind_t;
+  typedef boost::property_map<pure_c_graph_t, boost::edge_index_t>::type	eind_t;
+  /// Type of property edge isUnit for const c_graph_t
+  typedef boost::property_map<pure_c_graph_t, EdgeIsUnitType>::const_type	const_eisunit_t;
+  /// Type of property edge isUnit for non-const c_graph_t
+  typedef boost::property_map<pure_c_graph_t, EdgeIsUnitType>::type		eisunit_t;
 
   int          next_edge_number;   ///< useful for insertion of new edges
 
@@ -139,6 +150,7 @@ public:
     std::swap (next_edge_number, _g.next_edge_number); dependents.swap (_g.dependents); }
 
   int x () const {return X;}                           ///< Number of independent variables
+  void x (int x) { X=x;}                               ///< Number of independent variables
   int y () const {return (int) dependents.size();}     ///< Number of dependent variables
   int v () const {return (int) num_vertices(*this);}   ///< Number of variables 
   int z () const {return v()-x()-y();}                 ///< Number of intermediate vertices
@@ -180,6 +192,7 @@ public:
 				       c_graph_t& cg,
 				       std::vector<const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphVertex*>& av,
 				       std::vector<edge_address_t>& ev);
+
 #endif // USEXAIFBOOSTER
 
 };
@@ -639,6 +652,50 @@ struct accu_graph_t {
   void set_jacobi_entries ();
 };
 
+#ifdef USEXAIFBOOSTER
+enum EdgeRefType_E {LCG_EDGE,
+                    JAE_VERT,
+                    UNDEFINED};
+
+struct EdgeRef_t {
+
+/*  union {
+ *    const LinearizedComputationalGraphEdge* my_LCG_edge_p;
+ *    JacobianAccumulationExpressionVertex* my_JAE_vertex_p;
+ *  } my_ref_p; */
+
+  c_graph_t::edge_t my_angelLCGedge;
+  EdgeRefType_E my_type;
+  const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* my_LCG_edge_p;
+  xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* my_JAE_vertex_p;
+
+  EdgeRef_t (c_graph_t::edge_t _e,
+             const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* _LCGedge_p) :
+    my_angelLCGedge(_e),
+    my_type(LCG_EDGE),
+    my_LCG_edge_p(_LCGedge_p),
+    my_JAE_vertex_p(NULL) {};
+
+  EdgeRef_t (c_graph_t::edge_t _e,
+             xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* _JAEvert_p) :
+    my_angelLCGedge(_e),
+    my_type(JAE_VERT),
+    my_LCG_edge_p(NULL),
+    my_JAE_vertex_p(_JAEvert_p) {};
+};
+
+struct edge_reroute_t {
+  c_graph_t::edge_t e;
+  c_graph_t::edge_t pivot_e;
+  bool isPre;
+
+  edge_reroute_t (c_graph_t::edge_t _e,
+                  c_graph_t::edge_t _pivot_e,
+                  bool _isPre) :
+    e (_e), pivot_e (_pivot_e), isPre (_isPre) {}
+};
+
+#endif // USEXAIFBOOSTER
 
 } // namespace angel
 

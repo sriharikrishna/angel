@@ -1354,6 +1354,31 @@ int find_best_subset (const vector<Object_t>& v1, const Ad_graph_t& adg,
   return v2.size();
 }
 
+// =====================================================
+// scarcity preserving eliminations
+// =====================================================
+
+/** \brief Receives a vector of edge elimination objects \p bev1 and a c-graph \p cg and returns a vector \p bev2 which contains only scarcity preserving edge eliminations.
+
+    This function selects edge eliminations that preserve scarcity in the
+    Jacobian, in that their elimination does not result in an overall
+    increase in the number of edges in the computational graph.  We fail to
+    consider unit edges in this implementation.
+
+    \param bev1 set of edges that can be eliminated
+    \param cg c-graph
+    \param bev2 Set of scarcity preserving edge elimination objects
+    \return size of bev2
+*/
+int scarce_pres_edge_eliminations (vector<edge_bool_t>& bev1,
+				   const c_graph_t& cg,
+				   vector<edge_bool_t>& bev2);
+
+int scarce_pres_edge_eliminations (vector<edge_ij_elim_t>& ev1,
+				   const c_graph_t& cg,
+				   vector<edge_ij_elim_t>& ev2);
+
+
 #ifdef USE_MPI
 /// Build a parallel heuristic out of a sequential 
 template <class Heuristic_t, class Comm_t>

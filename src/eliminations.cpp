@@ -8,6 +8,10 @@
 
 namespace angel {
 
+#ifdef USEXAIFBOOSTER
+using namespace xaifBoosterCrossCountryInterface;
+#endif
+
 using namespace std;
 using namespace boost;
 
@@ -45,6 +49,7 @@ int front_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
   typedef c_graph_t::edge_t            edge_t;
   typedef c_graph_t::oei_t             oei_t;
   c_graph_t::ew_t                      ew= get(edge_weight, cg);
+  boost::property_map<c_graph_t, EdgeIsUnitType>::type eUnit = get(EdgeIsUnitType(), cg);
   // write_edge_property (std::cout, "edge weights ", ew, cg);
 
   vertex_t i= source (edge_ij, cg), j= target (edge_ij, cg);
@@ -69,12 +74,25 @@ int front_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
     tie (edge_ik, found_ik)= edge (i, k, cg);
   
     // test whether elimination induces op, i.e. += || *
-    nnt+= found_ik || ew[edge_jk] != 1 && c_ji != 1; 
-
-    if (found_ik) ew[edge_ik]+= d;
+    // nnt+= found_ik || ew[edge_jk] != 1 && c_ji != 1; 
+    if (!eUnit[edge_ij]
+	&&
+	!eUnit[edge_jk]) 
+      nnt++;
+    if (found_ik) { 
+      ew[edge_ik]+= d;
+      eUnit[edge_ik]=false; 
+    } 
     else {
       tie (edge_ik, found_ik)= add_edge (i, k, cg.next_edge_number++, cg);
-      ew[edge_ik]= d; }
+      ew[edge_ik]= d; 
+      if (eUnit[edge_ij]
+	  &&
+	  eUnit[edge_jk]) 
+	eUnit[edge_ik]=true;
+      else
+	eUnit[edge_ik]=false;
+    }
   }
   remove_edge (edge_ij, cg);
 
@@ -100,6 +118,7 @@ int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
   typedef c_graph_t::edge_t            edge_t;
   typedef c_graph_t::iei_t             iei_t;
   c_graph_t::ew_t                      ew= get(edge_weight, cg);
+  boost::property_map<c_graph_t, EdgeIsUnitType>::type eUnit = get(EdgeIsUnitType(), cg);
 
   vertex_t i= source (edge_ij, cg), j= target (edge_ij, cg);
 
@@ -123,12 +142,27 @@ int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
     tie (edge_kj, found_kj)= edge (k, j, cg);
   
     // test whether elimination induces op, i.e. += || *
-    nnt+= found_kj || ew[edge_ki] != 1 && c_ji != 1; 
+    // nnt+= found_kj || ew[edge_ki] != 1 && c_ji != 1; 
+    if (!eUnit[edge_ij]
+	&&
+	!eUnit[edge_ki]) 
+      nnt++;
 
-    if (found_kj) ew[edge_kj]+= d;
+    if (found_kj) { 
+      ew[edge_kj]+= d;
+      eUnit[edge_kj]=false; 
+    }
     else {
       tie (edge_kj, found_kj)= add_edge (k, j, cg.next_edge_number++, cg);
-      ew[edge_kj]= d; }
+      ew[edge_kj]= d; 
+      if (eUnit[edge_ij]
+	  &&
+	  eUnit[edge_ki]) 
+	eUnit[edge_kj]=true;
+      else
+	eUnit[edge_kj]=false;
+
+    }
   }
   remove_edge (edge_ij, cg);
 
@@ -462,46 +496,247 @@ bool convert_elimination_sequence (const vector<edge_ij_elim_t>& ev,
   line_graph_t lgc (lg);
   tv.resize (0);
   for (size_t c= 0; c < ev.size(); c++) {
-    edge_ij_elim_t                 ee= ev[c];
+    edge_ij_elim_t ee = ev[c];
+    vector<line_graph_t::edge_t> lev;
     // cout << "conv_elim_seq: eliminate edge " << ee;
     // write_graph ("from graph", lgc);
     // line_graph_t::evn_t            evn= get(vertex_name, lgc);
     // write_vertex_property (cout, "vertices of this edge graph", evn, lgc);
-    vector<line_graph_t::edge_t>   lev;
-    bool found= find_edge (ee.i, ee.j, lgc, lev);
-    if (!found) {cout << "for edge (" << ee.i << ", " << ee.j 
-		      << ") does not exist a line graph node!\n"; return false; }
-    if (lev.size() > 1) {cout << "for edge (" << ee.i << ", " << ee.j 
-			      << ") does exist multiple line graph nodes!\n"; return false; }
-    line_graph_t::edge_t           ledge= lev[0];
+    // std::cout << "dealing with edge elim: " << ee.i << " to " << ee.j << std::endl; 
+    line_graph_t::edge_t ledge;
+
+#ifndef NDEBUG
+    cout << endl;
+    cout << "convert_elimination_sequence: eliminate edge " << ee;
+    write_graph ("from line graph: ", lgc);
+    line_graph_t::evn_t evn = get(vertex_name, lgc);
+    write_vertex_property (cout, "Labels of vertices in this line graph: ", evn, lgc);
+#endif
+
+    bool found = find_edge (ee.i, ee.j, lgc, lev);
+    throw_exception (!found || lev.empty(), consistency_exception, "LCG edge has no corresponding line graph node");
+
+    if (lev.size() == 1) { ledge = lev[0]; }
+    else { // if lev.size() != 1
+      cout << lev.size() << " line graph nodes correspond to LCG edge (" << ee.i << ", " << ee.j << ")."
+			 << "  Determining the correct one...";
+      vector<line_graph_t::edge_t> candidates;
+      // iterate through corresponding line graph vertices to ensure only one of them isn't isolated
+      for (size_t l = 0; l < lev.size(); l++) {
+        if (in_degree(lev[l], lgc) > 0 || out_degree(lev[l], lgc) > 0) candidates.push_back(lev[l]);
+      }
+      throw_exception (candidates.empty(), consistency_exception, "all corresponding line graph nodes are isolated");
+      throw_exception (candidates.size() > 1, consistency_exception, "multiple non-isolated corresponding line graph nodes");
+
+      cout << " Unique correlation found!\n";
+      ledge = candidates[0];
+    } // end lev.size() != 1
+
     if (ee.front) {
       line_graph_t::ofi_t oi, oend;
-      for (boost::tie (oi, oend)= out_edges (ledge, lgc); oi != oend; ++oi) {
-	triplet_t t (ledge, target (*oi, lgc), -1); tv.push_back (t); 
-	// cout << "new face " << t;
+      for (boost::tie (oi, oend) = out_edges (ledge, lgc); oi != oend; ++oi) {
+        triplet_t t (ledge, target (*oi, lgc), -1); tv.push_back (t);
+#ifndef NDEBUG
+        cout << "new face " << t;
+#endif
       }
       front_edge_elimination (ee.i, ee.j, lgc);
     } else {
       line_graph_t::ifi_t ii, iend;
-      for (boost::tie (ii, iend)= in_edges (ledge, lgc); ii != iend; ++ii) {
-	triplet_t t (source (*ii, lgc), ledge, -1); tv.push_back (t); 
-	// cout << "new face " << t;
+      for (boost::tie (ii, iend) = in_edges (ledge, lgc); ii != iend; ++ii) {
+        triplet_t t (source (*ii, lgc), ledge, -1); tv.push_back (t);
+#ifndef NDEBUG
+        cout << "new face " << t;
+#endif
       }
-      back_edge_elimination (ee.i, ee.j, lgc); } 
-    // cout << endl;
-  }
+      back_edge_elimination (ee.i, ee.j, lgc); }
+  } // end all edge eliminations
   return true;
-}
+} // end convert_elimination_sequence()
 
+#ifdef USEXAIFBOOSTER
+//############################################################################################################
+// DIRECT ELIMINATIONS
 
+EdgeRefType_E getRefType (const c_graph_t::edge_t e, const c_graph_t& angelLCG, const list<EdgeRef_t>& edge_ref_list) {
+  c_graph_t::const_eind_t eind = get(edge_index, angelLCG);
+  for (list<EdgeRef_t>::const_iterator ref_it = edge_ref_list.begin(); ref_it != edge_ref_list.end(); ref_it++)
+    if (source (e, angelLCG) == source (ref_it->my_angelLCGedge, angelLCG) &&
+	target (e, angelLCG) == target (ref_it->my_angelLCGedge, angelLCG)) {
+      throw_exception (ref_it->my_type == UNDEFINED, consistency_exception, "requested edge reference type is UNDEFINED");
+      return ref_it->my_type;
+    }
+  throw_exception (true, consistency_exception, "can't return reference type - no reference entry could be found for edge");
+} // end getRef_type ()
 
+const LinearizedComputationalGraphEdge* getLCG_p (const c_graph_t::edge_t e,
+						  const c_graph_t& angelLCG,
+						  const list<EdgeRef_t>& edge_ref_list) {
+  c_graph_t::const_eind_t eind = get(edge_index, angelLCG);
+  for (list<EdgeRef_t>::const_iterator ref_it = edge_ref_list.begin(); ref_it != edge_ref_list.end(); ref_it++)
+    if (source (e, angelLCG) == source (ref_it->my_angelLCGedge, angelLCG) &&
+	target (e, angelLCG) == target (ref_it->my_angelLCGedge, angelLCG)) {
+      throw_exception (ref_it->my_LCG_edge_p == NULL, consistency_exception, "requested LCG edge pointer is NULL");
+      return ref_it->my_LCG_edge_p;
+    }
+  throw_exception (true, consistency_exception, "can't return LCG_p - no reference entry could be found for edge");
+} // end getLCG_p ()
+
+JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
+						const c_graph_t& angelLCG,
+						const list<EdgeRef_t>& edge_ref_list) {
+  c_graph_t::const_eind_t eind = get(edge_index, angelLCG);
+  for (list<EdgeRef_t>::const_iterator ref_it = edge_ref_list.begin(); ref_it != edge_ref_list.end(); ref_it++)
+    if (source (e, angelLCG) == source (ref_it->my_angelLCGedge, angelLCG) &&
+	target (e, angelLCG) == target (ref_it->my_angelLCGedge, angelLCG)) {
+      throw_exception (ref_it->my_JAE_vertex_p == NULL, consistency_exception, "requested JAE vertex pointer is NULL");
+      return ref_it->my_JAE_vertex_p;
+    }
+  throw_exception (true, consistency_exception, "can't return JAE_p - no reference entry could be found for edge");
+} // end getJAE_p ()
+
+void removeRef (const c_graph_t::edge_t e,
+		const c_graph_t& angelLCG,
+		list<EdgeRef_t>& edge_ref_list) {
+  for (list<EdgeRef_t>::iterator ref_it = edge_ref_list.begin(); ref_it != edge_ref_list.end(); ref_it++)
+    if (source (e, angelLCG) == source (ref_it->my_angelLCGedge, angelLCG) &&
+	target (e, angelLCG) == target (ref_it->my_angelLCGedge, angelLCG)) {
+      edge_ref_list.erase(ref_it);
+      return;
+    }
+  throw_exception (true, consistency_exception, "couldn't find edge reference in order to remove it");
+} // end removeRef()
+
+// Creates a new JAE corresponding to multiplying edges e1 and e2
+// where e1 comes before e2
+void multiply_edge_pair_directly (const c_graph_t::edge_t e1,
+				  const c_graph_t::edge_t e2,
+				  c_graph_t& angelLCG,
+				  list<EdgeRef_t>& edge_ref_list,
+				  JacobianAccumulationExpressionList& jae_list) {
+  // Create JAE with vertices for multiply and for the two edges being multiplied
+  JacobianAccumulationExpression& new_jae = jae_list.addExpression();
+  JacobianAccumulationExpressionVertex& jaev_e1 = new_jae.addVertex();
+  JacobianAccumulationExpressionVertex& jaev_e2 = new_jae.addVertex();
+  JacobianAccumulationExpressionVertex& jaev_mult = new_jae.addVertex();
+  jaev_mult.setOperation (JacobianAccumulationExpressionVertex::MULT_OP);
+  new_jae.addEdge(jaev_e1, jaev_mult);
+  new_jae.addEdge(jaev_e2, jaev_mult);
+
+  // resolve pointers for e1 and e2, create their vertices
+  EdgeRefType_E e1_ref_type = getRefType (e1, angelLCG, edge_ref_list);
+  EdgeRefType_E e2_ref_type = getRefType (e2, angelLCG, edge_ref_list);
+  if (e1_ref_type == LCG_EDGE) {
+    const LinearizedComputationalGraphEdge* e1_LCG_p = getLCG_p (e1, angelLCG, edge_ref_list);
+    jaev_e1.setExternalReference (*e1_LCG_p);
+  }
+  else if (e1_ref_type == JAE_VERT) {
+    JacobianAccumulationExpressionVertex* e1_JAE_p = getJAE_p (e1, angelLCG, edge_ref_list);
+    jaev_e1.setInternalReference (*e1_JAE_p);
+  }
+  if (e2_ref_type == LCG_EDGE) {
+    const LinearizedComputationalGraphEdge* e2_LCG_p = getLCG_p (e2, angelLCG, edge_ref_list);
+    jaev_e2.setExternalReference (*e2_LCG_p);
+  }
+  else if (e2_ref_type == JAE_VERT) {
+    JacobianAccumulationExpressionVertex* e2_JAE_p = getJAE_p (e2, angelLCG, edge_ref_list);
+    jaev_e2.setInternalReference (*e2_JAE_p);
+  }
+
+  //test for absorption
+  c_graph_t::edge_t fill_or_absorb_e;
+  bool found_absorb_e;
+  tie (fill_or_absorb_e, found_absorb_e) = edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG);
+
+  if (found_absorb_e) {
+    JacobianAccumulationExpressionVertex& jaev_absorb_e = new_jae.addVertex();
+    EdgeRefType_E absorb_e_ref_type = getRefType (fill_or_absorb_e, angelLCG, edge_ref_list);
+    if (absorb_e_ref_type == LCG_EDGE) {
+      const LinearizedComputationalGraphEdge* absorb_e_LCG_p = getLCG_p (fill_or_absorb_e, angelLCG, edge_ref_list);
+      jaev_absorb_e.setExternalReference (*absorb_e_LCG_p);
+    }
+    else if (absorb_e_ref_type == JAE_VERT) {
+      JacobianAccumulationExpressionVertex* absorb_e_JAE_p = getJAE_p (fill_or_absorb_e, angelLCG, edge_ref_list);
+      jaev_absorb_e.setInternalReference (*absorb_e_JAE_p);
+    }
+
+    //create add vertex, connect it up
+    JacobianAccumulationExpressionVertex& jaev_add = new_jae.addVertex();
+    jaev_add.setOperation (JacobianAccumulationExpressionVertex::ADD_OP);
+    new_jae.addEdge(jaev_absorb_e, jaev_add);
+    new_jae.addEdge(jaev_mult, jaev_add);
+
+    //point absorb_e at the top of the new JAE
+    removeRef (fill_or_absorb_e, angelLCG, edge_ref_list);
+    EdgeRef_t absorb_e_ref (fill_or_absorb_e, &jaev_add);
+    edge_ref_list.push_back(absorb_e_ref);
+  }
+  else { // no absorption
+    // create the fill-in edge in the angel LCG
+    tie (fill_or_absorb_e, found_absorb_e) = add_edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG.next_edge_number++, angelLCG);
+
+    boost::property_map<c_graph_t, EdgeIsUnitType>::type eUnit = get (EdgeIsUnitType(), angelLCG);
+    if (eUnit[e1] && eUnit[e2]) eUnit[fill_or_absorb_e] = true;
+    else eUnit[fill_or_absorb_e] = false;
+
+    EdgeRef_t fill_e_ref (fill_or_absorb_e, &jaev_mult);
+    edge_ref_list.push_back(fill_e_ref); //point the fill-in edge at the top of the new JAE
+  }
+
+} // end directly_eliminate_pair
+
+unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
+					    c_graph_t& angelLCG,
+					    list<EdgeRef_t>& edge_ref_list,
+					    JacobianAccumulationExpressionList& jae_list) {
+  unsigned int cost = 0;
+  c_graph_t::vertex_t tgt = target (e, angelLCG);
+  vector<c_graph_t::edge_t> tgtOutEdges;
+  c_graph_t::oei_t oei, oe_end;
+  // save out-edges of tgt in a vector; pointers become invalidated
+  for (tie (oei, oe_end) = out_edges (tgt, angelLCG); oei != oe_end; ++oei)
+    tgtOutEdges.push_back(*oei);
+  // multiply all pairs
+  for (size_t i = 0; i < tgtOutEdges.size(); i++) {
+    multiply_edge_pair_directly (e, tgtOutEdges[i], angelLCG, edge_ref_list, jae_list);
+    cost++;
+  }
+  if (in_degree (tgt, angelLCG) == 1) // if front elimination of e isolates the target
+    for (size_t i = 0; i < tgtOutEdges.size(); i++) {
+      removeRef (tgtOutEdges[i], angelLCG, edge_ref_list);
+      remove_edge (tgtOutEdges[i], angelLCG);
+    }
+  removeRef (e, angelLCG, edge_ref_list);
+  remove_edge (e, angelLCG);
+  return cost;
+} // end front_eliminate_edge_directly()
+
+unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
+					   c_graph_t& angelLCG,
+					   list<EdgeRef_t>& edge_ref_list,
+					   JacobianAccumulationExpressionList& jae_list) {
+  unsigned int cost = 0;
+  c_graph_t::vertex_t src = source (e, angelLCG);
+  vector<c_graph_t::edge_t> srcInEdges;
+  c_graph_t::iei_t iei, ie_end;  
+  // save in-edges of src in a vector; pointers become invalidated
+  for (tie (iei, ie_end) = in_edges (src, angelLCG); iei != ie_end; ++iei)
+      srcInEdges.push_back(*iei);
+  for (size_t i = 0; i < srcInEdges.size(); i++) { // eliminate all pairs
+    multiply_edge_pair_directly (srcInEdges[i], e, angelLCG, edge_ref_list, jae_list);
+    cost++;
+  } // end all pairs
+  if (out_degree (src, angelLCG) == 1) // if back elimination of e isolates the source
+    for (size_t i = 0; i < srcInEdges.size(); i++) {
+      removeRef (srcInEdges[i], angelLCG, edge_ref_list);
+      remove_edge (srcInEdges[i], angelLCG);
+    }
+  removeRef (e, angelLCG, edge_ref_list);
+  remove_edge (e, angelLCG);
+  return cost;
+} // end back_eliminate_edge_directly()
+
+#endif // USEXAIFBOOSTER
 
 } // namespace angel
-
-
-
-
-
-
-
 
