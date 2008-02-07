@@ -1,9 +1,5 @@
-// $Id: eliminations.cpp,v 1.12 2003/07/28 23:56:50 uwe_naumann Exp $
-
 #include "eliminations.hpp"
-
 #include "angel_tools.hpp"
-
 #include "angel_io.hpp"
 
 namespace angel {
@@ -49,7 +45,7 @@ int front_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
   typedef c_graph_t::edge_t            edge_t;
   typedef c_graph_t::oei_t             oei_t;
   c_graph_t::ew_t                      ew= get(edge_weight, cg);
-  boost::property_map<c_graph_t, EdgeIsUnitType>::type eUnit = get(EdgeIsUnitType(), cg);
+  boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), cg);
   // write_edge_property (std::cout, "edge weights ", ew, cg);
 
   vertex_t i= source (edge_ij, cg), j= target (edge_ij, cg);
@@ -63,7 +59,6 @@ int front_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
   for (tie (oei, oe_end)= out_edges (j, cg); oei != oe_end; ++oei)
     ev.push_back (*oei);
 
-  int nnt= 0; // number of non-trivial eliminations
   for (size_t n= 0; n < ev.size(); n++) {
     edge_t edge_jk= ev[n];
     vertex_t k= target (edge_jk, cg);
@@ -72,26 +67,17 @@ int front_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
     bool   found_ik;
     edge_t edge_ik;
     tie (edge_ik, found_ik)= edge (i, k, cg);
-  
-    // test whether elimination induces op, i.e. += || *
-    // nnt+= found_ik || ew[edge_jk] != 1 && c_ji != 1; 
-    if (!eUnit[edge_ij]
-	&&
-	!eUnit[edge_jk]) 
-      nnt++;
-    if (found_ik) { 
+    if (found_ik) { // absorption
       ew[edge_ik]+= d;
-      eUnit[edge_ik]=false; 
+      if (eType[edge_ij] == VARIABLE_EDGE || eType[edge_jk] == VARIABLE_EDGE)	eType[edge_ik] = VARIABLE_EDGE;
+      else if (eType[edge_ik] != VARIABLE_EDGE)					eType[edge_ik] = CONSTANT_EDGE;
     } 
-    else {
+    else { // fill-in
       tie (edge_ik, found_ik)= add_edge (i, k, cg.next_edge_number++, cg);
-      ew[edge_ik]= d; 
-      if (eUnit[edge_ij]
-	  &&
-	  eUnit[edge_jk]) 
-	eUnit[edge_ik]=true;
-      else
-	eUnit[edge_ik]=false;
+      ew[edge_ik]= d;
+      if (eType[edge_ij] == VARIABLE_EDGE || eType[edge_jk] == VARIABLE_EDGE)	eType[edge_ik] = VARIABLE_EDGE;
+      else if (eType[edge_ij] == UNIT_EDGE && eType[edge_jk] == UNIT_EDGE)	eType[edge_ik] = UNIT_EDGE;
+      else									eType[edge_ik] = CONSTANT_EDGE;
     }
   }
   remove_edge (edge_ij, cg);
@@ -103,11 +89,7 @@ int front_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
     remove_edge (ev[n], cg);
   // is overkill: remove_unreachable_edges (j, cg);
 
-#ifdef IGNORE_TRIVIAL_ELIMINATIONS
-  return nnt;
-#else
   return ev.size();
-#endif
 }
 
 int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
@@ -118,7 +100,7 @@ int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
   typedef c_graph_t::edge_t            edge_t;
   typedef c_graph_t::iei_t             iei_t;
   c_graph_t::ew_t                      ew= get(edge_weight, cg);
-  boost::property_map<c_graph_t, EdgeIsUnitType>::type eUnit = get(EdgeIsUnitType(), cg);
+  boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), cg);
 
   vertex_t i= source (edge_ij, cg), j= target (edge_ij, cg);
 
@@ -131,7 +113,6 @@ int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
   for (tie (iei, ie_end)= in_edges (i, cg); iei != ie_end; ++iei)
     ev.push_back (*iei);
 
-  int nnt= 0; // number of non-trivial in-edges
   for (size_t n= 0; n < ev.size(); n++) {
     edge_t edge_ki= ev[n];
     vertex_t k= source (edge_ki, cg);
@@ -140,28 +121,17 @@ int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
     bool   found_kj;
     edge_t edge_kj;
     tie (edge_kj, found_kj)= edge (k, j, cg);
-  
-    // test whether elimination induces op, i.e. += || *
-    // nnt+= found_kj || ew[edge_ki] != 1 && c_ji != 1; 
-    if (!eUnit[edge_ij]
-	&&
-	!eUnit[edge_ki]) 
-      nnt++;
-
-    if (found_kj) { 
+    if (found_kj) { // absorption 
       ew[edge_kj]+= d;
-      eUnit[edge_kj]=false; 
+      if (eType[edge_ij] == VARIABLE_EDGE || eType[edge_ki] == VARIABLE_EDGE)	eType[edge_kj] = VARIABLE_EDGE;
+      else if (eType[edge_kj] != VARIABLE_EDGE)					eType[edge_kj] = CONSTANT_EDGE;
     }
-    else {
+    else { // fill-in
       tie (edge_kj, found_kj)= add_edge (k, j, cg.next_edge_number++, cg);
       ew[edge_kj]= d; 
-      if (eUnit[edge_ij]
-	  &&
-	  eUnit[edge_ki]) 
-	eUnit[edge_kj]=true;
-      else
-	eUnit[edge_kj]=false;
-
+      if (eType[edge_ij] == VARIABLE_EDGE || eType[edge_ki] == VARIABLE_EDGE)	eType[edge_kj] = VARIABLE_EDGE;
+      else if (eType[edge_ij] == UNIT_EDGE && eType[edge_ki] == UNIT_EDGE)	eType[edge_kj] = UNIT_EDGE;
+      else									eType[edge_kj] = CONSTANT_EDGE;
     }
   }
   remove_edge (edge_ij, cg);
@@ -174,11 +144,7 @@ int back_edge_elimination (c_graph_t::edge_t edge_ij, c_graph_t& cg) {
       remove_edge (ev[n], cg); 
   // is overkill: remove_irrelevant_edges (i, cg);
 
-#ifdef IGNORE_TRIVIAL_ELIMINATIONS
-  return nnt;
-#else
   return ev.size();
-#endif
 }
 
 
@@ -595,6 +561,19 @@ JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
   throw_exception (true, consistency_exception, "can't return JAE_p - no reference entry could be found for edge");
 } // end getJAE_p ()
 
+void setJaevRef (const c_graph_t::edge_t e, JacobianAccumulationExpressionVertex& jaev, const c_graph_t& angelLCG, const list<EdgeRef_t>& edge_ref_list) {
+  EdgeRefType_E e_ref_type = getRefType (e, angelLCG, edge_ref_list);
+  if (e_ref_type == LCG_EDGE) {
+    const LinearizedComputationalGraphEdge* LCG_p = getLCG_p (e, angelLCG, edge_ref_list);
+    jaev.setExternalReference (*LCG_p);
+  }
+  else if (e_ref_type == JAE_VERT) {
+    JacobianAccumulationExpressionVertex* JAE_p = getJAE_p (e, angelLCG, edge_ref_list);
+    jaev.setInternalReference (*JAE_p);
+  }
+  else throw_exception (true, consistency_exception, "cannot set JAE vertex ref because edge reference type is UNDEFINED");
+} // end setJaevRef ()
+
 void removeRef (const c_graph_t::edge_t e,
 		const c_graph_t& angelLCG,
 		list<EdgeRef_t>& edge_ref_list) {
@@ -609,103 +588,93 @@ void removeRef (const c_graph_t::edge_t e,
 
 // Creates a new JAE corresponding to multiplying edges e1 and e2
 // where e1 comes before e2
-void multiply_edge_pair_directly (const c_graph_t::edge_t e1,
-				  const c_graph_t::edge_t e2,
-				  c_graph_t& angelLCG,
-				  list<EdgeRef_t>& edge_ref_list,
-				  JacobianAccumulationExpressionList& jae_list) {
+unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
+					  const c_graph_t::edge_t e2,
+					  c_graph_t& angelLCG,
+					  const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					  list<EdgeRef_t>& edge_ref_list,
+					  JacobianAccumulationExpressionList& jae_list) {
+
   // Create JAE with vertices for multiply and for the two edges being multiplied
   JacobianAccumulationExpression& new_jae = jae_list.addExpression();
-  JacobianAccumulationExpressionVertex& jaev_e1 = new_jae.addVertex();
-  JacobianAccumulationExpressionVertex& jaev_e2 = new_jae.addVertex();
   JacobianAccumulationExpressionVertex& jaev_mult = new_jae.addVertex();
   jaev_mult.setOperation (JacobianAccumulationExpressionVertex::MULT_OP);
+  JacobianAccumulationExpressionVertex& jaev_e1 = new_jae.addVertex();
+  JacobianAccumulationExpressionVertex& jaev_e2 = new_jae.addVertex();
+  setJaevRef (e1, jaev_e1, angelLCG, edge_ref_list);
+  setJaevRef (e2, jaev_e2, angelLCG, edge_ref_list);
   new_jae.addEdge(jaev_e1, jaev_mult);
   new_jae.addEdge(jaev_e2, jaev_mult);
 
-  // resolve pointers for e1 and e2, create their vertices
-  EdgeRefType_E e1_ref_type = getRefType (e1, angelLCG, edge_ref_list);
-  EdgeRefType_E e2_ref_type = getRefType (e2, angelLCG, edge_ref_list);
-  if (e1_ref_type == LCG_EDGE) {
-    const LinearizedComputationalGraphEdge* e1_LCG_p = getLCG_p (e1, angelLCG, edge_ref_list);
-    jaev_e1.setExternalReference (*e1_LCG_p);
-  }
-  else if (e1_ref_type == JAE_VERT) {
-    JacobianAccumulationExpressionVertex* e1_JAE_p = getJAE_p (e1, angelLCG, edge_ref_list);
-    jaev_e1.setInternalReference (*e1_JAE_p);
-  }
-  if (e2_ref_type == LCG_EDGE) {
-    const LinearizedComputationalGraphEdge* e2_LCG_p = getLCG_p (e2, angelLCG, edge_ref_list);
-    jaev_e2.setExternalReference (*e2_LCG_p);
-  }
-  else if (e2_ref_type == JAE_VERT) {
-    JacobianAccumulationExpressionVertex* e2_JAE_p = getJAE_p (e2, angelLCG, edge_ref_list);
-    jaev_e2.setInternalReference (*e2_JAE_p);
-  }
+  boost::property_map<c_graph_t, EdgeType>::type eType = get (EdgeType(), angelLCG);
 
   //test for absorption
   c_graph_t::edge_t fill_or_absorb_e;
   bool found_absorb_e;
   tie (fill_or_absorb_e, found_absorb_e) = edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG);
-
-  if (found_absorb_e) {
-    JacobianAccumulationExpressionVertex& jaev_absorb_e = new_jae.addVertex();
-    EdgeRefType_E absorb_e_ref_type = getRefType (fill_or_absorb_e, angelLCG, edge_ref_list);
-    if (absorb_e_ref_type == LCG_EDGE) {
-      const LinearizedComputationalGraphEdge* absorb_e_LCG_p = getLCG_p (fill_or_absorb_e, angelLCG, edge_ref_list);
-      jaev_absorb_e.setExternalReference (*absorb_e_LCG_p);
-    }
-    else if (absorb_e_ref_type == JAE_VERT) {
-      JacobianAccumulationExpressionVertex* absorb_e_JAE_p = getJAE_p (fill_or_absorb_e, angelLCG, edge_ref_list);
-      jaev_absorb_e.setInternalReference (*absorb_e_JAE_p);
-    }
-
-    //create add vertex, connect it up
+  if (found_absorb_e) { // absorption
+    //create add vertex and absorb vertex, connect them up
     JacobianAccumulationExpressionVertex& jaev_add = new_jae.addVertex();
     jaev_add.setOperation (JacobianAccumulationExpressionVertex::ADD_OP);
+    JacobianAccumulationExpressionVertex& jaev_absorb_e = new_jae.addVertex();
+    setJaevRef (fill_or_absorb_e, jaev_absorb_e, angelLCG, edge_ref_list);
     new_jae.addEdge(jaev_absorb_e, jaev_add);
     new_jae.addEdge(jaev_mult, jaev_add);
 
-    //point absorb_e at the top of the new JAE
+    // reset reference for the absorb edge
     removeRef (fill_or_absorb_e, angelLCG, edge_ref_list);
     EdgeRef_t absorb_e_ref (fill_or_absorb_e, &jaev_add);
     edge_ref_list.push_back(absorb_e_ref);
+
+    // set edge type for absorption edge
+    if (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE)	eType[fill_or_absorb_e] = VARIABLE_EDGE;
+    else if (eType[fill_or_absorb_e] != VARIABLE_EDGE)			eType[fill_or_absorb_e] = CONSTANT_EDGE;
   }
-  else { // no absorption
-    // create the fill-in edge in the angel LCG
+  else { // fill-in
     tie (fill_or_absorb_e, found_absorb_e) = add_edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG.next_edge_number++, angelLCG);
-
-    boost::property_map<c_graph_t, EdgeIsUnitType>::type eUnit = get (EdgeIsUnitType(), angelLCG);
-    if (eUnit[e1] && eUnit[e2]) eUnit[fill_or_absorb_e] = true;
-    else eUnit[fill_or_absorb_e] = false;
-
     EdgeRef_t fill_e_ref (fill_or_absorb_e, &jaev_mult);
     edge_ref_list.push_back(fill_e_ref); //point the fill-in edge at the top of the new JAE
-  }
 
-} // end directly_eliminate_pair
+    // set edge type for new fill-in edge
+    if (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE)	eType[fill_or_absorb_e] = VARIABLE_EDGE;
+    else if (eType[e1] == UNIT_EDGE && eType[e2] == UNIT_EDGE)		eType[fill_or_absorb_e] = UNIT_EDGE;
+    else								eType[fill_or_absorb_e] = CONSTANT_EDGE;
+  }
+  
+  // determine cost based on awareness level
+  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE))
+    return 0;
+  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE))
+    return 0;
+  else
+    return 1;
+} // end multiply_edge_pair_directly
 
 unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 					    c_graph_t& angelLCG,
+					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					    list<EdgeRef_t>& edge_ref_list,
 					    JacobianAccumulationExpressionList& jae_list) {
   unsigned int cost = 0;
   c_graph_t::vertex_t tgt = target (e, angelLCG);
   vector<c_graph_t::edge_t> tgtOutEdges;
   c_graph_t::oei_t oei, oe_end;
-  // save out-edges of tgt in a vector; pointers become invalidated
+
+  // save out-edges of tgt in a vector, as pointers become invalidated
   for (tie (oei, oe_end) = out_edges (tgt, angelLCG); oei != oe_end; ++oei)
     tgtOutEdges.push_back(*oei);
-  // multiply all pairs
-  for (size_t i = 0; i < tgtOutEdges.size(); i++) {
-    multiply_edge_pair_directly (e, tgtOutEdges[i], angelLCG, edge_ref_list, jae_list);
-    cost++;
-  }
-  if (in_degree (tgt, angelLCG) == 1) // if front elimination of e isolates the target
+
+  // multiply all edge pairs
+  for (size_t i = 0; i < tgtOutEdges.size(); i++)
+    cost += multiply_edge_pair_directly (e, tgtOutEdges[i], angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+
+  // remove tgt of e and incident edges if it becomes isolated
+  if (in_degree (tgt, angelLCG) == 1)
     for (size_t i = 0; i < tgtOutEdges.size(); i++) {
       removeRef (tgtOutEdges[i], angelLCG, edge_ref_list);
       remove_edge (tgtOutEdges[i], angelLCG);
     }
+
   removeRef (e, angelLCG, edge_ref_list);
   remove_edge (e, angelLCG);
   return cost;
@@ -713,28 +682,253 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 
 unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   c_graph_t& angelLCG,
+					   const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					   list<EdgeRef_t>& edge_ref_list,
 					   JacobianAccumulationExpressionList& jae_list) {
   unsigned int cost = 0;
   c_graph_t::vertex_t src = source (e, angelLCG);
   vector<c_graph_t::edge_t> srcInEdges;
   c_graph_t::iei_t iei, ie_end;  
-  // save in-edges of src in a vector; pointers become invalidated
+
+  // save in-edges of src in a vector, as pointers become invalidated
   for (tie (iei, ie_end) = in_edges (src, angelLCG); iei != ie_end; ++iei)
       srcInEdges.push_back(*iei);
-  for (size_t i = 0; i < srcInEdges.size(); i++) { // eliminate all pairs
-    multiply_edge_pair_directly (srcInEdges[i], e, angelLCG, edge_ref_list, jae_list);
-    cost++;
-  } // end all pairs
-  if (out_degree (src, angelLCG) == 1) // if back elimination of e isolates the source
+
+  // multiply all edge pairs
+  for (size_t i = 0; i < srcInEdges.size(); i++)
+    cost += multiply_edge_pair_directly (srcInEdges[i], e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+
+  // remove src of e and incident edges if it becomes isolated and isn't a dependent
+  if (out_degree (src, angelLCG) == 1 && vertex_type (src, angelLCG) != dependent)
     for (size_t i = 0; i < srcInEdges.size(); i++) {
       removeRef (srcInEdges[i], angelLCG, edge_ref_list);
       remove_edge (srcInEdges[i], angelLCG);
     }
+
   removeRef (e, angelLCG, edge_ref_list);
   remove_edge (e, angelLCG);
   return cost;
 } // end back_eliminate_edge_directly()
+
+unsigned int pair_elim (c_graph_t::edge_t e1,
+			c_graph_t::edge_t e2,
+			c_graph_t& angelLCG,
+			const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			const elimSeq_cost_t& currentElimSeq,
+			refillDependenceMap_t& refillDependences) {
+  boost::property_map<c_graph_t, EdgeType>::type eType = get (EdgeType(), angelLCG);
+  c_graph_t::edge_t fill_or_absorb_e;
+  bool found_absorb_e;
+
+  // determine whether absorption edge is present
+  tie (fill_or_absorb_e, found_absorb_e) = edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG);
+  if (found_absorb_e) { // absorption - all we have to do is set the edge type for the absorption edge
+    if (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE)	eType[fill_or_absorb_e] = VARIABLE_EDGE;
+    else if (eType[fill_or_absorb_e] != VARIABLE_EDGE)			eType[fill_or_absorb_e] = CONSTANT_EDGE;
+  }
+  else { // fill-in
+    
+    // check for refill.  If found, add tgt to dependence vertex set for respective edge (from src to succ of tgt)
+    for (size_t c = 0; c < currentElimSeq.edgeElimVector.size(); c++) {
+      unsigned int i = currentElimSeq.edgeElimVector[c].i;
+      unsigned int j = currentElimSeq.edgeElimVector[c].j;
+      if (source (e1, angelLCG) == i && target (e2, angelLCG) == j) {
+#ifndef NDEBUG
+	cout << endl << "refilledge (" << i << "," << j << "), adding this information to the refillDependences map..." << endl << endl;
+#endif
+	// add vertex to the refill dependence set for the refilled edge
+	refillDependenceMap_t::iterator depMap_i = refillDependences.find(make_pair(i, j));
+	if (depMap_i == refillDependences.end()) {
+#ifndef NDEBUG
+	  cout << "the edge was not found as a map key.  Creating new map key and empty set..." << endl;
+#endif
+	  // add the edge to the map if it isnt there
+	  depMap_i = refillDependences.insert( std::make_pair(make_pair(i, j), vertex_set_t()) ).first;
+	  currentElimSeq.revealedNewDependence = true;
+	}
+	bool wasntPresent = (depMap_i->second).insert(target (e1, angelLCG)).second; // add the vertex to the depSet for the current edge
+	if (wasntPresent) currentElimSeq.revealedNewDependence = true;
+	// refill has already been found for this edge, so break
+	break;
+      } // end if fill edge is found to have been previously eliminated (refill)
+    } // end all previous elims in current sequence
+
+    // create the fill-in edge and set it's edge type
+    tie (fill_or_absorb_e, found_absorb_e) = add_edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG.next_edge_number++, angelLCG);
+    if (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE)	eType[fill_or_absorb_e] = VARIABLE_EDGE;
+    else if (eType[e1] == UNIT_EDGE && eType[e2] == UNIT_EDGE)		eType[fill_or_absorb_e] = UNIT_EDGE;
+    else								eType[fill_or_absorb_e] = CONSTANT_EDGE;
+  } // end fill-in
+
+  // determine cost based on awareness level and return it
+  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE))
+    return 0;
+  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE))
+    return 0;
+  else
+    return 1;
+} // end pair_elim()
+
+unsigned int front_elim (c_graph_t::edge_t e,
+			 c_graph_t& angelLCG,
+			 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			 const elimSeq_cost_t& currentElimSeq,
+			 refillDependenceMap_t& refillDependences) {
+  unsigned int cost = 0;
+  c_graph_t::oei_t oei, oe_end;
+  vector<c_graph_t::edge_t> tgtOutEdges;
+
+  // save out-edges of tgt in a vector, as pointers become invalidated
+  for (tie (oei, oe_end) = out_edges (target (e, angelLCG), angelLCG); oei != oe_end; ++oei)
+    tgtOutEdges.push_back(*oei);
+
+  for (size_t i = 0; i < tgtOutEdges.size(); i++)
+    cost += pair_elim (e, tgtOutEdges[i], angelLCG, ourAwarenessLevel, currentElimSeq, refillDependences);
+ 
+  // if elimination isolates the target, remove vertex and incident edges
+  if (in_degree (target (e, angelLCG), angelLCG) == 1)
+    for (size_t i = 0; i < tgtOutEdges.size(); i++)
+      remove_edge (tgtOutEdges[i], angelLCG);
+
+  remove_edge (e, angelLCG);
+  return cost;
+} // end front_elim() 
+
+unsigned int back_elim (c_graph_t::edge_t e,
+			c_graph_t& angelLCG,
+			const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			const elimSeq_cost_t& currentElimSeq,
+			refillDependenceMap_t& refillDependences) {
+  unsigned int cost = 0;
+  c_graph_t::iei_t iei, ie_end;
+  vector<c_graph_t::edge_t> srcInEdges;
+
+  // save in-edges of src in a vector, as pointers become invalidated
+  for (tie (iei, ie_end) = in_edges (source (e, angelLCG), angelLCG); iei != ie_end; ++iei)
+    srcInEdges.push_back(*iei);
+
+  for (size_t i = 0; i < srcInEdges.size(); i++)
+    cost += pair_elim (srcInEdges[i], e, angelLCG, ourAwarenessLevel, currentElimSeq, refillDependences);
+
+  // remove src of e and incident edges if it becomes isolated and isn't a dependent
+  if (out_degree (source (e, angelLCG), angelLCG) == 1 && vertex_type (source (e, angelLCG), angelLCG) != dependent)
+    for (size_t i = 0; i < srcInEdges.size(); i++)
+      remove_edge (srcInEdges[i], angelLCG);
+
+  remove_edge (e, angelLCG);
+  return cost;
+} // end back_elim()
+
+unsigned int pairElim_noJAE (c_graph_t::edge_t e1,
+			     c_graph_t::edge_t e2,
+			     c_graph_t& angelLCG,
+			     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			     const transformationSeq_cost_t* currentTransformationSequence,
+			     refillDependenceMap_t& refillDependences) {
+  boost::property_map<c_graph_t, EdgeType>::type eType = get (EdgeType(), angelLCG);
+  c_graph_t::edge_t fill_or_absorb_e;
+  bool found_absorb_e;
+
+  // check for refill.  If found, add tgt to dependence vertex set for respective edge (from src to succ of tgt)
+  for (size_t c = 0; c < currentTransformationSequence->transformationVector.size(); c++) {
+    if (currentTransformationSequence->transformationVector[c].isRerouting) continue; // ignore reroutings
+
+    unsigned int i = currentTransformationSequence->transformationVector[c].myElim.i;
+    unsigned int j = currentTransformationSequence->transformationVector[c].myElim.j;
+
+    // the fill/absorb edge was previously eliminated
+    if (source (e1, angelLCG) == i && target (e2, angelLCG) == j) {
+#ifndef NDEBUG
+      cout << endl << "refilledge (" << i << "," << j << "), adding this information to the refillDependences map..." << endl << endl;
+#endif
+      // add vertex to the refill dependence set for the refilled edge
+      refillDependenceMap_t::iterator depMap_i = refillDependences.find(make_pair(i, j));
+      if (depMap_i == refillDependences.end()) { // map doesn't contain a key for the refilled edge
+#ifndef NDEBUG
+	cout << "the edge was not found as a map key.  Creating new map key with empty vertex set..." << endl;
+#endif
+	// add the edge to the map if it isnt there
+	depMap_i = refillDependences.insert( std::make_pair(make_pair(i, j), vertex_set_t()) ).first;
+	currentTransformationSequence->revealedNewDependence = true; // edge newly added as map key
+      }
+
+      // add the vertex to the depSet for the current edge
+      if ((depMap_i->second).insert(target (e1, angelLCG)).second)
+	currentTransformationSequence->revealedNewDependence = true; // vertex newly added to dependence set for edge
+
+      break; // refill has already been found for this edge, so break
+    } // end if fill/absorb edge is found to have been previously eliminated (refill)
+  } // end all previous elims in current sequence
+
+  // determine whether absorption edge is present
+  tie (fill_or_absorb_e, found_absorb_e) = edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG);
+  if (found_absorb_e) { // absorption: all we have to do is set the edge type for the absorption edge
+    if (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE)	eType[fill_or_absorb_e] = VARIABLE_EDGE;
+    else if (eType[fill_or_absorb_e] != VARIABLE_EDGE)			eType[fill_or_absorb_e] = CONSTANT_EDGE;
+  } // end absorption
+  else { // fill-in: create new edge and set it's edge type
+    tie (fill_or_absorb_e, found_absorb_e) = add_edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG.next_edge_number++, angelLCG);
+    if (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE)	eType[fill_or_absorb_e] = VARIABLE_EDGE;
+    else if (eType[e1] == UNIT_EDGE && eType[e2] == UNIT_EDGE)		eType[fill_or_absorb_e] = UNIT_EDGE;
+    else								eType[fill_or_absorb_e] = CONSTANT_EDGE;
+  } // end fill-in
+
+  // determine cost based on awareness level and return it
+  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE)
+  || (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE)))
+    return 0;
+  else return 1;
+} // end pairElim_noJAE()
+
+unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,
+					 c_graph_t& angelLCG,
+					 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					 const transformationSeq_cost_t* currentTransformationSequence,
+					 refillDependenceMap_t& refillDependences) {
+  unsigned int cost = 0;
+  c_graph_t::oei_t oei, oe_end;
+  vector<c_graph_t::edge_t> tgtOutEdges;
+
+  // save out-edges of tgt in a vector, as pointers become invalidated
+  for (tie (oei, oe_end) = out_edges (target (e, angelLCG), angelLCG); oei != oe_end; ++oei)
+    tgtOutEdges.push_back(*oei);
+
+  for (size_t i = 0; i < tgtOutEdges.size(); i++)
+    cost += pairElim_noJAE (e, tgtOutEdges[i], angelLCG, ourAwarenessLevel, currentTransformationSequence, refillDependences);
+ 
+  // if elimination isolates the target, remove vertex and incident edges
+  if (in_degree (target (e, angelLCG), angelLCG) == 1)
+    for (size_t i = 0; i < tgtOutEdges.size(); i++)
+      remove_edge (tgtOutEdges[i], angelLCG);
+
+  remove_edge (e, angelLCG);
+  return cost;
+} // end frontEdgeElimination_noJAE()
+
+unsigned int backEdgeElimination_noJAE (c_graph_t::edge_t e,
+					 c_graph_t& angelLCG,
+					 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					 const transformationSeq_cost_t* currentTransformationSequence,
+					 refillDependenceMap_t& refillDependences) {
+  unsigned int cost = 0;
+  c_graph_t::iei_t iei, ie_end;
+  vector<c_graph_t::edge_t> srcInEdges;
+
+  // save in-edges of src in a vector, as pointers become invalidated
+  for (tie (iei, ie_end) = in_edges (source (e, angelLCG), angelLCG); iei != ie_end; ++iei)
+    srcInEdges.push_back(*iei);
+
+  for (size_t i = 0; i < srcInEdges.size(); i++)
+    cost += pairElim_noJAE (srcInEdges[i], e, angelLCG, ourAwarenessLevel, currentTransformationSequence, refillDependences);
+
+  // remove src of e and incident edges if it becomes isolated and isn't a dependent
+  if (out_degree (source (e, angelLCG), angelLCG) == 1 && vertex_type (source (e, angelLCG), angelLCG) != dependent)
+    for (size_t i = 0; i < srcInEdges.size(); i++)
+      remove_edge (srcInEdges[i], angelLCG);
+
+  remove_edge (e, angelLCG);
+  return cost;
+} // end backEdgeElimination_noJAE()
 
 #endif // USEXAIFBOOSTER
 

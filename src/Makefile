@@ -6,8 +6,8 @@
 #CXXFLAGS+= -O3 
 CXXFLAGS+= -DNDEBUG
 #CXXFLAGS+= -g
+#CXXFLAGS+= -pg
 
-#CPPFLAGS+= -DIGNORE_TRIVIAL_ELIMINATIONS
 #CPPFLAGS+= -DGNUPLOT # generate output for gnuplot (maybe part of output must be set as comment)
 #CPPFLAGS+= -DWRITE_COSTS # write costs for instance in LSA.hpp
 #CPPFLAGS+= -DSAME_RANDOM_VALUES # pseudo random values identical in each run, for debugging
