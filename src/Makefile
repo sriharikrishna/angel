@@ -4,7 +4,7 @@
 
 # CXXFLAGS may be changed appropriately
 #CXXFLAGS+= -O3 
-CXXFLAGS+= -DNDEBUG
+#CXXFLAGS+= -DNDEBUG
 #CXXFLAGS+= -g
 #CXXFLAGS+= -pg
 
