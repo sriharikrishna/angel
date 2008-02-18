@@ -673,12 +673,6 @@ enum EdgeRefType_E {LCG_EDGE,
                     UNDEFINED};
 
 struct EdgeRef_t {
-
-/*  union {
- *    const LinearizedComputationalGraphEdge* my_LCG_edge_p;
- *    JacobianAccumulationExpressionVertex* my_JAE_vertex_p;
- *  } my_ref_p; */
-
   c_graph_t::edge_t my_angelLCGedge;
   EdgeRefType_E my_type;
   const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* my_LCG_edge_p;

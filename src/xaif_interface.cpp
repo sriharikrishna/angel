@@ -253,17 +253,16 @@ void ourLCG_to_angelLCG (const LinearizedComputationalGraph& ourLCG,
   LinearizedComputationalGraph::ConstEdgeIteratorPair eip (ourLCG.edges());
   for (LinearizedComputationalGraph::ConstEdgeIterator ei (eip.first), e_end (eip.second); ei != e_end; ++ei) {
     // locate source and target of edge in angelLCG
-    c_graph_t::vertex_t source = which_index (& (ourLCG.getSourceOf (*ei)), ourLCG_verts);
-    c_graph_t::vertex_t	target = which_index (& (ourLCG.getTargetOf (*ei)), ourLCG_verts);
-    pair<c_graph_t::edge_t, bool> new_edge = add_edge (source, target, edge_number++, angelLCG);
+    c_graph_t::vertex_t angelSource = which_index (& (ourLCG.getSourceOf (*ei)), ourLCG_verts);
+    c_graph_t::vertex_t	angelTarget = which_index (& (ourLCG.getTargetOf (*ei)), ourLCG_verts);
+    pair<c_graph_t::edge_t, bool> new_edge = add_edge (angelSource, angelTarget, edge_number++, angelLCG);
     if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::UNIT_LABEL)
       eType[new_edge.first] = UNIT_EDGE;
-    else if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::CONSTANT_LABEL) {
-      //cout << "---------------------------------------------------------------- FOUND A CONSTANT EDGE ------------------------------------------" << endl;
+    else if ((*ei).getEdgeLabelType() == LinearizedComputationalGraphEdge::CONSTANT_LABEL)
       eType[new_edge.first] = CONSTANT_EDGE;
-    }
     else
       eType[new_edge.first] = VARIABLE_EDGE;
+
     EdgeRef_t new_edge_ref (new_edge.first, &*ei);
     edge_ref_list.push_back(new_edge_ref);
   } // end for all LCG edges
@@ -452,7 +451,7 @@ void populate_remainderGraph_and_correlationLists (const c_graph_t& angelLCG,
 
     // derive contents of correlation entry from the internal edge reference list
     EdgeRefType_E new_remainder_edge_ref_t = getRefType (*ei, angelLCG, edge_ref_list);
-    if(new_remainder_edge_ref_t == LCG_EDGE) {
+    if (new_remainder_edge_ref_t == LCG_EDGE) {
       new_edge_correlation.myEliminationReference.myOriginalEdge_p = getLCG_p (*ei, angelLCG, edge_ref_list);
       new_edge_correlation.myType = EdgeCorrelationEntry::LCG_EDGE;
     }
