@@ -119,46 +119,104 @@ xaif_edge_pr (line_graph_t::edge_t e, const accu_graph_t& ag, const vector<edge_
 void write_graph_xaif_booster (const accu_graph_t& ag,
 			       const vector<const LinearizedComputationalGraphVertex*>& av,
 			       const vector<edge_address_t>& ae,
-			       JacobianAccumulationExpressionList& elist) {
-  typedef LinearizedComputationalGraphVertex      xlvertex_t;
-  typedef JacobianAccumulationExpressionVertex    xavertex_t;
+			       JacobianAccumulationExpressionList& JAElist,
+			       LinearizedComputationalGraph& remainderLCG,
+			       VertexCorrelationList& v_cor_list,
+			       EdgeCorrelationList& e_cor_list) {
+  remainderLCG.clear();
+  set<unsigned int> independent_indices, dependent_indices;
   // line_graph_t::const_evn_t evn= get (vertex_name, ag.lg);
+
+  // make a preliminary pass to make remainder graph vertices
+  for (size_t c = 0; c < ag.accu_exp.size(); c++) {
+    ad_edge_t my_jacobi = ag.jacobi_entries[c];
+    if (my_jacobi.second != 0) {
+      // store indices of indep and dep vertices
+      independent_indices.insert(my_jacobi.first);
+      dependent_indices.insert(my_jacobi.second);
+    }
+  } // end preliminary pass
       
-  vector<xavertex_t*> exp_output_pr; // pointer to output vertex of expression
+  // create and correlate remainder graph vertices from indep and dep sets
+  for (set<unsigned int>::const_iterator sit = independent_indices.begin(); sit != independent_indices.end(); sit++) {
+    LinearizedComputationalGraphVertex& new_remainder_vertex = remainderLCG.addVertex();
+    VertexCorrelationEntry new_vertex_correlation;
+    new_vertex_correlation.myOriginalVertex_p = av[*sit];
+    new_vertex_correlation.myRemainderVertex_p = &new_remainder_vertex;
+    v_cor_list.push_back(new_vertex_correlation);
+  }
+  for (set<unsigned int>::const_iterator sit = dependent_indices.begin(); sit != dependent_indices.end(); sit++) {
+    LinearizedComputationalGraphVertex& new_remainder_vertex = remainderLCG.addVertex();
+    VertexCorrelationEntry new_vertex_correlation;
+    new_vertex_correlation.myOriginalVertex_p = av[*sit];
+    new_vertex_correlation.myRemainderVertex_p = &new_remainder_vertex;
+    v_cor_list.push_back(new_vertex_correlation);
+  }
+
+  // iterate over all angel JAEs
+  vector<JacobianAccumulationExpressionVertex*> exp_output_pr; // pointer to output vertex of expression
   for (size_t c= 0; c < ag.accu_exp.size(); c++) {
     const accu_exp_graph_t& my_exp= ag.accu_exp[c];
     property_map<pure_accu_exp_graph_t, vertex_name_t>::const_type vpr= get (vertex_name, my_exp);
 
-    JacobianAccumulationExpression& new_exp= elist.addExpression();
+    JacobianAccumulationExpression& new_exp = JAElist.addExpression();
     //exp_pr.push_back(&new_exp);
-    vector<xavertex_t*>  vp (my_exp.v());
+    vector<JacobianAccumulationExpressionVertex*> vp (my_exp.v());
     for (size_t vc= 0; vc < (size_t) my_exp.v(); vc++) {      
       const accu_exp_t& prop= vpr[vc];
-      xavertex_t& new_vertex= new_exp.addVertex();
+      JacobianAccumulationExpressionVertex& new_vertex = new_exp.addVertex();
       vp[vc]= &new_vertex;
+
+      // the last vertex in the expression is the output vertex
       if (vc+1 == (size_t) my_exp.v()) exp_output_pr.push_back(&new_vertex);
+
       switch (prop.ref_kind) { 
       case accu_exp_t::nothing: throw_exception (true, consistency_exception, "Unset vertex"); break;
-      case accu_exp_t::exp:    
-	           throw_debug_exception (prop.ref.exp_nr >= int (c), consistency_exception, 
-					  "Expression number too large")
-	           new_vertex.setInternalReference (*exp_output_pr[prop.ref.exp_nr]); break;
-      case accu_exp_t::lgn: {    
-	  const LinearizedComputationalGraphEdge* ptr= xaif_edge_pr (prop.ref.node, ag, ae); 
-	  throw_debug_exception (ptr == NULL, consistency_exception, "Unset reference");
-	  new_vertex.setExternalReference (*ptr); } break;
+      case accu_exp_t::exp:
+	throw_debug_exception (prop.ref.exp_nr >= int (c), consistency_exception, "Expression number too large")
+	new_vertex.setInternalReference (*exp_output_pr[prop.ref.exp_nr]); break;
+      case accu_exp_t::lgn: {
+	const LinearizedComputationalGraphEdge* ptr= xaif_edge_pr (prop.ref.node, ag, ae); 
+	throw_debug_exception (ptr == NULL, consistency_exception, "Unset reference");
+	new_vertex.setExternalReference (*ptr); } break;
       case accu_exp_t::isop:    
-	new_vertex.setOperation (prop.ref.op == accu_exp_t::add ? xavertex_t::ADD_OP : 
-				 xavertex_t::MULT_OP); } }
-    
-    graph_traits<pure_accu_exp_graph_t>::edge_iterator ei, e_end;   // set edges
+	new_vertex.setOperation (prop.ref.op == accu_exp_t::add ? JacobianAccumulationExpressionVertex::ADD_OP
+								: JacobianAccumulationExpressionVertex::MULT_OP);
+      } // end switch on prop.ref_kind
+    } // end all expression vertices
+
+    // deal with JAE edges    
+    graph_traits<pure_accu_exp_graph_t>::edge_iterator ei, e_end;
     for (tie (ei, e_end)= edges (my_exp); ei != e_end; ei++)
       new_exp.addEdge (*vp[source (*ei, my_exp)], *vp[target (*ei, my_exp)]);
 
-    ad_edge_t my_jacobi= ag.jacobi_entries[c];
-    if (my_jacobi.second != 0)
-      new_exp.setJacobianEntry (*av[my_jacobi.second], *av[my_jacobi.first]);
-  } // end expression
+    // deal with JAEs that are Jacobian entries
+    ad_edge_t my_jacobi = ag.jacobi_entries[c];
+    if (my_jacobi.second != 0) {
+      //new_exp.setJacobianEntry (*av[my_jacobi.second], *av[my_jacobi.first]);
+
+      // create edge in the remainder graph
+      const LinearizedComputationalGraphVertex* original_src_p = av[my_jacobi.first];
+      const LinearizedComputationalGraphVertex* original_tgt_p = av[my_jacobi.second];
+      LinearizedComputationalGraphVertex* remainder_src_p = NULL;
+      LinearizedComputationalGraphVertex* remainder_tgt_p = NULL;
+      for (VertexCorrelationList::iterator vcori = v_cor_list.begin(); vcori != v_cor_list.end(); vcori++) {
+	if (vcori->myOriginalVertex_p == original_src_p)	remainder_src_p = vcori->myRemainderVertex_p;
+	else if (vcori->myOriginalVertex_p == original_tgt_p)	remainder_tgt_p = vcori->myRemainderVertex_p;
+      } // end all vertex correlation entries
+      throw_exception (remainder_src_p == NULL || remainder_tgt_p == NULL, consistency_exception, "Vertex in remainder graph could not be found");
+      LinearizedComputationalGraphEdge& new_remainder_edge = remainderLCG.addEdge(*remainder_src_p, *remainder_tgt_p);
+
+      // crate the correlation entry
+      EdgeCorrelationEntry new_edge_correlation;
+      new_edge_correlation.myRemainderGraphEdge_p = &new_remainder_edge;
+      new_edge_correlation.myType = EdgeCorrelationEntry::JAE_VERT;
+      new_edge_correlation.myEliminationReference.myJAEVertex_p = exp_output_pr.back();
+      //new_edge_correlation.myEliminationReference.myJAEVertex_p = getJAE_p (*ei, angelLCG, edge_ref_list);
+      e_cor_list.push_back(new_edge_correlation);
+    } // end if Jacobian entry
+
+  } // end all Jacobian accumulation expressions
 } // end write_graph_xaif_booster()
 
 unsigned int num_nontrivial_edges (const c_graph_t& angelLCG,
@@ -502,10 +560,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   cout << "contents of bestElimSeqFound.edgeElimVector: " << endl;
   for (size_t c = 0; c < bestElimSeqFound.edgeElimVector.size(); c++)
     cout << "((" << bestElimSeqFound.edgeElimVector[c].i << "," << bestElimSeqFound.edgeElimVector[c].j << ")," << bestElimSeqFound.edgeElimVector[c].front << ") ";
-  cout << endl;
-
-  // Now re-perform the sequence until we reach the best edge count
-  cout << endl << "****** Now re-performing bestElimSeqFound until we reach our edge goal of " << bestElimSeqFound.bestNumNontrivialEdges << " nontrivial edges" << endl;
+  cout << endl << endl << "****** Now re-performing bestElimSeqFound until we reach our edge goal of " << bestElimSeqFound.bestNumNontrivialEdges << " nontrivial edges" << endl;
 #endif
 
   unsigned int cost_of_elim_seq = 0;
@@ -801,7 +856,10 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
 } // end compute_partial_transformation_sequence()
 
 void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
-				   JacobianAccumulationExpressionList& elist) {
+				   JacobianAccumulationExpressionList& JAElist,
+				   LinearizedComputationalGraph& remainderLCG,
+				   VertexCorrelationList& v_cor_list,
+				   EdgeCorrelationList& e_cor_list) {
   c_graph_t cg;
   vector<const LinearizedComputationalGraphVertex*> av;
   vector<edge_address_t> ae;
@@ -882,13 +940,16 @@ void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
     else cout << "is Jacoby entry: " << my_jacobi << std::endl; }
 #endif
 
-  write_graph_xaif_booster (ac, av, ae, elist);
+  write_graph_xaif_booster (ac, av, ae, JAElist, remainderLCG, v_cor_list, e_cor_list);
 } // end of angel::compute_elimination_sequence()
 
 void compute_elimination_sequence_lsa_face (const LinearizedComputationalGraph& xgraph,
 					    int iterations, 
 					    double gamma,
-					    JacobianAccumulationExpressionList& expression_list) {
+					    JacobianAccumulationExpressionList& JAElist,
+					    LinearizedComputationalGraph& remainderLCG,
+					    VertexCorrelationList& v_cor_list,
+					    EdgeCorrelationList& e_cor_list) {
   c_graph_t                                            cg;
   vector<const LinearizedComputationalGraphVertex*>    av;
   vector<edge_address_t>                               ae;
@@ -910,14 +971,17 @@ void compute_elimination_sequence_lsa_face (const LinearizedComputationalGraph& 
     face_elimination (feh.seq[c], lg, ac);
   ac.set_jacobi_entries ();
 
-  write_graph_xaif_booster (ac, av, ae, expression_list);
+  write_graph_xaif_booster (ac, av, ae, JAElist, remainderLCG, v_cor_list, e_cor_list);
 
 } // end of angel::compute_elimination_sequence_lsa_face()
 
 void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph& xgraph,
 					      int iterations, 
 					      double gamma,
-					      JacobianAccumulationExpressionList& expression_list) {
+					      JacobianAccumulationExpressionList& JAElist,
+					      LinearizedComputationalGraph& remainderLCG,
+					      VertexCorrelationList& v_cor_list,
+					      EdgeCorrelationList& e_cor_list) {
   c_graph_t                                            cg;
   vector<const LinearizedComputationalGraphVertex*>    av;
   vector<edge_address_t>                               ae;
@@ -927,12 +991,11 @@ void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph
   for (size_t i= 0; i != cg.dependents.size(); i++)
     // version 1
     if (out_degree (cg.dependents[i], cg) > 0) {
-      cerr << "Warning! Vertex elimination not possible with these graph.\n"
-	   << "Call LSA for face elimination with same parameters (may take longer).\n";
-      return compute_elimination_sequence_lsa_face (xgraph, iterations, gamma, expression_list);}
+      cerr << "Warning! Vertex elimination not possible with this graph, because at least one dependent vertex has at least one outedge.\n"
+	   << "Calling LSA for face elimination with same parameters (may take longer)...\n";
+      return compute_elimination_sequence_lsa_face (xgraph, iterations, gamma, JAElist, remainderLCG, v_cor_list, e_cor_list);}
     // version 2
-    // throw_exception (out_degree (cg.dependents[i], cg) > 0, consistency_exception, 
-    //                  "Vertex elimination not possible with these graph.");
+    // throw_exception (out_degree (cg.dependents[i], cg) > 0, consistency_exception, "Vertex elimination not possible with these graph.");
       
   vertex_elimination_history_t                         veh (cg);
   SA_elimination_cost_t<reverse_mode_vertex_t>         cost (reverse_mode_vertex);
@@ -953,8 +1016,7 @@ void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph
     face_elimination (tv[c], lg, ac);
   ac.set_jacobi_entries ();
 
-  write_graph_xaif_booster (ac, av, ae, expression_list);
-
+  write_graph_xaif_booster (ac, av, ae, JAElist, remainderLCG, v_cor_list, e_cor_list);
 } // end of angel::compute_elimination_sequence_lsa_vertex()
 
 } // end namespace angel
@@ -966,19 +1028,28 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
   try {
     if (myType == REGULAR_ELIMTYPE) {
       compute_elimination_sequence (getLCG(),
-				    getEliminationResult().myJAEList);
+				    getEliminationResult().myJAEList,
+				    getEliminationResult().myRemainderLCG,
+				    getEliminationResult().myVertexCorrelationList,
+				    getEliminationResult().myEdgeCorrelationList);
     }
     else if (myType == LSA_VERTEX_ELIMTYPE) {
       compute_elimination_sequence_lsa_vertex (getLCG(),
 					       getNumIterations(),
 					       getGamma(),
-					       getEliminationResult().myJAEList);
+					       getEliminationResult().myJAEList,
+					       getEliminationResult().myRemainderLCG,
+					       getEliminationResult().myVertexCorrelationList,
+					       getEliminationResult().myEdgeCorrelationList);
     }
     else if (myType == LSA_FACE_ELIMTYPE) {
       compute_elimination_sequence_lsa_face (getLCG(),
 					     getNumIterations(),
 					     getGamma(),
-					     getEliminationResult().myJAEList);
+					     getEliminationResult().myJAEList,
+					     getEliminationResult().myRemainderLCG,
+					     getEliminationResult().myVertexCorrelationList,
+					     getEliminationResult().myEdgeCorrelationList);
     }
     else if (myType == SCARCE_ELIMTYPE) {
       compute_partial_elimination_sequence (getLCG(),
