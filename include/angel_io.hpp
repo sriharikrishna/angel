@@ -553,6 +553,15 @@ extern vis_display_output_t cout_vis_display_output;
 //   }
 // };
 
+#ifdef USEXAIFBOOSTER
+
+void write_refillDependences (ostream& stream,
+			      const refillDependenceMap_t& refillDependences);
+
+void writeVertexAndEdgeTypes (ostream& stream,
+			      c_graph_t& angelLCG);
+
+#endif // USEXAIFBOOSTER
 
 } // namespace angel
 

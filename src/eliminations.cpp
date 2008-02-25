@@ -655,6 +655,10 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					    list<EdgeRef_t>& edge_ref_list,
 					    JacobianAccumulationExpressionList& jae_list) {
+#ifndef NDEBUG
+  cout << "front eliminating edge " << e << endl;
+#endif
+
   unsigned int cost = 0;
   c_graph_t::vertex_t tgt = target (e, angelLCG);
   vector<c_graph_t::edge_t> tgtOutEdges;
@@ -685,6 +689,10 @@ unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					   list<EdgeRef_t>& edge_ref_list,
 					   JacobianAccumulationExpressionList& jae_list) {
+#ifndef NDEBUG
+  cout << "back eliminating edge " << e << endl;
+#endif
+
   unsigned int cost = 0;
   c_graph_t::vertex_t src = source (e, angelLCG);
   vector<c_graph_t::edge_t> srcInEdges;
@@ -774,6 +782,10 @@ unsigned int front_elim (c_graph_t::edge_t e,
 			 const Elimination::AwarenessLevel_E ourAwarenessLevel,
 			 const elimSeq_cost_t& currentElimSeq,
 			 refillDependenceMap_t& refillDependences) {
+#ifndef NDEBUG
+  cout << "front eliminating edge " << e << endl;
+#endif
+
   unsigned int cost = 0;
   c_graph_t::oei_t oei, oe_end;
   vector<c_graph_t::edge_t> tgtOutEdges;
@@ -799,6 +811,10 @@ unsigned int back_elim (c_graph_t::edge_t e,
 			const Elimination::AwarenessLevel_E ourAwarenessLevel,
 			const elimSeq_cost_t& currentElimSeq,
 			refillDependenceMap_t& refillDependences) {
+#ifndef NDEBUG
+  cout << "back eliminating edge " << e << endl;
+#endif
+
   unsigned int cost = 0;
   c_graph_t::iei_t iei, ie_end;
   vector<c_graph_t::edge_t> srcInEdges;
@@ -885,6 +901,10 @@ unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,
 					 const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					 const transformationSeq_cost_t* currentTransformationSequence,
 					 refillDependenceMap_t& refillDependences) {
+#ifndef NDEBUG
+  cout << "front eliminating edge " << e << endl;
+#endif
+
   unsigned int cost = 0;
   c_graph_t::oei_t oei, oe_end;
   vector<c_graph_t::edge_t> tgtOutEdges;
@@ -910,6 +930,10 @@ unsigned int backEdgeElimination_noJAE (c_graph_t::edge_t e,
 					 const Elimination::AwarenessLevel_E ourAwarenessLevel,
 					 const transformationSeq_cost_t* currentTransformationSequence,
 					 refillDependenceMap_t& refillDependences) {
+#ifndef NDEBUG
+  cout << "back eliminating edge " << e << endl;
+#endif
+
   unsigned int cost = 0;
   c_graph_t::iei_t iei, ie_end;
   vector<c_graph_t::edge_t> srcInEdges;

@@ -122,7 +122,39 @@ string_stream_output_t cout_string_output (std::cout);
 
 vis_display_output_t cout_vis_display_output (std::cout);
 
+#ifdef USEXAIFBOOSTER
+
+void write_refillDependences (ostream& stream,
+			      const refillDependenceMap_t& refillDependences) {
+  stream << "current contents of refillDependences: " << endl;
+  for (refillDependenceMap_t::const_iterator di = refillDependences.begin(); di != refillDependences.end(); di++) {
+    stream <<  "(" << di->first.first << "," << di->first.second << ") -> { ";
+    for (vertex_set_t::const_iterator vsi = di->second.begin(); vsi != di->second.end(); vsi++)
+      stream << *vsi << " ";
+    stream << "}" << endl;
+  }
+  stream << endl;
+} // end write_refillDependences()
+
+void writeVertexAndEdgeTypes (ostream& stream,
+			      c_graph_t& angelLCG) {
+  c_graph_t::vi_t vi, v_end;
+  for (tie (vi, v_end) = vertices(angelLCG); vi != v_end; ++vi) {
+    stream << "vertex " << *vi;
+    if (vertex_type(*vi, angelLCG) == dependent) stream << " IS"; else stream << " is NOT";
+    stream << " a dependent" << endl;
+  }
+  boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), angelLCG);
+  c_graph_t::ei_t ei, e_end;
+  for (tie(ei, e_end) = edges(angelLCG); ei != e_end; ++ei) {
+    stream << "edge " << *ei << " is a ";
+    if (eType[*ei] == UNIT_EDGE)		stream << "UNIT edge" << endl;
+    else if (eType[*ei] == CONSTANT_EDGE)	stream << "CONSTANT edge" << endl;
+    else if (eType[*ei] == VARIABLE_EDGE)	stream << "VARIABLE edge" << endl;
+  }
+} // end writeVertexAndEdgeTypes()
+
+#endif // USEXAIFBOOSTER
+
 } // namespace angel
-
-
 
