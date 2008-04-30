@@ -345,7 +345,7 @@ void populate_remainderGraph_and_correlationLists (const c_graph_t& angelLCG,
   for (tie (vi, v_end) = vertices (angelLCG); vi != v_end; ++vi) {
     // since vertices aren't removed from angelLCG, only copy non-isolated vertices
     if (in_degree (*vi, angelLCG) != 0 || out_degree (*vi, angelLCG) != 0) {
-      LinearizedComputationalGraphVertex& new_rvert = remainderLCG.addVertex();
+      LinearizedComputationalGraphVertex& new_rvert (remainderLCG.addVertex());
       // add a new correlation entry to the list
       VertexCorrelationEntry new_rvert_cor;
       new_rvert_cor.myOriginalVertex_p = ourLCG_verts[*vi];
@@ -457,8 +457,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 						     numIntermediateVerticesWithoutUnitEdge(angelLCG), // numIntermediatesWithoutUnitEdgeAtBestEdgecount
 						     0); // lastDesiredElim
 #ifndef NDEBUG
-    cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl << "TRYING A NEW COMPLETE ELIMINATION SEQUENCE" << endl;
-    cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
+    cout << "++++++++++++++++++++++++" << endl << "TRYING A NEW COMPLETE ELIMINATION SEQUENCE" << "++++++++++++++++++++++++" << endl;
 #endif
 
     // perform a complete elimination sequence that preserves scarcity and tries to avoid refill
@@ -656,8 +655,7 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
 								  0);
 
 #ifndef NDEBUG
-    cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl << "TRYING A NEW COMPLETE ELIMINATION SEQUENCE" << endl;
-    cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
+    cout << "++++++++++++++++++++++++" << endl << "TRYING A NEW COMPLETE TRANSFORMATION SEQUENCE" << "++++++++++++++++++++++++" << endl;
 #endif
 
     // run currentTransformationSequence
