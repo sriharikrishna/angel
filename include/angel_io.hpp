@@ -175,21 +175,6 @@ inline void write_graph (const string& file_name,
 }
 
 // -----------------------------------------------------
-// general graph output as Boolian adjajency matrix
-// -----------------------------------------------------
-
-/** \brief Write c-graph or line graph to file as Boolean matrix
-    \param file_name File will be overwritten
-    \param adg C-graph or line graph
-    \param write_transposed Write transposed matrix, if ommited false assumed
-    \note Transposed form is quite memory expensive
-*/
-// JU: this does not compile with newer boost/gcc versions
-// template <typename Ad_graph_t> 
-// void write_graph_as_bool_matrix (const string& file_name, const Ad_graph_t& adg,
-// 				 bool write_transposed= false);
-
-// -----------------------------------------------------
 // write graph like EliAD tools does
 // -----------------------------------------------------
 
