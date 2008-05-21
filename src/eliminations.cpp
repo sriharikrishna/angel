@@ -1,10 +1,8 @@
-// $Id: eliminations.cpp,v 1.12 2003/07/28 23:56:50 uwe_naumann Exp $
+// $Id: eliminations.cpp,v 1.13 2008/02/28 14:57:33 gottschling Exp $
 
-#include "eliminations.hpp"
-
-#include "angel_tools.hpp"
-
-#include "angel_io.hpp"
+#include "angel/include/eliminations.hpp"
+#include "angel/include/angel_tools.hpp"
+#include "angel/include/angel_io.hpp"
 
 namespace angel {
 

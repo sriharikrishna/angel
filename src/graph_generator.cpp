@@ -1,17 +1,17 @@
-// $Id: graph_generator.cpp,v 1.5 2003/06/11 16:28:55 gottschling Exp $
+// $Id: graph_generator.cpp,v 1.6 2008/02/28 14:57:33 gottschling Exp $
 
-#include "graph_generator.hpp"
+#include "angel/include/graph_generator.hpp"
 
 #include <vector>
 #include <cstdlib>
 #include <numeric>
 
-#include "angel_exceptions.hpp"
-#include "angel_types.hpp"
-#include "angel_tools.hpp"
+#include "angel/include/angel_exceptions.hpp"
+#include "angel/include/angel_types.hpp"
+#include "angel/include/angel_tools.hpp"
 
 #ifndef NDEBUG
-#include "angel_io.hpp"
+#include "angel/include/angel_io.hpp"
 #endif
 
 namespace angel {

@@ -1,5 +1,5 @@
 
-// $Id: angel_types.hpp,v 1.24 2004/10/16 04:18:17 jean_utke Exp $ 
+// $Id: angel_types.hpp,v 1.26 2008/02/28 16:21:08 gottschling Exp $ 
 
 #ifndef 	_angel_types_include_
 #define 	_angel_types_include_
@@ -168,7 +168,7 @@ public:
   /// Remove all vertices that are not connected to dependent and inpedendent vertices
   void clear_graph ();
 
-  friend int read_graph_eliad (std::string& file_name, c_graph_t& cg, bool retry);
+  friend int read_graph_eliad (const std::string& file_name, c_graph_t& cg, bool retry);
   friend void stats2block (int inputs, int outputs, const std::vector<c_graph_t>& stats, 
 			   c_graph_t& block);
   friend void block2loop (const c_graph_t& block, int loops,

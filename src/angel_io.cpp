@@ -1,24 +1,25 @@
-// $Id: angel_io.cpp,v 1.4 2004/02/22 18:44:46 gottschling Exp $
+// $Id: angel_io.cpp,v 1.6 2008/02/28 16:21:06 gottschling Exp $
 
-#include "angel_io.hpp"
+#include "angel/include/angel_io.hpp"
 
 #include <fstream>
 #include <string.h>
 #include <cstdio>
 #include <vector>
 
-#include "angel_tools.hpp"
-#include "angel_exceptions.hpp"
+#include "angel/include/angel_tools.hpp"
+#include "angel/include/angel_exceptions.hpp"
 
 namespace angel {
 
   using namespace std;
   using namespace boost;
 
-int read_graph_eliad (string& file_name, c_graph_t& cg, bool retry) {
+int read_graph_eliad (const string& file_name_in, c_graph_t& cg, bool retry) {
 
   typedef c_graph_t::vertex_t vertex_t;
 
+  string file_name(file_name_in);
   FILE* fin= fopen (file_name.c_str(), "r");
   while (fin == NULL) {
     string error_message= "File " + file_name + " with c-graph not found"; 

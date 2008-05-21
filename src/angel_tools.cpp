@@ -1,12 +1,12 @@
-// $Id: angel_tools.cpp,v 1.3 2003/06/11 16:28:54 gottschling Exp $
+// $Id: angel_tools.cpp,v 1.4 2008/02/28 14:57:33 gottschling Exp $
 
-#include "angel_tools.hpp"
+#include "angel/include/angel_tools.hpp"
 
 #include <queue>
 
-#include "angel_exceptions.hpp"
-#include "angel_io.hpp"
-#include "eliminations.hpp"
+#include "angel/include/angel_exceptions.hpp"
+#include "angel/include/angel_io.hpp"
+#include "angel/include/eliminations.hpp"
 
 namespace angel {
 

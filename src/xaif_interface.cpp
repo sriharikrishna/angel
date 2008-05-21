@@ -1,13 +1,13 @@
-// $Id: xaif_interface.cpp,v 1.13 2004/05/19 14:15:49 gottschling Exp $
+// $Id: xaif_interface.cpp,v 1.15 2008/02/28 14:57:33 gottschling Exp $
 
 #ifdef USEXAIFBOOSTER
 
-#include "xaif_interface.hpp"
-#include "eliminations.hpp"
-#include "heuristics.hpp"
+#include "angel/include/xaif_interface.hpp"
+#include "angel/include/eliminations.hpp"
+#include "angel/include/heuristics.hpp"
 
-#include "angel_io.hpp"
-#include "sa.hpp"
+#include "angel/include/angel_io.hpp"
+#include "angel/include/sa.hpp"
 
 namespace angel {
 

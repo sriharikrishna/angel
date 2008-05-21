@@ -1,14 +1,14 @@
-// $Id: angel_types.cpp,v 1.12 2004/03/23 03:41:20 gottschling Exp $ 
+// $Id: angel_types.cpp,v 1.14 2008/02/28 14:57:33 gottschling Exp $ 
 
-#include "angel_types.hpp"
+#include "angel/include/angel_types.hpp"
 
 #include <iostream>
 #include <string>
 #include <string>
 
-#include "eliminations.hpp"
-#include "angel_tools.hpp"
-#include "angel_io.hpp"
+#include "angel/include/eliminations.hpp"
+#include "angel/include/angel_tools.hpp"
+#include "angel/include/angel_io.hpp"
 
 // =====================================================
 // c-graph

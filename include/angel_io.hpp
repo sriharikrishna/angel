@@ -1,4 +1,4 @@
-// $Id: angel_io.hpp,v 1.12 2005/03/22 21:48:49 jean_utke Exp $
+// $Id: angel_io.hpp,v 1.14 2008/02/28 16:21:08 gottschling Exp $
 
 #ifndef 	_angel_io_include_
 #define 	_angel_io_include_
@@ -35,7 +35,7 @@ namespace angel {
       Otherwise it is retried with the new name which is returned
       in the parameter list.
   */
-int read_graph_eliad (string& file_name, c_graph_t& cg, bool retry= true);
+int read_graph_eliad (const string& file_name, c_graph_t& cg, bool retry= true);
 
 // =====================================================
 // output

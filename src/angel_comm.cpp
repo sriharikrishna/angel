@@ -1,6 +1,6 @@
-// $Id: angel_comm.cpp,v 1.4 2003/05/14 21:42:14 gottschling Exp $
+// $Id: angel_comm.cpp,v 1.5 2008/02/28 14:57:32 gottschling Exp $
 
-#include "angel_comm.hpp"
+#include "angel/include/angel_comm.hpp"
 
 #ifdef USE_MPI
 

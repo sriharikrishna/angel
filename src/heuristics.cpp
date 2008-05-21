@@ -1,12 +1,11 @@
-// $Id: heuristics.cpp,v 1.10 2005/03/22 05:08:40 jean_utke Exp $
-
-#include "heuristics.hpp"
+// $Id: heuristics.cpp,v 1.11 2008/02/28 14:57:33 gottschling Exp $
 
 #include <limits.h>
 #include <algorithm>
 
-#include "angel_exceptions.hpp"
-#include "angel_tools.hpp"
+#include "angel/include/heuristics.hpp"
+#include "angel/include/angel_exceptions.hpp"
+#include "angel/include/angel_tools.hpp"
 
 namespace angel {
 

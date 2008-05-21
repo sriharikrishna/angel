@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.21 2004/10/16 04:18:17 jean_utke Exp $
+# $Id: Makefile,v 1.22 2008/02/28 14:57:32 gottschling Exp $
 
 # BOOST_DIR must be defined in the environment !
 
@@ -16,6 +16,9 @@ OBJECTS	= heuristics.o sa.o angel_comm.o angel_types.o angel_tools.o angel_io.o 
 			graph_generator.o xaif_interface.o 
 IDIR	= ../include
 CXXFLAGS+= -c
+
+ANGEL_ROOT ?= ../..
+CXXFLAGS+= -I$(ANGEL_ROOT) -I$(BOOST_ROOT)
 
 it:	all
 
