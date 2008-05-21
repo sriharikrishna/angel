@@ -114,6 +114,9 @@ and the lines below that one in <br>
 
 <a href="angel.tgz">Source code tar file</a> as of
 Feb/09/2007&nbsp;
+<br/>
+<br/>
+Please also see the <a href="http://sourceforge.net/projects/angellib/">project page at sourceforge</a>.
 <h3>Documentation</h3>
 
 For
@@ -125,9 +128,9 @@ generated on Feb/09/2007)
 
 <ul>
 
-  <li>main author is Peter Gottschling</li>
+  <li>the main author of the original version is Peter Gottschling</li>
 
-  <li>further contributions have been made by Uwe Naumann</li>
+  <li>further contributions have been made by Uwe Naumann, Jean Utke and Andrew Lyons</li>
 
   <li>the initial development of ANGEL was part of the XCOp
 project and was supported
