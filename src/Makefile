@@ -17,8 +17,8 @@ OBJECTS	= heuristics.o sa.o angel_comm.o angel_types.o angel_tools.o angel_io.o 
 IDIR	= ../include
 CXXFLAGS+= -c
 
-ANGEL_ROOT ?= ../..
-CXXFLAGS+= -I$(ANGEL_ROOT) -I$(BOOST_ROOT)
+ANGEL_ROOT = ../..
+CXXFLAGS+= -I$(ANGEL_ROOT) 
 
 it:	all
 
