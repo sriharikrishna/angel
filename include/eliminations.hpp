@@ -1,17 +1,16 @@
-// $Id: eliminations.hpp,v 1.18 2004/03/23 03:41:20 gottschling Exp $
-
 #ifndef 	_eliminations_include_
 #define 	_eliminations_include_
-
-
-//
-//
-//
 
 #include "angel_types.hpp"
 #include "angel_io.hpp"
 
-namespace angel {
+#ifdef USEXAIFBOOSTER
+  #include "xaifBooster/algorithms/CrossCountryInterface/inc/Elimination.hpp"
+  using namespace xaifBoosterCrossCountryInterface;
+  using std::list;
+#endif
+
+  namespace angel {
 
   using std::vector;
   using std::cout;
@@ -745,6 +744,132 @@ bool convert_elimination_sequence (const vector<edge_ij_elim_t>& ev,
 				   const line_graph_t& lg,
 				   vector<triplet_t>& tv);
 
+#ifdef USEXAIFBOOSTER
+
+EdgeRefType_E getRefType (const c_graph_t::edge_t e,
+			  const c_graph_t& angelLCG,
+			  const list<EdgeRef_t>& edge_ref_list);
+
+const LinearizedComputationalGraphEdge* getLCG_p (const c_graph_t::edge_t e,
+						  const c_graph_t& angelLCG,
+						  const list<EdgeRef_t>& edge_ref_list);
+
+JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
+						const c_graph_t& angelLCG,
+						const list<EdgeRef_t>& edge_ref_list);
+
+void setJaevRef (const c_graph_t::edge_t e,
+		 JacobianAccumulationExpressionVertex& jaev,
+		 const c_graph_t& angelLCG,
+		 const list<EdgeRef_t>& edge_ref_list);
+	
+void removeRef (const c_graph_t::edge_t e,
+		const c_graph_t& angelLCG,
+		list<EdgeRef_t>& edge_ref_list);
+
+/** Multiply a contiguous pair of edges in an angel c_graph_t and create a new
+    xaifBoosterCrossCountryInterface::JacobianAccumulationExpression.
+
+    \param e1 the first edge. 
+    \param e2 the second edge (its source is the target of e1. 
+    \param angelLCG the c_graph_t (passed by reference) that the operation is performed on.
+    \param edge_ref_list the stl list container that keeps track of the reference
+           (LCG pointer or JAE pointer) for each edge in angelLCG.
+    \param jae_list the xaifBooster JAE list that we construct incrementally
+           as we perform eliminations.
+    \return The cost (in terms of multiplications) of the elimination.
+
+    If there's fill-in, a new edge is created and a new edge reference points it to the new JAE.
+    If there's absorption, the existing edge has its reference updated to point to the new JAE.
+ */
+unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
+					  const c_graph_t::edge_t e2,
+					  c_graph_t& angelLCG,
+					  const xaifBoosterCrossCountryInterface::Elimination::AwarenessLevel_E ourAwarenessLevel,
+					  list<EdgeRef_t>& edge_ref_list,
+					  JacobianAccumulationExpressionList& jae_list);
+
+/** Front eliminate an edge from an angel c_graph_t but go directly to a
+    xaifBoosterCrossCountryInterface::JacobianAccumulationExpression, rather
+    than the internal angel accumulation graph type.
+
+    \param e the edge that will be front eliminated. 
+    \param angelLCG the c_graph_t (passed by reference) that the elimination is performed on.
+    \param edge_ref_list the stl list container that keeps track of the reference
+           (LCG pointer or JAE pointer) for each edge in angelLCG.
+    \param jae_list the xaifBooster JAE list that we construct incrementally
+           as we perform eliminations.
+    \return The cost (in terms of multiplications) of the elimination.
+
+    This function is also aware of unit and constant edges.  This entails labeling
+    new edges with the appropriate type, as well as determining the cost appropriately.
+ */
+unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
+					    c_graph_t& angelLCG,
+					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					    list<EdgeRef_t>& edge_ref_list,
+					    JacobianAccumulationExpressionList& jae_list);
+
+/** Back eliminate an edge from an angel c_graph_t but go directly to a
+    xaifBoosterCrossCountryInterface::JacobianAccumulationExpression, rather
+    than the internal angel accumulation graph type.
+
+    \param e the edge that will be back eliminated.
+    \param angelLCG the c_graph_t (passed by reference) that the elimination is performed on.
+    \param edge_ref_list the stl list container that keeps track of the reference
+           (LCG pointer or JAE pointer) for each edge in angelLCG.
+    \param jae_list the xaifBooster JAE list that we construct incrementally
+           as we perform eliminations.
+    \return The cost (in terms of multiplications) of the elimination.
+
+    This function is also aware of unit and constant edges.  This entails labeling
+    new edges with the appropriate type, as well as determining the cost appropriately.
+ */
+unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
+					   c_graph_t& angelLCG,
+					   const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					   list<EdgeRef_t>& edge_ref_list,
+					   JacobianAccumulationExpressionList& jae_list);
+
+unsigned int pair_elim (c_graph_t::edge_t e1,
+			c_graph_t::edge_t e2,
+			c_graph_t& angelLCG,
+			const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			const elimSeq_cost_t& currentElimSeq,
+			refillDependenceMap_t& refillDependences);
+
+unsigned int front_elim (c_graph_t::edge_t e,
+			 c_graph_t& angelLCG,
+			 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			 const elimSeq_cost_t& currentElimSeq,
+			 refillDependenceMap_t& refillDependences);
+
+unsigned int back_elim (c_graph_t::edge_t e,
+			c_graph_t& angelLCG,
+			const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			const elimSeq_cost_t& currentElimSeq,
+			refillDependenceMap_t& refillDependences);
+
+unsigned int pairElim_noJAE (c_graph_t::edge_t e1,
+			     c_graph_t::edge_t e2,
+			     c_graph_t& angelLCG,
+			     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			     const transformationSeq_cost_t* currentTransformationSequence,
+			     refillDependenceMap_t& refillDependences);
+
+unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,
+					 c_graph_t& angelLCG,
+					 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					 const transformationSeq_cost_t* currentTransformationSequence,
+					 refillDependenceMap_t& refillDependences);
+
+unsigned int backEdgeElimination_noJAE (c_graph_t::edge_t e,
+					c_graph_t& angelLCG,
+					const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					const transformationSeq_cost_t* currentTransformationSequence,
+					refillDependenceMap_t& refillDependences);
+
+#endif // USEXAIFBOOSTER
 
 } // namespace angel
 

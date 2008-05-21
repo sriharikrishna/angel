@@ -1,12 +1,5 @@
-// $Id: heuristics.hpp,v 1.19 2005/03/22 05:08:40 jean_utke Exp $
-
 #ifndef 	_heuristics_include_
 #define 	_heuristics_include_
-
-
-//
-//
-//
 
 #include <vector>
 
@@ -18,6 +11,10 @@
 #include "gmpi.hpp"
 #include "angel_comm.hpp"
 #endif // USE_MPI
+
+#ifdef USEXAIFBOOSTER
+#include "reroutings.hpp"
+#endif // USEXAIFBOOSTER
 
 namespace angel {
 
@@ -1353,6 +1350,158 @@ int find_best_subset (const vector<Object_t>& v1, const Ad_graph_t& adg,
   }
   return v2.size();
 }
+
+#ifdef USEXAIFBOOSTER
+
+// =====================================================
+// scarcity preserving eliminations
+// =====================================================
+
+/** \brief Determines the effect, in terms of nontrivial edge count, of performing edge elimination \p be
+
+    \param be edge elimination target under consideration
+    \param angelLCG c-graph
+    \param ourAwarenessLevel setting such as unit aware, constant aware, or no awareness
+    \return net effect on nontrivial edge count
+*/
+int edge_elim_effect (const edge_bool_t be,
+		      const c_graph_t& angelLCG,
+		      const Elimination::AwarenessLevel_E ourAwarenessLevel);
+
+/** \brief Filter that selects edge elimination targets that don't increase the nontrivial edge count
+
+    \param bev1 set of edges that can be eliminated
+    \param angelLCG c-graph
+    \param ourAwarenessLevel needed to assess costs of eliminations
+    \param bev2 set of edge elims that don't increase the nontrivial edge count
+    \return size of bev2
+*/
+bool maintaining_edge_eliminations (const vector<edge_bool_t>& bev1,
+				    const c_graph_t& angelLCG,
+				    const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				    vector<edge_bool_t>& bev2);
+
+/** \brief Filter that selects edge elimination targets that decrease the nontrivial edge count
+
+    \param bev1 set of edges that can be eliminated
+    \param angelLCG c-graph
+    \param ourAwarenessLevel needed to assess costs of eliminations
+    \param bev2 set of edge elims that decrease the nontrivial edge count
+    \return size of bev2
+*/
+bool reducing_edge_eliminations (const vector<edge_bool_t>& bev1,
+				 const c_graph_t& angelLCG,
+				 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				 vector<edge_bool_t>& bev2);
+
+/** \brief Filter that selects edge elimination targets whose refill dependences (a possibly empty set of vertices)
+ * have been met (meaning that there is no alternate path for the edge through the vertex
+
+    \param bev1 set of edges that can be eliminated
+    \param angelLCG c-graph
+    \param bev2 set of edge elims that dont violate refill dependences (returned by reference)
+    \return size of bev2
+*/
+bool refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
+					c_graph_t& angelLCG,
+					const refillDependenceMap_t refillDependences,
+					vector<edge_bool_t>& bev2);
+
+/** Filter for selecting those edge eliminations that don't undo a rerouting
+ * (a front-elimination can undo a pre-routing, and a back-elimination can undo a post-routing)
+ */
+bool rerouting_considerate_edge_eliminations (const vector<edge_bool_t>& bev,
+					      const c_graph_t& angelLCG,
+					      const std::vector<Transformation_t>& transformationsPerformedV,
+					      vector<edge_bool_t>& reroutingConsiderateEdgeElimsV);
+
+// ==============================================================================
+// |			FILTERS FOR REROUTINGS					|
+// ==============================================================================
+
+/** Filter that populates \p noncyclicReroutingsV with (strictly) those reroutings
+ * that have not already been performed, based on \p transformationsPerformedV
+ */
+size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
+			    const std::vector<Transformation_t>& transformationsPerformedV,
+			    const c_graph_t& angelLCG,
+			    vector<edge_reroute_t>& noncyclicReroutingsV);
+
+/*
+bool maintaining_reroutings (const vector<edge_reroute_t>& erv,
+			     const c_graph_t& angelLCG,
+			     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			     vector<edge_reroute_t>& maintainReroutingsV);
+*/
+
+/** Filter that populates /p reducingReroutingsV with those reroutings that can be followed
+ * by an edge elimination with an overall reduction in the nontrivial edgecount.
+ */
+bool reducing_reroutings (const vector<edge_reroute_t>& erv,
+			  const c_graph_t& angelLCG,
+			  const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			  vector<edge_reroute_t>& reducingReroutingsV);
+
+// ==============================================================================
+// |		FILTERS FOR ELIMINATIONS AND REROUTINGS	(TRANSFORMATIONS)	|
+// ==============================================================================
+
+/** Filter that populates /p allViableTransformationsV with all possible edge eliminations and
+ * all possible reroutings that haven't already been performed (so-called noncyclic reroutings).
+ */
+bool all_viable_transformations (c_graph_t& angelLCG,
+				 const std::vector<Transformation_t>& transformationsPerformedV,
+				 vector<Transformation_t>& allViableTransformationsV);
+
+/** Filter that populates /p maintainingTransformationsV with those edge eliminations and
+ * reroutings that maintain the nontrivial edge count (in particular, this includes all reroutings).
+ */
+bool maintaining_transformations (const vector<Transformation_t>& tv,
+				  const c_graph_t& angelLCG,
+				  const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				  vector<Transformation_t>& maintainingTransformationsV);
+
+/** Filter that populates /p reducingTransformationsV with edge eliminations that reduce
+ * the nontrivial edge count and reroutings that can be followed by an edge elimination
+ * with an overall reduction in the nontrivial edgecount.
+ */
+bool reducing_transformations (const vector<Transformation_t>& tv,
+			       c_graph_t& angelLCG,
+			       const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			       vector<Transformation_t>& reducingTransformationsV);
+
+/** Filter that populates /p refillAvoidingTransformationsV with edge eliminations that
+ * aren't known to be refillable in the future.  Any reroutings are passed straight through.
+ */
+bool refill_avoiding_transformations (const vector<Transformation_t>& tv,
+				      c_graph_t& angelLCG,
+				      const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				      const refillDependenceMap_t& refillDependences,
+				      vector<Transformation_t>& refillAvoidingTransformationsV);
+
+/** Filter that populates /p reroutingConsiderateTransformationsV with edge eliminations
+ * that don't undo reroutings.  Any reroutings are passed straight through.
+ */
+bool rerouting_considerate_transformations (const vector<Transformation_t>& tv,
+					    const c_graph_t& angelLCG,
+					    const std::vector<Transformation_t>& transformationsPerformedV,
+					    vector<Transformation_t>& reroutingConsiderateTransformationsV); 
+
+/** Filter that populates /p lowestMarkowitzTransformationsV with those edge eliminations
+ * that have the lowest markowitz degree.  Any reroutings are passed straight through.
+ */
+bool lowest_markowitz_transformations (const vector<Transformation_t>& tv,
+				       const c_graph_t& angelLCG,
+				       vector<Transformation_t>& lowestMarkowitzTransformationsV);
+
+/** Filter that populates /p lowestMarkowitzTransformationsV with an edge elimination
+ * that is chosen by reverse topological order.  Any reroutings are passed straight through.
+ */
+bool reverse_mode_transformations (const vector<Transformation_t>& tv,
+				   const c_graph_t& angelLCG,
+				   vector<Transformation_t>& reverseModeTransformationsV);
+
+#endif // USEXAIFBOOSTER
 
 #ifdef USE_MPI
 /// Build a parallel heuristic out of a sequential 

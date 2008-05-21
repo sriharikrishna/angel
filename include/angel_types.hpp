@@ -1,13 +1,6 @@
-
 // $Id: angel_types.hpp,v 1.26 2008/02/28 16:21:08 gottschling Exp $ 
-
 #ifndef 	_angel_types_include_
 #define 	_angel_types_include_
-
-
-//
-//
-//
 
 #include <vector>
 #include <string>
@@ -19,8 +12,11 @@
 #include "boost/property_map.hpp"
 
 #ifdef USEXAIFBOOSTER
+#include <map>
+#include <set>
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/LinearizedComputationalGraph.hpp"
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/JacobianAccumulationExpressionList.hpp"
+#include "xaifBooster/algorithms/CrossCountryInterface/inc/GraphCorrelations.hpp"
 #endif // USEXAIFBOOSTER
 
 #include "angel_exceptions.hpp"
@@ -39,12 +35,39 @@ enum vertex_type_t {independent,   ///< Independent vertex
 		    undefined_vertex ///< Undefined, e.g. out of range
 };
 
-typedef boost::property<boost::edge_weight_t, int>                      edge_weight_property;
-typedef boost::property<boost::edge_index_t, int, edge_weight_property> edge_index_weight_property;
+enum Edge_Type_E { VARIABLE_EDGE,
+		   UNIT_EDGE,
+		   CONSTANT_EDGE };
+
+struct EdgeType { 
+  enum { num = 129 };
+  typedef boost::edge_property_tag kind;
+}; // end struct
+
+// edge properties
+typedef boost::property<boost::edge_weight_t, int>			edge_weight_property;
+typedef boost::property<boost::edge_index_t, int, edge_weight_property>	edge_index_weight_property;
+typedef boost::property<EdgeType, int, edge_index_weight_property>	edge_type_index_weight_property;
 
 /// Pure BGL type definition of c-graph
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, 
-                       boost::no_property, edge_index_weight_property> pure_c_graph_t;
+//typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, 
+//			boost::no_property, edge_type_index_weight_property> pure_c_graph_t;
+
+struct VertexVisited { 
+  //enum { num = 128 };
+  typedef boost::vertex_property_tag kind;
+}; // end struct
+
+// vertex visited property (for reachability queries)
+typedef boost::property<VertexVisited, bool>				vertex_visited_property;
+
+/// Pure BGL type definition of c-graph
+typedef boost::adjacency_list<boost::vecS, 			// OutEdgeList
+			      boost::vecS,			// VertexList
+			      boost::bidirectionalS, 		// Directed
+			      vertex_visited_property,		// VertexProperties
+			      edge_type_index_weight_property>	// EdgeProperties
+  pure_c_graph_t;
 
 // some forward declarations
 class graph_package_t; 
@@ -71,13 +94,17 @@ public:
   /// Iterator type of a vertex's outgoing edges
   typedef boost::graph_traits<pure_c_graph_t>::out_edge_iterator          oei_t;
   /// Type of property edge label for const c_graph_t
-  typedef boost::property_map<pure_c_graph_t, boost::edge_weight_t>::const_type  const_ew_t;
+  typedef boost::property_map<pure_c_graph_t, boost::edge_weight_t>::const_type	const_ew_t;
   /// Type of property edge label for non-const c_graph_t
-  typedef boost::property_map<pure_c_graph_t, boost::edge_weight_t>::type        ew_t;
+  typedef boost::property_map<pure_c_graph_t, boost::edge_weight_t>::type	ew_t;
   /// Type of property edge index for const c_graph_t
-  typedef boost::property_map<pure_c_graph_t, boost::edge_index_t>::const_type   const_eind_t;
+  typedef boost::property_map<pure_c_graph_t, boost::edge_index_t>::const_type	const_eind_t;
   /// Type of property edge index for non-const c_graph_t
-  typedef boost::property_map<pure_c_graph_t, boost::edge_index_t>::type         eind_t;
+  typedef boost::property_map<pure_c_graph_t, boost::edge_index_t>::type	eind_t;
+  /// Type of property edge isUnit for const c_graph_t
+  typedef boost::property_map<pure_c_graph_t, EdgeType>::const_type		const_etype_t;
+  /// Type of property edge isUnit for non-const c_graph_t
+  typedef boost::property_map<pure_c_graph_t, EdgeType>::type			etype_t;
 
   int          next_edge_number;   ///< useful for insertion of new edges
 
@@ -139,6 +166,7 @@ public:
     std::swap (next_edge_number, _g.next_edge_number); dependents.swap (_g.dependents); }
 
   int x () const {return X;}                           ///< Number of independent variables
+  void x (int x) { X=x;}                               ///< Number of independent variables
   int y () const {return (int) dependents.size();}     ///< Number of dependent variables
   int v () const {return (int) num_vertices(*this);}   ///< Number of variables 
   int z () const {return v()-x()-y();}                 ///< Number of intermediate vertices
@@ -180,6 +208,7 @@ public:
 				       c_graph_t& cg,
 				       std::vector<const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphVertex*>& av,
 				       std::vector<edge_address_t>& ev);
+
 #endif // USEXAIFBOOSTER
 
 };
@@ -639,6 +668,132 @@ struct accu_graph_t {
   void set_jacobi_entries ();
 };
 
+#ifdef USEXAIFBOOSTER
+enum EdgeRefType_E {LCG_EDGE,
+                    JAE_VERT,
+                    UNDEFINED};
+
+struct EdgeRef_t {
+  c_graph_t::edge_t my_angelLCGedge;
+  EdgeRefType_E my_type;
+  const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* my_LCG_edge_p;
+  xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* my_JAE_vertex_p;
+
+  EdgeRef_t (c_graph_t::edge_t _e,
+             const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* _LCGedge_p) :
+    my_angelLCGedge(_e),
+    my_type(LCG_EDGE),
+    my_LCG_edge_p(_LCGedge_p),
+    my_JAE_vertex_p(NULL) {}
+
+  EdgeRef_t (c_graph_t::edge_t _e,
+             xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* _JAEvert_p) :
+    my_angelLCGedge(_e),
+    my_type(JAE_VERT),
+    my_LCG_edge_p(NULL),
+    my_JAE_vertex_p(_JAEvert_p) {}
+};
+
+struct elimSeq_cost_t {
+  std::vector<edge_ij_elim_t> edgeElimVector;
+  unsigned int bestNumNontrivialEdges;
+  unsigned int cost;
+  unsigned int costAtBestEdgecount;
+  unsigned int numIntermediatesAtBestEdgecount;
+  unsigned int numIntermediatesWithoutUnitEdgeAtBestEdgecount;
+  size_t lastDesiredElim;		// unused for now
+  mutable bool revealedNewDependence;
+
+  elimSeq_cost_t (unsigned int _bestNumNontrivialEdges,
+		  unsigned int _cost,
+		  unsigned int _costAtBestEdgecount,
+		  unsigned int _numIntermediatesAtBestEdgecount,
+		  unsigned int _numIntermediatesWithoutUnitEdgeAtBestEdgecount,
+		  size_t _lastDesiredElim) :
+    bestNumNontrivialEdges (_bestNumNontrivialEdges),
+    cost (_cost),
+    costAtBestEdgecount (_costAtBestEdgecount),
+    numIntermediatesAtBestEdgecount (_numIntermediatesAtBestEdgecount),
+    numIntermediatesWithoutUnitEdgeAtBestEdgecount (_numIntermediatesWithoutUnitEdgeAtBestEdgecount),
+    lastDesiredElim (_lastDesiredElim),
+    revealedNewDependence (false) {}
+};
+
+struct edge_reroute_t {
+  c_graph_t::edge_t e;
+  c_graph_t::edge_t pivot_e;
+  bool isPre;
+
+  mutable bool pivot_eliminatable;
+  mutable bool increment_eliminatable;
+
+  mutable std::vector<c_graph_t::vertex_t> type3EdgeElimVector;
+
+  edge_reroute_t () {};
+
+  edge_reroute_t (const c_graph_t::edge_t _e,
+                  const c_graph_t::edge_t _pivot_e,
+                  bool _isPre) :
+    e (_e),
+    pivot_e (_pivot_e),
+    isPre (_isPre),
+    pivot_eliminatable (0),
+    increment_eliminatable (0) { type3EdgeElimVector.clear(); }
+}; // end struct edge_reroute_t
+
+struct Transformation_t {
+  bool isRerouting;
+  edge_reroute_t myRerouteElim;
+  edge_ij_elim_t myElim;
+
+  Transformation_t (const edge_bool_t& a_bool_elim_,
+		    const c_graph_t& angelLCG) :
+		      isRerouting (false) {
+    myElim = edge_ij_elim_t (source(a_bool_elim_.first, angelLCG), target(a_bool_elim_.first, angelLCG), a_bool_elim_.second);
+  };
+
+  Transformation_t (const edge_ij_elim_t& an_ij_elim_) :
+    isRerouting (false), myElim (an_ij_elim_) {};
+
+  Transformation_t (const edge_reroute_t& aRerouteElim_) :
+    isRerouting (true), myRerouteElim (aRerouteElim_) {};
+
+  private:
+
+  Transformation_t ();
+
+};
+
+struct transformationSeq_cost_t {
+  std::vector<Transformation_t> transformationVector;
+  unsigned int bestNumNontrivialEdges;
+  unsigned int cost;
+  unsigned int costAtBestEdgecount;
+  unsigned int numIntermediatesAtBestEdgecount;
+  unsigned int numIntermediatesWithoutUnitEdgeAtBestEdgecount;
+  size_t lastDesiredTransformation;	// unused for now
+  mutable bool revealedNewDependence;
+
+  transformationSeq_cost_t (unsigned int _bestNumNontrivialEdges,
+		  	    unsigned int _cost,
+			    unsigned int _costAtBestEdgecount,
+			    unsigned int _numIntermediatesAtBestEdgecount,
+			    unsigned int _numIntermediatesWithoutUnitEdgeAtBestEdgecount,
+			    size_t _lastDesiredTransformation) :
+			      bestNumNontrivialEdges (_bestNumNontrivialEdges),
+			      cost (_cost),
+			      costAtBestEdgecount (_costAtBestEdgecount),
+			      numIntermediatesAtBestEdgecount (_numIntermediatesAtBestEdgecount),
+			      numIntermediatesWithoutUnitEdgeAtBestEdgecount (_numIntermediatesWithoutUnitEdgeAtBestEdgecount),
+			      lastDesiredTransformation (_lastDesiredTransformation),
+			      revealedNewDependence (false) {}
+};
+
+typedef std::pair<unsigned int,unsigned int> 	uint_pair_t;
+typedef std::set<c_graph_t::vertex_t>		vertex_set_t;
+typedef std::map< uint_pair_t, vertex_set_t >	refillDependenceMap_t;
+
+#endif // USEXAIFBOOSTER
 
 } // namespace angel
 

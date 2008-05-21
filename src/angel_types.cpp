@@ -457,11 +457,6 @@ void accu_graph_t::set_jacobi_entries () {
 } // namespace angel
 
 
-
-
-
-
-
 // =========================== doxygen input for whole lib
 
 /*! \mainpage ANGEL Reference Manual

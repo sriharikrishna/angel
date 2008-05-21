@@ -1,5 +1,4 @@
 // $Id: angel_tools.cpp,v 1.4 2008/02/28 14:57:33 gottschling Exp $
-
 #include "angel/include/angel_tools.hpp"
 
 #include <queue>
@@ -12,6 +11,51 @@ namespace angel {
 
 using namespace std;
 using namespace boost;
+
+bool reachable (const c_graph_t::vertex_t src,
+                const c_graph_t::vertex_t tgt,
+                c_graph_t& angelLCG) {
+  property_map<pure_c_graph_t, VertexVisited>::type visited = get(VertexVisited(), angelLCG);
+
+  c_graph_t::oei_t oei, oe_end;
+  for (tie (oei, oe_end) = out_edges (src, angelLCG); oei != oe_end; ++oei) {
+    if (target(*oei, angelLCG) == tgt) return true;
+    if (!visited[target(*oei, angelLCG)]) { // call recursively on unvisited successors
+      visited[target(*oei, angelLCG)] = true;
+      if (reachable (target(*oei, angelLCG), tgt, angelLCG)) return true;
+    }
+  } // end all outedges
+
+  return false;
+} // end
+
+void vertex_upset (const c_graph_t::vertex_t v,
+                   const c_graph_t& angelLCG,
+                   vertex_set_t& upset) {
+  upset.clear();
+  upset.insert(v);
+
+  c_graph_t::oei_t oei, oe_end;
+  for (tie (oei, oe_end) = out_edges (v, angelLCG); oei != oe_end; ++oei) {
+    vertex_set_t successor_upset;
+    vertex_upset (target(*oei, angelLCG), angelLCG, successor_upset);
+    upset.insert(successor_upset.begin(), successor_upset.end());
+  }
+}
+
+void vertex_downset (const c_graph_t::vertex_t v,
+		     const c_graph_t& angelLCG,
+		     vertex_set_t& downset) {
+  downset.clear();
+  downset.insert(v);
+
+  c_graph_t::iei_t iei, ie_end;
+  for (tie (iei, ie_end) = in_edges (v, angelLCG); iei != ie_end; ++iei) {
+    vertex_set_t predecessor_downset;
+    vertex_downset (source (*iei, angelLCG), angelLCG, predecessor_downset);
+    downset.insert(predecessor_downset.begin(), predecessor_downset.end());
+  }
+}
 
 bool lex_less_face (line_graph_t::face_t e1, line_graph_t::face_t e2,
 		    const line_graph_t& lg) {
