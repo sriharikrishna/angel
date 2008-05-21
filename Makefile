@@ -11,11 +11,6 @@ include specs/$(angel_config).conf
 # usage of other libraries (architecture (or compiler version) independent part of def)
 include specs/lib_usage.conf
 
-ifeq "$(strip $(usexaif))" "yes"
-  CPPFLAGS	+= -DUSE_XAIF
-  CPPFLAGS	+= -I$(XAIF_DIR)
-endif
-
 .PHONY:	it lib objects doc clean dist echo
 
 it: 	lib 
@@ -23,7 +18,6 @@ it: 	lib
 lib:	lib/libangel.a
 
 lib/libangel.a:	objects
-	$(RM) $(RMFLAGS) $@
 	$(AR) $(ARFLAGS) $@ src/*.o
 
 objects:
