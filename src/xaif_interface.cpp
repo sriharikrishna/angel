@@ -765,14 +765,14 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
        //<< bestTransformationSequence->numIntermediatesAtBestEdgecount << " intermediate vertices have no incident unit edges" << endl;
 #endif
 
-  unsigned int cost_of_transformation_seq = 0;
-
 /* AL: COMMENTED OUT BECAUSE DIVISIONS AND SUBTRACTIONS (REQUIRED FOR REROUTINGS) ARE NOT IMPLEMENTED AS JAES
 #ifndef NDEBUG
   cout << endl << "*************************************************************************************" << endl; 
   cout << "Now performing the best partial sequence of transformations..." << endl;
   cout << "*************************************************************************************" << endl; 
 #endif
+
+  unsigned int cost_of_transformation_seq = 0;
 
   // Perform the best transformation sequence
   for (size_t i = 0; i < bestTransformationSequence->transformationVector.size(); i++) {
@@ -822,9 +822,9 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
 
   populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
 
-#ifndef NDEBUG
-  cout << "compute_partial_transformation_sequence: cost " << cost_of_transformation_seq << endl;
-#endif
+//#ifndef NDEBUG
+  //cout << "compute_partial_transformation_sequence: cost " << cost_of_transformation_seq << endl;
+//#endif
 
 } // end compute_partial_transformation_sequence()
 
