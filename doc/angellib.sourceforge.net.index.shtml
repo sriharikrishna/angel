@@ -62,6 +62,8 @@ Maximal overall Markowitz degree reduction</li>
     <li>
 Lowest Markowitz minimal damage</li>
 
+<li> Scarsity-aware edge eliminations </li>
+
   </ul>
 
   <li>
@@ -101,7 +103,7 @@ make</a></li>
 
 
   <li><a href="http://www.boost.org">boost libraries</a></li>
-  <li>&nbsp;<a href="http://www.mcs.anl.gov/openad">OpenAD</a> : this
+  <li><a href="http://www.mcs.anl.gov/openad">OpenAD</a> : this
 dependency&nbsp; can be avoided by commenting out<br>
 
     <tt> CPPFLAGS += -DUSEXAIFBOOSTER</tt> <br>
@@ -113,7 +115,7 @@ and the lines below that one in <br>
 </ol>
 
 <a href="angel.tgz">Source code tar file</a> as of
-Feb/09/2007&nbsp;
+<!--#flastmod file="angel.tgz" -->
 <br/>
 <br/>
 Please also see the <a href="http://sourceforge.net/projects/angellib/">project page at sourceforge</a>.
@@ -123,7 +125,7 @@ For
 details on classes and functions
 in ANGEL see
 the reference manual <a href="refman.pdf">PDF</a> or <a href="html/index.html">html pages</a> (last
-generated on Feb/09/2007)
+generated on  <!--#flastmod file="html/index.html" -->)
 <h3>Author &amp;&nbsp;Acknowledgements</h3>
 
 <ul>
