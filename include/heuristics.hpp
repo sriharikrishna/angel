@@ -1395,10 +1395,12 @@ bool reducing_edge_eliminations (const vector<edge_bool_t>& bev1,
 				 vector<edge_bool_t>& bev2);
 
 /** \brief Filter that selects edge elimination targets whose refill dependences (a possibly empty set of vertices)
- * have been met (meaning that there is no alternate path for the edge through the vertex
+ * have been met (meaning that there is no alternate path for the edge through the vertex).
 
     \param bev1 set of edges that can be eliminated
     \param angelLCG c-graph
+    \param refillDependences partial map of edges to a set of vertices that lie on paths from the edge sources
+	   to the edge targets, used to anticipate refill.
     \param bev2 set of edge elims that dont violate refill dependences (returned by reference)
     \return size of bev2
 */
