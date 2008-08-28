@@ -411,7 +411,8 @@ void populate_remainderGraph_and_correlationLists (const c_graph_t& angelLCG,
 double gen_prob() {
   double a = rand();
   double b = rand();
-  return (a>b)?b/a:a/b;
+  return (a > b) ? b/a
+		 : a/b;
 }
 
 unsigned int replay_elim_seq (c_graph_t& angelLCG,
@@ -462,6 +463,8 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
   unsigned int orig_numVertices = num_vertices(angelLCG);
 
   #define ECONST 2.71828
+
+  srand( time(NULL) );
 
   vector<edge_bool_t> bev;
   c_graph_t angelLCG_copy (angelLCG);
