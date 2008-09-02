@@ -460,32 +460,34 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
   c_graph_t angelLCG;
   list<EdgeRef_t> edge_ref_list;
   ourLCG_to_angelLCG (ourLCG, ourLCG_verts, angelLCG, edge_ref_list);
-  unsigned int orig_numVertices = num_vertices(angelLCG);
 
   #define ECONST 2.71828
 
-  srand( time(NULL) );
+  srand(time(NULL));
 
   vector<edge_bool_t> bev;
   c_graph_t angelLCG_copy (angelLCG);
 
   elimSeq_cost_t dummy_elimSeq_cost (0, 0, 0, 0, 0, 0);
   refillDependenceMap_t dummy_refillDependenceMap;
+  vector<edge_ij_elim_t> EdgeElimSeq_v, bestEdgeElimSeq_v;
 
-  unsigned int computationalCost = 0;
-
+  unsigned int previous_numNontrivialEdges = num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel);
   unsigned int bestNumNontrivialEdges = num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel);
   unsigned int computationalCost_at_bestEdgeCount = 0;
-
-  vector<edge_ij_elim_t> EdgeElimSeq_v, bestEdgeElimSeq_v;
-  unsigned int previous_numNontrivialEdges = num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel);
-  double T = 100;
-
-  for (unsigned int steps_counter = 0; steps_counter < 20*orig_numVertices; steps_counter++) {
+  unsigned int computationalCost = 0;
+  double T = 10;
+  unsigned int max_steps = 20 * num_vertices(angelLCG);
+  for (unsigned int steps_counter = 0; steps_counter < max_steps; steps_counter++) {
+    // adjust temperature
+    if(steps_counter%10==0)
+      T = 10;
+    else
+      T = T/2.0;
 #ifndef NDEBUG
     cout << "datapoint:" << computationalCost << ":" << num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel) << endl;
+    cout << "T=" << T << endl;
 #endif
-
     eliminatable_objects (angelLCG_copy, bev);
     if (bev.empty()) break; // no more eliminatable edges
 
@@ -493,15 +495,39 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
     vector<double> deltaE(bev.size() + 1);
     for (size_t c = 0; c < bev.size(); c++)
       deltaE[c] = edge_elim_effect (bev[c], angelLCG_copy, ourAwarenessLevel);
-    deltaE[bev.size()] = previous_numNontrivialEdges - num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel);
+    deltaE[bev.size()] = (int)previous_numNontrivialEdges - (int)num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel);
     // normalize the probabilities
     double deltasum = 0;
+    double best_improvement = 100;
+    for(unsigned int i = 0; i < deltaE.size(); i++)
+      if(best_improvement > deltaE[i])
+	best_improvement = deltaE[i];
+    if(best_improvement < 0) {
+      //cout << "best_improvement of " << best_improvement << " was recognized" << endl;
+      for (unsigned int i = 0; i < deltaE.size(); i++) {
+	if (deltaE[i]>-1)
+	  deltaE[i]=200;
+      }
+    }
+    else {
+      //cout << "improvement wasn't recognized" << endl;
+    }
+    vector<double> old_deltaE(bev.size() + 1);
+    old_deltaE = deltaE;
+    
+    //cout << "previous_numNontrivialEdges=" << previous_numNontrivialEdges << "\tnum_nontrivial_edges=" << num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel) << endl << "dE=\t"; 
     for(unsigned int i = 0; i < deltaE.size(); i++) {
+      //cout << deltaE[i] << "\t";
       deltaE[i] = pow(ECONST, -deltaE[i]/T);
       deltasum += deltaE[i];
     }
-    for(unsigned int i = 0; i < deltaE.size(); i++)
+    //cout << endl << "deltasum = " << deltasum << endl << "Prob =\t";
+    for(unsigned int i = 0; i < deltaE.size(); i++) {
       deltaE[i] = deltaE[i]/deltasum;
+      //cout <<  deltaE[i] << "\t";
+    }
+    //cout << endl;
+
     // choose an edge elim (randomly)
     double Pr = gen_prob();
     double current_ptr = deltaE[0];
@@ -510,6 +536,19 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
       current_ind++;
       current_ptr += deltaE[current_ind];
     }
+    /*
+    if(gen_prob() > .1) {
+      while(current_ptr < Pr) {
+	current_ind++;
+	current_ptr += deltaE[current_ind];
+      }
+    }
+    else {
+      cout << "last one! ";
+      current_ind = deltaE.size()-1;
+    }
+    */
+    //cout << "got index " << current_ind << " with prob " << Pr <<  endl;//<< " olddeltaE[i] = " << old_deltaE[current_ind] << endl;
 
     if (current_ind != bev.size()) { // eliminate an edge
       previous_numNontrivialEdges = num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel);
@@ -517,10 +556,8 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
       bool isFront = bev[current_ind].second;
       edge_ij_elim_t thisElim (source (e, angelLCG), target (e, angelLCG), isFront);
       EdgeElimSeq_v.push_back(thisElim);
-
       computationalCost += isFront ? front_elim (e, angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap)
 				   : back_elim (e, angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap);
-
       // check whether we've beaten our CURRENT best
       if (num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel) < bestNumNontrivialEdges
        || (num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel) == bestNumNontrivialEdges && computationalCost < computationalCost_at_bestEdgeCount)) {
@@ -528,14 +565,11 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
 	computationalCost_at_bestEdgeCount = computationalCost;
 	bestEdgeElimSeq_v = EdgeElimSeq_v;
 #ifndef NDEBUG
-	cout << "** New best_num_edges found: " << bestNumNontrivialEdges << " with computational cost " << computationalCost << endl;
+	cout << "** New best_num_edges found: " << bestNumNontrivialEdges << " with computational cost " << computationalCost << " after " << EdgeElimSeq_v.size() << " eliminations" << endl;
 #endif
       }
     }
     else { // this corresponds to a backtracking (going back cannot lead to a new "best-so-far" result)
-#ifndef NDEBUG
-      cout << "We've decided to do a BACKTRACKING step" << endl;
-#endif
       if (EdgeElimSeq_v.empty())
 	continue;
       angelLCG_copy = angelLCG;
@@ -554,7 +588,6 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
 #endif
 
   unsigned int cost_of_elim_seq = 0;
-
   if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestNumNontrivialEdges) {
 #ifndef NDEBUG
     cout << "No eliminations necessary to reach the desired edge count of " << bestNumNontrivialEdges << endl;
@@ -568,10 +601,8 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
       // find the edge from i,j representation
       tie (e, found_e) = edge (EdgeElimSeq_v[c].i, EdgeElimSeq_v[c].j, angelLCG);
       throw_exception (!found_e, consistency_exception, "edge in elims_performed could not be found in angelLCG for elimination");
-
       cost_of_elim_seq += isFront ? front_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list)
 				  : back_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
-
       if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestNumNontrivialEdges) {
 #ifndef NDEBUG
 	cout << "Goal of " << bestNumNontrivialEdges << " reached" << endl;
@@ -580,13 +611,11 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
       }
     }
   }
-
 #ifndef NDEBUG
   write_graph ("angelLCG after partial edge elimination sequence (G prime): ", angelLCG);
   writeVertexAndEdgeTypes (cout, angelLCG);
   cout << "compute_partial_elimination_sequence: cost " << cost_of_elim_seq << endl;
 #endif
-
   populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
 } // end compute_partial_elimination_sequence()
 
