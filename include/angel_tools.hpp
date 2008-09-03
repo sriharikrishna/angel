@@ -393,6 +393,15 @@ inline int count_parallel_edges (typename Ad_graph_t::edge_descriptor e,
 }
 
 
+/**
+ * Finds the edge in \p angelLCG that has source \p i and target \p j.
+ * The edge is returned by setting \p e, which is passed by reference.
+ */
+void getEdgeFromIJ(unsigned int i,
+		   unsigned int j,
+		   const c_graph_t& angelLCG,
+		   c_graph_t::edge_t& e);
+
 // =====================================================
 // comparisons
 // =====================================================

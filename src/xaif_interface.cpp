@@ -451,8 +451,7 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
 					      VertexCorrelationList& v_cor_list,
 					      EdgeCorrelationList& e_cor_list) {
 #ifndef NDEBUG
-  cout << "allowMaintainingFlag is set to "; if (allowMaintainingFlag) cout << "true"; else cout << "false";
-  cout << ", and ourAwarenessLevel is set to " << Elimination::AwarenessLevelToString(ourAwarenessLevel) << endl;
+  cout << "ourAwarenessLevel is set to " << Elimination::AwarenessLevelToString(ourAwarenessLevel) << endl;
 #endif
 
   // Create internal (angel) LCG from xaifBooster LCG
@@ -582,9 +581,9 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
   // Really, we output the number of intermediates with no incident unit edge (can be normalized)
   cout << "Achieved a nontrivial edge count of " << bestNumNontrivialEdges << endl;
   cout << "Best sequence of edge elims:: " << endl;
-  for (size_t c = 0; c < EdgeElimSeq_v.size(); c++)
-    cout << "((" << EdgeElimSeq_v[c].i << "," << EdgeElimSeq_v[c].j << ")," << EdgeElimSeq_v[c].front << ") ";
-  cout << endl << endl << "****** Now re-performing EdgeElimSeq_v until we reach our edge goal of " << bestNumNontrivialEdges << " nontrivial edges" << endl;
+  for (size_t c = 0; c < bestEdgeElimSeq_v.size(); c++)
+    cout << "((" << bestEdgeElimSeq_v[c].i << "," << bestEdgeElimSeq_v[c].j << ")," << bestEdgeElimSeq_v[c].front << ") ";
+  cout << endl << endl << "****** Now re-performing bestEdgeElimSeq_v until we reach our edge goal of " << bestNumNontrivialEdges << " nontrivial edges" << endl;
 #endif
 
   unsigned int cost_of_elim_seq = 0;
@@ -594,19 +593,15 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
 #endif
   }
   else { //replay the elimination sequence until we reach edge count goal
-    c_graph_t::edge_t e;
-    bool found_e;
-    for (size_t c = 0; c < EdgeElimSeq_v.size(); c++) {
-      bool isFront = EdgeElimSeq_v[c].front;
-      // find the edge from i,j representation
-      tie (e, found_e) = edge (EdgeElimSeq_v[c].i, EdgeElimSeq_v[c].j, angelLCG);
-      throw_exception (!found_e, consistency_exception, "edge in elims_performed could not be found in angelLCG for elimination");
-      cost_of_elim_seq += isFront ? front_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list)
-				  : back_eliminate_edge_directly (e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+    for (size_t c = 0; c < bestEdgeElimSeq_v.size(); c++) {
+      c_graph_t::edge_t e;
+      getEdgeFromIJ(bestEdgeElimSeq_v[c].i, bestEdgeElimSeq_v[c].j, angelLCG, e);
+      cost_of_elim_seq += bestEdgeElimSeq_v[c].front ? front_eliminate_edge_directly(e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list)
+						     : back_eliminate_edge_directly(e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
       if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestNumNontrivialEdges) {
-#ifndef NDEBUG
+	#ifndef NDEBUG
 	cout << "Goal of " << bestNumNontrivialEdges << " reached" << endl;
-#endif
+	#endif
 	break;
       }
     }
@@ -617,7 +612,7 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
   cout << "compute_partial_elimination_sequence: cost " << cost_of_elim_seq << endl;
 #endif
   populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
-} // end compute_partial_elimination_sequence()
+} // end compute_partial_elimination_sequence_sa()
 
 void compute_partial_elimination_sequence (const LinearizedComputationalGraph& ourLCG,
 					   const Elimination::AwarenessLevel_E ourAwarenessLevel,
