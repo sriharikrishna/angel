@@ -347,7 +347,6 @@ double gen_prob() {
 unsigned int chooseTarget_sa(std::vector<double>& deltaE,
 			     double T) {
   #define ECONST 2.71828
-  //srand(time(NULL));
 
   //write_vector("deltaE (before adjustment): ", deltaE);
   double best_improvement = 100;
