@@ -901,6 +901,23 @@ struct empty_operator_t {
 inline size_t block_begin (size_t i, size_t p, size_t n) {
   return i * (n/p) + std::min (i, n%p); }
 
+// =====================================================
+// Functions for simulated annealing for partial accumulation (scarcity exploitation)
+// =====================================================
+
+/** \brief Returns a random number between zero and one.
+    \sa chooseTarget_sa
+*/
+double gen_prob();
+
+/** \brief Randomly chooses an index into the vector \p deltaE
+    \param deltaE a vector of changes in energy.  Normalized probabilities are calculated for each entry according to simulated annealing
+    \param T the temperature
+    \sa gen_prob
+*/
+unsigned int chooseTarget_sa(std::vector<double>& deltaE,
+			     double T);
+
 } // namespace angel
 
 

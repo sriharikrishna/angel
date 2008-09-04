@@ -333,4 +333,71 @@ void remove_trivial_edges (c_graph_t& cg) {
       } } }
 }
 
+// =====================================================
+// Functions for partial accumulation simulated annealing (scarcity exploitation)
+// =====================================================
+
+double gen_prob() {
+  double a = rand();
+  double b = rand();
+  return (a > b) ? b/a
+		 : a/b;
+} // end gen_prob()
+
+unsigned int chooseTarget_sa(std::vector<double>& deltaE,
+			     double T) {
+  #define ECONST 2.71828
+  //srand(time(NULL));
+
+  //write_vector("deltaE (before adjustment): ", deltaE);
+  double best_improvement = 100;
+  for(unsigned int i = 0; i < deltaE.size(); i++)
+    if(best_improvement > deltaE[i])
+      best_improvement = deltaE[i];
+  if(best_improvement < 0) {
+    //cout << "best_improvement of " << best_improvement << " was recognized" << endl;
+    for (unsigned int i = 0; i < deltaE.size(); i++)
+      if (deltaE[i] > -1)
+	deltaE[i] = 200;
+  }
+  else {
+    //cout << "improvement wasn't recognized" << endl;
+  }
+  //write_vector("deltaE (after adjustment): ", deltaE);
+
+  // normalize the probabilities
+  double deltasum = 0;
+  for(unsigned int i = 0; i < deltaE.size(); i++) {
+    deltaE[i] = pow(ECONST, -deltaE[i]/T);
+    deltasum += deltaE[i];
+  }
+  //cout << "deltasum = " << deltasum << endl;
+  for(unsigned int i = 0; i < deltaE.size(); i++)
+    deltaE[i] = deltaE[i]/deltasum;
+  //write_vector("deltaE (normalized): ", deltaE);
+
+  // choose a vector index randomly
+  double Pr = gen_prob();
+  double current_ptr = deltaE[0];
+  unsigned int choice_index = 0;
+  while(current_ptr < Pr) {
+    choice_index++;
+    current_ptr += deltaE[choice_index];
+  }
+  /*
+  if(gen_prob() > .1) {
+    while(current_ptr < Pr) {
+      choice_index++;
+      current_ptr += deltaE[choice_index];
+    }
+  }
+  else {
+    cout << "last one! ";
+    choice_index = deltaE.size()-1;
+  }
+  */
+  //cout << "got index " << choice_index << " with prob " << Pr <<  endl;
+  return choice_index;
+} // end chooseTarget_sa()
+
 } // namespace angel

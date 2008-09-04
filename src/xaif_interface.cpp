@@ -407,34 +407,26 @@ void populate_remainderGraph_and_correlationLists (const c_graph_t& angelLCG,
 
 } // end populate_remainderGraph_and_correlationLists()
 
-//#################### Functions used for scarcity simulated annealing ########################################
-double gen_prob() {
-  double a = rand();
-  double b = rand();
-  return (a > b) ? b/a
-		 : a/b;
-}
-
 unsigned int replay_elim_seq (c_graph_t& angelLCG,
 			      const vector<edge_ij_elim_t> EdgeElimSeq_v,
 			      unsigned int& previous_numNontrivialEdges,
 			      const Elimination::AwarenessLevel_E ourAwarenessLevel,
 			      elimSeq_cost_t& dummy_elimSeq_cost,
 			      refillDependenceMap_t& dummy_refillDependenceMap) {
-  c_graph_t::edge_t e;
-  bool found_e;
   unsigned int computationalCost = 0;
   for (size_t i = 0; i < EdgeElimSeq_v.size(); i++) {
     if (i == EdgeElimSeq_v.size() - 1) // save previous_numNontrivialEdges
       previous_numNontrivialEdges = num_nontrivial_edges(angelLCG, ourAwarenessLevel);
-    tie (e, found_e) = edge (EdgeElimSeq_v[i].i, EdgeElimSeq_v[i].j, angelLCG);
-    throw_exception (!found_e, consistency_exception, "edge of type edge_ij_elim_t could not be found in angelLCG for elimination");
+    #ifndef NDEBUG
+    cout << "\t";
+    #endif
+    c_graph_t::edge_t e;
+    getEdgeFromIJ(EdgeElimSeq_v[i].i, EdgeElimSeq_v[i].j, angelLCG, e);
     computationalCost += EdgeElimSeq_v[i].front ? front_elim (e, angelLCG, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap)
 						: back_elim (e, angelLCG, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap);
   } // end iterate over edge elims
   return computationalCost;
 } // end replay_elim_seq()
-//#############################################################################################################
 
 } // end namespace angel
 
@@ -459,8 +451,6 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
   c_graph_t angelLCG;
   list<EdgeRef_t> edge_ref_list;
   ourLCG_to_angelLCG (ourLCG, ourLCG_verts, angelLCG, edge_ref_list);
-
-  #define ECONST 2.71828
 
   srand(time(NULL));
 
@@ -495,64 +485,12 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
     for (size_t c = 0; c < bev.size(); c++)
       deltaE[c] = edge_elim_effect (bev[c], angelLCG_copy, ourAwarenessLevel);
     deltaE[bev.size()] = (int)previous_numNontrivialEdges - (int)num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel);
-    // normalize the probabilities
-    double deltasum = 0;
-    double best_improvement = 100;
-    for(unsigned int i = 0; i < deltaE.size(); i++)
-      if(best_improvement > deltaE[i])
-	best_improvement = deltaE[i];
-    if(best_improvement < 0) {
-      //cout << "best_improvement of " << best_improvement << " was recognized" << endl;
-      for (unsigned int i = 0; i < deltaE.size(); i++) {
-	if (deltaE[i]>-1)
-	  deltaE[i]=200;
-      }
-    }
-    else {
-      //cout << "improvement wasn't recognized" << endl;
-    }
-    vector<double> old_deltaE(bev.size() + 1);
-    old_deltaE = deltaE;
-    
-    //cout << "previous_numNontrivialEdges=" << previous_numNontrivialEdges << "\tnum_nontrivial_edges=" << num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel) << endl << "dE=\t"; 
-    for(unsigned int i = 0; i < deltaE.size(); i++) {
-      //cout << deltaE[i] << "\t";
-      deltaE[i] = pow(ECONST, -deltaE[i]/T);
-      deltasum += deltaE[i];
-    }
-    //cout << endl << "deltasum = " << deltasum << endl << "Prob =\t";
-    for(unsigned int i = 0; i < deltaE.size(); i++) {
-      deltaE[i] = deltaE[i]/deltasum;
-      //cout <<  deltaE[i] << "\t";
-    }
-    //cout << endl;
 
-    // choose an edge elim (randomly)
-    double Pr = gen_prob();
-    double current_ptr = deltaE[0];
-    unsigned int current_ind = 0;
-    while(current_ptr < Pr) {
-      current_ind++;
-      current_ptr += deltaE[current_ind];
-    }
-    /*
-    if(gen_prob() > .1) {
-      while(current_ptr < Pr) {
-	current_ind++;
-	current_ptr += deltaE[current_ind];
-      }
-    }
-    else {
-      cout << "last one! ";
-      current_ind = deltaE.size()-1;
-    }
-    */
-    //cout << "got index " << current_ind << " with prob " << Pr <<  endl;//<< " olddeltaE[i] = " << old_deltaE[current_ind] << endl;
-
-    if (current_ind != bev.size()) { // eliminate an edge
+    unsigned int choice_index = chooseTarget_sa(deltaE, T);
+    if (choice_index != bev.size()) { // eliminate an edge
       previous_numNontrivialEdges = num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel);
-      c_graph_t::edge_t e = bev[current_ind].first;
-      bool isFront = bev[current_ind].second;
+      c_graph_t::edge_t e = bev[choice_index].first;
+      bool isFront = bev[choice_index].second;
       edge_ij_elim_t thisElim (source (e, angelLCG), target (e, angelLCG), isFront);
       EdgeElimSeq_v.push_back(thisElim);
       computationalCost += isFront ? front_elim (e, angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap)
@@ -569,6 +507,9 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
       }
     }
     else { // this corresponds to a backtracking (going back cannot lead to a new "best-so-far" result)
+      #ifndef NDEBUG
+      cout << "Performing a BACKTRACKING step" << endl;
+      #endif
       if (EdgeElimSeq_v.empty())
 	continue;
       angelLCG_copy = angelLCG;
