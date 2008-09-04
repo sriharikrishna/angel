@@ -903,7 +903,7 @@ unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,
 					 const transformationSeq_cost_t* currentTransformationSequence,
 					 refillDependenceMap_t& refillDependences) {
 #ifndef NDEBUG
-  cout << "front eliminating edge " << e << endl;
+  cout << "front eliminating edge " << e << "\t(without creating any JAEs)" << endl;
 #endif
 
   unsigned int cost = 0;
@@ -932,7 +932,7 @@ unsigned int backEdgeElimination_noJAE (c_graph_t::edge_t e,
 					 const transformationSeq_cost_t* currentTransformationSequence,
 					 refillDependenceMap_t& refillDependences) {
 #ifndef NDEBUG
-  cout << "back eliminating edge " << e << endl;
+  cout << "back eliminating edge " << e << "\t(without creating any JAEs)" << endl;
 #endif
 
   unsigned int cost = 0;

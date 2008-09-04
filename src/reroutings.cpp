@@ -217,6 +217,10 @@ unsigned int preroute_edge_directly (edge_reroute_t er,
 				     const Elimination::AwarenessLevel_E ourAwarenessLevel,
 				     list<EdgeRef_t>& edge_ref_list,
 				     JacobianAccumulationExpressionList& jae_list) {
+  #ifndef NDEBUG
+    cout << "prerouting edge " << er.e << " about pivot edge " << er.pivot_e << "\t(and creating the corresponding JAEs)" << endl;
+  #endif
+
   unsigned int cost = 0;
   boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), angelLCG);
   c_graph_t::iei_t iei, ie_end; 
@@ -357,6 +361,10 @@ unsigned int postroute_edge_directly (edge_reroute_t er,
 				      const Elimination::AwarenessLevel_E ourAwarenessLevel,
 				      list<EdgeRef_t>& edge_ref_list,
 				      JacobianAccumulationExpressionList& jae_list) {
+  #ifndef NDEBUG
+    cout << "postrouting edge " << er.e << " about pivot edge " << er.pivot_e << "\t(and creating the corresponding JAEs)" << endl;
+  #endif
+
   unsigned int cost = 0;
   boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), angelLCG);
   c_graph_t::iei_t iei, ie_end; 
@@ -493,6 +501,10 @@ unsigned int postroute_edge_directly (edge_reroute_t er,
 unsigned int prerouteEdge_noJAE (edge_reroute_t er,
                                  c_graph_t& angelLCG,
                                  const Elimination::AwarenessLevel_E ourAwarenessLevel) {
+  #ifndef NDEBUG
+    cout << "prerouting edge " << er.e << " about pivot edge " << er.pivot_e << "\t(without creating any JAEs)" << endl;
+  #endif
+
   unsigned int cost = 0;
   boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), angelLCG);
   c_graph_t::iei_t iei, ie_end; 
@@ -548,6 +560,10 @@ unsigned int prerouteEdge_noJAE (edge_reroute_t er,
 unsigned int postrouteEdge_noJAE (edge_reroute_t er,
                                   c_graph_t& angelLCG,
                                   const Elimination::AwarenessLevel_E ourAwarenessLevel) {
+  #ifndef NDEBUG
+    cout << "postrouting edge " << er.e << " about pivot edge " << er.pivot_e << "\t(without creating any JAEs)" << endl;
+  #endif
+
   unsigned int cost = 0;
   boost::property_map<c_graph_t, EdgeType>::type eType = get(EdgeType(), angelLCG);
   c_graph_t::iei_t iei, ie_end; 
