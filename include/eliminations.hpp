@@ -502,6 +502,10 @@ int eliminatable_edges (const c_graph_t& cg,
 int eliminatable_edges (const c_graph_t& cg,
 			vector<edge_ij_elim_t>& ev);
 
+/// Returns a set of edges that can be eliminated from c-graph \p cg
+unsigned int eliminatable_edges(const c_graph_t& cg, 
+				vector<EdgeElim>& ev);
+
 /// Returns a set of faces that can be eliminated from line graph \p lg
 int eliminatable_faces (const line_graph_t& lg, 
 			vector<line_graph_t::face_t>& fv);

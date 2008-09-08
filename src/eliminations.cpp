@@ -426,6 +426,21 @@ int eliminatable_edges (const c_graph_t& cg,
   return ev.size();
 }
 
+unsigned int eliminatable_edges(const c_graph_t& cg,
+				std::vector<EdgeElim>& ev) {
+  ev.clear();
+  c_graph_t::ei_t ei, e_end;
+  for (tie(ei, e_end) = edges(cg); ei != e_end; ++ei) {
+    // can edge be back-eliminated ?
+    if (vertex_type(source(*ei, cg), cg) != independent)
+      ev.push_back(EdgeElim (*ei, false, cg));
+    // can edge be front-eliminated ?
+    if (vertex_type(target(*ei, cg), cg) != dependent)
+      ev.push_back(EdgeElim (*ei, true, cg));
+  } // end iterate over all edges
+  return ev.size();
+} // end eliminatable_edges()
+
 int eliminatable_faces (const line_graph_t& lg, 
 			std::vector<line_graph_t::face_t>& fv) {
   // in fact it only copies the edges into a vector for better treatment

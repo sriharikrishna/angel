@@ -1368,6 +1368,17 @@ int edge_elim_effect (const edge_bool_t be,
 		      const c_graph_t& angelLCG,
 		      const Elimination::AwarenessLevel_E ourAwarenessLevel);
 
+/** \brief Determines the effect, in terms of nontrivial edge count, of performing edge elimination \p ee
+
+    \param ee edge elimination target under consideration
+    \param angelLCG The linearized computational graph
+    \param ourAwarenessLevel setting such as unit aware, constant aware, or no awareness
+    \return net effect on nontrivial edge count
+*/
+int edge_elim_effect(const EdgeElim ee,
+		     const c_graph_t& angelLCG,
+		     const Elimination::AwarenessLevel_E ourAwarenessLevel);
+
 /** \brief Filter that selects edge elimination targets that don't increase the nontrivial edge count
 
     \param bev1 set of edges that can be eliminated
@@ -1429,6 +1440,14 @@ size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
 			    const c_graph_t& angelLCG,
 			    vector<edge_reroute_t>& noncyclicReroutingsV);
 
+/** Filter that populates \p noncyclicReroutingsV with (strictly) those reroutings
+ * that have not already been performed, based on \p transformationsPerformedV
+ */
+size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
+			    const std::vector<Transformation>& transformationsPerformedV,
+			    const c_graph_t& angelLCG,
+			    vector<edge_reroute_t>& noncyclicReroutingsV);
+
 /*
 bool maintaining_reroutings (const vector<edge_reroute_t>& erv,
 			     const c_graph_t& angelLCG,
@@ -1448,12 +1467,26 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 // |		FILTERS FOR ELIMINATIONS AND REROUTINGS	(TRANSFORMATIONS)	|
 // ==============================================================================
 
-/** Filter that populates /p allViableTransformationsV with all possible edge eliminations and
+/** Assesses the change in nontrivial edge count that results from applying the transformation \p t 
+ * 
+ */
+int transformation_effect(const Transformation t,
+			  const c_graph_t& angelLCG,
+			  const Elimination::AwarenessLevel_E ourAwarenessLevel);
+
+/** Filter that populates \p allViableTransformationsV with all possible edge eliminations and
  * all possible reroutings that haven't already been performed (so-called noncyclic reroutings).
  */
 bool all_viable_transformations (c_graph_t& angelLCG,
 				 const std::vector<Transformation_t>& transformationsPerformedV,
 				 vector<Transformation_t>& allViableTransformationsV);
+
+/** Filter that populates \p allViableTransformationsV with all possible edge eliminations and
+ * all possible reroutings that haven't already been performed (so-called noncyclic reroutings).
+ */
+bool all_viable_transformations(c_graph_t& angelLCG,
+				const std::vector<Transformation>& transformationsPerformedV,
+				vector<Transformation>& allViableTransformationsV);
 
 /** Filter that populates /p maintainingTransformationsV with those edge eliminations and
  * reroutings that maintain the nontrivial edge count (in particular, this includes all reroutings).

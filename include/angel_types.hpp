@@ -6,6 +6,7 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 
 #include "boost/graph/adjacency_list.hpp"
 #include "boost/graph/graph_traits.hpp"
@@ -762,7 +763,124 @@ struct Transformation_t {
 
   Transformation_t ();
 
-};
+}; // end struct Transformation_t
+
+  /// Graph-independent edge elimination.
+  /** Class for representing an edge elimination.
+   *  The edge is represented by the unsigned ints that correspond to its source and target.
+   *  This allows us to represent a rerouting independently of a particular graph instance.
+  */
+  class EdgeElim {
+  public:
+
+    EdgeElim();
+
+    EdgeElim(const c_graph_t::edge_t& e,
+	     bool isFront,
+	     const c_graph_t& angelLCG);
+
+    EdgeElim(const edge_bool_t& be,
+	     const c_graph_t& angelLCG);
+
+    EdgeElim(const edge_ij_elim_t& eij);
+
+    std::string debug() const;
+
+    bool isFront() const;
+
+    c_graph_t::edge_t getE(const c_graph_t& angelLCG) const;
+
+  private:
+
+    unsigned int src, tgt;
+    bool front;
+
+  }; // end class EdgeElim
+
+  /// Graph-independent rerouting.
+  /** Class for representing a rerouting.
+   *  The relevant edges are represented by the unsigned ints that correspond to their source and target.
+   *  This allows us to represent a rerouting independently of a particular graph instance.
+   */
+  class Rerouting {
+  public:
+
+    Rerouting();
+
+    Rerouting(const c_graph_t::edge_t e,
+	      const c_graph_t::edge_t pivot_e,
+	      bool isPre,
+	      const c_graph_t& angelLCG);
+
+    Rerouting(const edge_reroute_t& er,
+	      const c_graph_t& angelLCG);
+
+    std::string debug() const;
+
+    bool isPre() const;
+
+    c_graph_t::edge_t getE(const c_graph_t& angelLCG) const;
+
+    c_graph_t::edge_t getPivotE(const c_graph_t& angelLCG) const;
+
+    edge_reroute_t getER(const c_graph_t& angelLCG) const;
+
+    /** Returns true iff this rerouting is the same as \p er.
+     *  Two reroutings are equivalent if and only if their edges and pivot edges have identical sources and targets, respectively.
+     */
+    bool isIdenticalTo(const edge_reroute_t& er,
+		       const c_graph_t& angelLCG) const;
+
+  private:
+
+    void init(const c_graph_t::edge_t& e,
+	      const c_graph_t::edge_t& pivot_e,
+	      bool isPre,
+	      const c_graph_t& angelLCG);
+       
+    unsigned int i, j, k;
+    bool pre;
+
+  }; // end class Rerouting
+
+  /// Graph-independent transformation.
+  /** Class for representing either a rerouting or an edge elimination.
+   *  The relevant edges are represented by the unsigned ints that correspond to their source and target.
+   *  This allows us to represent a transformation independently of a particular graph instance.
+   */
+  class Transformation {
+  public:
+
+    Transformation(const EdgeElim& anEdgeElim);
+
+    Transformation(const edge_bool_t& be,
+		   const c_graph_t& angelLCG);
+
+    Transformation(const edge_ij_elim_t& an_ij_elim);
+
+    Transformation(const Rerouting& aRerouting);
+
+    Transformation(const edge_reroute_t& aRerouteElim,
+		   const c_graph_t& angelLCG);
+
+    Transformation(const Transformation_t& anOldTransformation,
+		   const c_graph_t& angelLCG);
+
+    std::string debug() const;
+
+    const EdgeElim& getEdgeElim() const;
+    const Rerouting& getRerouting() const;
+
+    bool isRerouting;
+
+  private:
+
+    Transformation();
+
+    Rerouting myRerouting;
+    EdgeElim myEdgeElim;
+
+  }; // end class Transformation
 
 struct transformationSeq_cost_t {
   std::vector<Transformation_t> transformationVector;

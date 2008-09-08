@@ -1209,6 +1209,12 @@ int edge_elim_effect (const edge_bool_t be,
   return nontrivialEdgeChange;
 }
 
+int edge_elim_effect(const EdgeElim ee,
+		     const c_graph_t& angelLCG,
+		     const Elimination::AwarenessLevel_E ourAwarenessLevel) {
+  return edge_elim_effect(make_pair(ee.getE(angelLCG), ee.isFront()), angelLCG, ourAwarenessLevel);
+} // end edge_elim_effect()
+
 bool maintaining_edge_eliminations (const vector<edge_bool_t>& bev1,
 				    const c_graph_t& angelLCG,
 				    const Elimination::AwarenessLevel_E ourAwarenessLevel,
@@ -1382,10 +1388,31 @@ size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
        && source(transformationsPerformedV[j].myRerouteElim.pivot_e, angelLCG) == source(erv[i].pivot_e, angelLCG)
        && target(transformationsPerformedV[j].myRerouteElim.pivot_e, angelLCG) == target(erv[i].pivot_e, angelLCG)) break;
 
-    // it it made it all the way through, the rerouting hasn't already been performed
+    // if it made it all the way through, the rerouting hasn't already been performed
     if (j == transformationsPerformedV.size()) noncyclicReroutingsV.push_back(erv[i]);
   } // end iterate over erv
 
+  return noncyclicReroutingsV.size();
+} // end noncyclicReroutings()
+
+size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
+			    const std::vector<Transformation>& transformationsPerformedV,
+			    const c_graph_t& angelLCG,
+			    vector<edge_reroute_t>& noncyclicReroutingsV) {
+  noncyclicReroutingsV.clear();
+  if (erv.empty())
+    return 0;
+  size_t j;
+  // check each rerouting in erv to see whether it has already been performed
+  for (size_t i = 0; i < erv.size(); i++) {
+    // go through the history 
+    for (j = 0; j < transformationsPerformedV.size(); j++)
+      if (transformationsPerformedV[j].isRerouting
+       && transformationsPerformedV[j].getRerouting().isIdenticalTo(erv[i], angelLCG))
+	  break;
+    if (j == transformationsPerformedV.size()) // if it made it all the way through, the rerouting hasn't already been performed
+      noncyclicReroutingsV.push_back(erv[i]);
+  } // end iterate over erv
   return noncyclicReroutingsV.size();
 } // end noncyclicReroutings()
 
@@ -1678,6 +1705,19 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 // |            FILTERS FOR ELIMINATIONS AND REROUTINGS (TRANSFORMATIONS)       |
 // ==============================================================================
 
+int transformation_effect(const Transformation t,
+			  const c_graph_t& angelLCG,
+			  const Elimination::AwarenessLevel_E ourAwarenessLevel) {
+  int effect;
+  if (t.isRerouting) {
+    bool dummy_incrementIsTrivial;
+    effect = reroute_effect(t.getRerouting().getER(angelLCG), angelLCG, ourAwarenessLevel, dummy_incrementIsTrivial);
+  }
+  else
+    effect = edge_elim_effect(t.getEdgeElim(), angelLCG, ourAwarenessLevel);
+  return effect;
+} // end transformation_effect()
+
 bool all_viable_transformations (c_graph_t& angelLCG,
 				 const std::vector<Transformation_t>& transformationsPerformedV,
 				 vector<Transformation_t>& allViableTransformationsV) {
@@ -1698,11 +1738,34 @@ bool all_viable_transformations (c_graph_t& angelLCG,
     allViableTransformationsV.push_back(Transformation_t (noncyclicReroutingsV[i]));
 
 #ifndef NDEBUG
-  cout << "	There are " << allEdgeElimsV.size() << " viable Edge eliminations in G" << endl;
-  cout << "	Of " << allReroutingsV.size() << " possible reroutings, " << noncyclicReroutingsV.size() << " are noncyclic" << endl;
-  cout << "There are " << allViableTransformationsV.size() << " viable transformations in G" << endl;
+  cout << "\tThere are " << allEdgeElimsV.size() << " viable Edge eliminations in G" << endl;
+  cout << "\tOf " << allReroutingsV.size() << " possible reroutings, " << noncyclicReroutingsV.size() << " are noncyclic" << endl;
+  cout << "\t\tThere are " << allViableTransformationsV.size() << " viable transformations in G" << endl;
 #endif
 
+  return !allViableTransformationsV.empty();
+} // end all_viable_transformations()
+
+bool all_viable_transformations (c_graph_t& angelLCG,
+				 const std::vector<Transformation>& transformationsPerformedV,
+				 vector<Transformation>& allViableTransformationsV) {
+  allViableTransformationsV.clear();
+  // find all eliminatable edges
+  vector<EdgeElim> allEdgeElimsV;
+  eliminatable_edges(angelLCG, allEdgeElimsV);
+  for (size_t i = 0; i < allEdgeElimsV.size(); i++)
+    allViableTransformationsV.push_back(Transformation (allEdgeElimsV[i]));
+  // find viable reroutings
+  vector<edge_reroute_t> allReroutingsV, noncyclicReroutingsV;
+  reroutable_edges (angelLCG, allReroutingsV);
+  noncyclicReroutings (allReroutingsV, transformationsPerformedV, angelLCG, noncyclicReroutingsV);
+  for (size_t i = 0; i < noncyclicReroutingsV.size(); i++)
+    allViableTransformationsV.push_back(Transformation (noncyclicReroutingsV[i], angelLCG));
+  #ifndef NDEBUG
+  cout << "\tThere are " << allEdgeElimsV.size() << " viable Edge eliminations in G" << endl;
+  cout << "\tOf " << allReroutingsV.size() << " possible reroutings, " << noncyclicReroutingsV.size() << " are noncyclic" << endl;
+  cout << "\t\tThere are " << allViableTransformationsV.size() << " viable transformations in G" << endl;
+  #endif
   return !allViableTransformationsV.empty();
 } // end all_viable_transformations()
 

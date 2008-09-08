@@ -57,14 +57,15 @@ void vertex_downset (const c_graph_t::vertex_t v,
   }
 }
 
-void getEdgeFromIJ(unsigned int i,
-		   unsigned int j,
-		   const c_graph_t& angelLCG,
-		   c_graph_t::edge_t& e) {
+c_graph_t::edge_t getEdge(unsigned int i,
+			  unsigned int j,
+			  const c_graph_t& angelLCG) {
+  c_graph_t::edge_t e;
   bool found_e;
   tie (e, found_e) = edge(i, j, angelLCG);
-  throw_exception(!found_e, consistency_exception, "getEdgeFromIJ: edge could not be found from i,j");
-} // end getEdgeFromIJ()
+  throw_exception(!found_e, consistency_exception, "getEdge: edge could not be found from src,tgt");
+  return e;
+} // end getEdge()
 
 bool lex_less_face (line_graph_t::face_t e1, line_graph_t::face_t e2,
 		    const line_graph_t& lg) {

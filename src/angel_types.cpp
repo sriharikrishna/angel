@@ -454,6 +454,182 @@ void accu_graph_t::set_jacobi_entries () {
 			 "Wrong number of Jacobi entries");
 }
 
+  EdgeElim::EdgeElim() {
+  }
+
+  EdgeElim::EdgeElim(const c_graph_t::edge_t& e,
+		     bool isFront,
+		     const c_graph_t& angelLCG) :
+		       src (source(e, angelLCG)),
+		       tgt (target(e, angelLCG)),
+		       front (isFront) {
+  }
+
+  EdgeElim::EdgeElim(const edge_bool_t& be,
+		     const c_graph_t& angelLCG) :
+		       src (source(be.first, angelLCG)),
+		       tgt (target(be.first, angelLCG)),
+		       front (be.second) {
+  }
+
+  EdgeElim::EdgeElim(const edge_ij_elim_t& eij) :
+		       src (eij.i),
+		       tgt (eij.j),
+		       front (eij.front) {
+  }
+
+  std::string EdgeElim::debug() const {
+    std::ostringstream out;
+    front ? out << "front"
+	  : out << "back";
+    out << "eliminate edge (" << src << "," << tgt << ")" << std::ends;
+    return out.str();
+  } // end EdgeElim::debug()
+
+  bool EdgeElim::isFront() const {
+    return front;
+  } // end EdgeElim::isFront()
+
+  c_graph_t::edge_t EdgeElim::getE(const c_graph_t& angelLCG) const {
+    return getEdge(src, tgt, angelLCG);
+  } // end EdgeElim::getE()
+
+  Rerouting::Rerouting() {
+  }
+
+  Rerouting::Rerouting(const c_graph_t::edge_t e,
+		       const c_graph_t::edge_t pivot_e,
+		       bool isPre,
+		       const c_graph_t& angelLCG) {
+    init(e, pivot_e, isPre, angelLCG);
+  }
+
+  Rerouting::Rerouting(const edge_reroute_t& er,
+		       const c_graph_t& angelLCG) {
+    init(er.e, er.pivot_e, er.isPre, angelLCG);
+  }
+
+  std::string Rerouting::debug() const {
+    std::ostringstream out;
+    pre ? out << "preroute edge (" << i << "," << k << ") about pivot edge (" << j << "," << k << ")" << std::ends
+	: out << "postroute edge (" << i << "," << k << ") about pivot edge (" << i << "," << j << ")" << std::ends;
+    return out.str();
+  } // end Rerouting::debug()
+
+  bool Rerouting::isPre() const {
+    return pre;
+  } // end Rerouting::isPre()
+  
+  c_graph_t::edge_t Rerouting::getE(const c_graph_t& angelLCG) const {
+    // e goes from i to k, regardless of whether it's a prerouting or a postrouting
+    return getEdge(i, k, angelLCG);
+  } // end Rerouting::getE()
+
+  c_graph_t::edge_t Rerouting::getPivotE(const c_graph_t& angelLCG) const {
+    return pre ? getEdge(j, k, angelLCG)
+	       : getEdge(i, j, angelLCG);
+  } // end Rerouting::getPivotE()
+
+  edge_reroute_t Rerouting::getER(const c_graph_t& angelLCG) const {
+    return edge_reroute_t (getE(angelLCG), getPivotE(angelLCG), pre);
+  } // end Rerouting::getER()
+
+  bool Rerouting::isIdenticalTo(const edge_reroute_t& er,
+				const c_graph_t& angelLCG) const {
+    if (pre) { // i am a prerouting
+      if (!er.isPre)
+	return false;
+      // now we know they're both preroutings
+      if (i == source(er.e, angelLCG) && j == source(er.pivot_e, angelLCG)
+       && k == target(er.e, angelLCG) && k == target(er.pivot_e, angelLCG))
+	return true;
+      else
+	return false;
+    }
+    else { // i am a postrouting
+      if (er.isPre)
+	return false;
+      // now we know they're both postroutings
+      if (k == target(er.e, angelLCG) && j == target(er.pivot_e, angelLCG)
+       && i == source(er.e, angelLCG) && i == source(er.pivot_e, angelLCG))
+	return true;
+      else
+	return false;
+    }
+  } // end Rerouting::isIdenticalTo()
+
+  void Rerouting::init(const c_graph_t::edge_t& e,
+		       const c_graph_t::edge_t& pivot_e,
+		       bool isPre,
+		       const c_graph_t& angelLCG) {
+    if (isPre) {
+      throw_exception(target(e, angelLCG) != target(pivot_e, angelLCG),
+		      consistency_exception,
+		      "edge_ijk_reroute_t: the edge and the pivot edge must have the same target for a prerouting");
+      i = source(e, angelLCG);
+      j = source(pivot_e, angelLCG);
+      k = target(e, angelLCG);
+    }
+    else {
+      throw_exception(source(e, angelLCG) != source(pivot_e, angelLCG),
+		      consistency_exception,
+		      "edge_ijk_reroute_t: the edge and the pivot edge must have the same target for a prerouting");
+      k = target(e, angelLCG);
+      j = target(pivot_e, angelLCG);
+      i = source(e, angelLCG);
+    }
+    pre = isPre;
+  } // end Rerouting::init()
+
+  Transformation::Transformation(const EdgeElim& anEdgeElim) :
+				   isRerouting (false),
+				   myEdgeElim (anEdgeElim) {
+  }
+
+  Transformation::Transformation(const edge_bool_t& be,
+				 const c_graph_t& angelLCG) :
+				   isRerouting (false),
+				   myEdgeElim (be, angelLCG) {
+  }
+
+  Transformation::Transformation(const edge_ij_elim_t& an_ij_elim) :
+				   isRerouting (false),
+				   myEdgeElim (an_ij_elim) {
+  }
+
+  Transformation::Transformation(const Rerouting& aRerouting) :
+				   isRerouting (true),
+				   myRerouting (aRerouting) {
+  }
+
+  Transformation::Transformation(const edge_reroute_t& aRerouteElim,
+				 const c_graph_t& angelLCG) :
+				   isRerouting (true),
+				   myRerouting (aRerouteElim, angelLCG) {
+  }
+
+  Transformation::Transformation(const Transformation_t& anOldTransformation,
+				 const c_graph_t& angelLCG) :
+				   isRerouting (anOldTransformation.isRerouting),
+				   myRerouting (anOldTransformation.myRerouteElim, angelLCG),
+				   myEdgeElim (anOldTransformation.myElim) {
+  }
+
+  std::string Transformation::debug() const {
+    std::ostringstream out;
+    isRerouting ? out << myRerouting.debug().c_str()
+		: out << myEdgeElim.debug().c_str();
+    return out.str();
+  } // end Transformation::debug()
+
+  const EdgeElim& Transformation::getEdgeElim() const {
+    return myEdgeElim;
+  } // end Transformation::getEdgeElim()
+
+  const Rerouting& Transformation::getRerouting() const {
+    return myRerouting;
+  } // end Transformation::getRerouting()
+
 } // namespace angel
 
 
