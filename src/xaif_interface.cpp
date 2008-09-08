@@ -490,18 +490,25 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
   unsigned int bestNumNontrivialEdges = num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel);
   unsigned int computationalCost_at_bestEdgeCount = 0;
   unsigned int computationalCost = 0;
-  double T = 10;
-  unsigned int max_steps = 20 * num_vertices(angelLCG);
+  unsigned int max_steps = 100 * num_vertices(angelLCG);
+  unsigned int num_passes = 5;
   for (unsigned int steps_counter = 0; steps_counter < max_steps; steps_counter++) {
-    // adjust temperature
-    if(steps_counter%10==0)
-      T = 10;
-    else
-      T = T/2.0;
-#ifndef NDEBUG
+    #ifndef NDEBUG
     cout << "datapoint:" << computationalCost << ":" << num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel) << endl;
-    cout << "T=" << T << endl;
-#endif
+    #endif
+
+    // Start over from the beginning
+    if (steps_counter%(max_steps/num_passes) == 0) {
+      #ifndef NDEBUG
+      cout << "Starting a new SA pass (" << steps_counter << "/" << max_steps << " steps):\tbestNumNontrivialEdges = " << bestNumNontrivialEdges << ", computationalCost_at_bestEdgeCount = " << computationalCost_at_bestEdgeCount << endl;
+      #endif
+      edgeElimSeqV.clear();
+      computationalCost = 0;
+      previous_numNontrivialEdges = num_nontrivial_edges(angelLCG, ourAwarenessLevel);
+      angelLCG_copy = angelLCG;
+      continue;
+    }
+
     eliminatable_edges(angelLCG_copy, allEdgeElimsV);
     if (allEdgeElimsV.empty()) break; // no more eliminatable edges
 
@@ -511,7 +518,7 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
       deltaE[c] = edge_elim_effect (allEdgeElimsV[c], angelLCG_copy, ourAwarenessLevel);
     deltaE[allEdgeElimsV.size()] = (int)previous_numNontrivialEdges - (int)num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel);
 
-    unsigned int choice_index = chooseTarget_sa(deltaE, T);
+    unsigned int choice_index = chooseTarget_sa(deltaE);
     if (choice_index != allEdgeElimsV.size()) { // eliminate an edge
       previous_numNontrivialEdges = num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel);
       edgeElimSeqV.push_back(allEdgeElimsV[choice_index]);
@@ -785,7 +792,7 @@ void compute_partial_transformation_sequence_sa(const LinearizedComputationalGra
   ourLCG_to_angelLCG (ourLCG, ourLCG_verts, angelLCG_orig, edge_ref_list);
 
   unsigned int max_steps = 20 * num_vertices(angelLCG_orig);
-  double T = 10;
+  unsigned int num_passes = 5;
 
   transformationSeq_cost_t dummy_transformationSeq_cost (0, 0, 0, 0, 0, 0);
   refillDependenceMap_t dummy_refillDependenceMap;
@@ -796,14 +803,21 @@ void compute_partial_transformation_sequence_sa(const LinearizedComputationalGra
   unsigned int computationalCost_at_bestEdgeCount = 0;
   unsigned int computationalCost = 0;
   for (unsigned int steps_counter = 0; steps_counter < max_steps; steps_counter++) {
-    // adjust temperature
-    if(steps_counter%10 == 0)
-      T = 10;
-    else
-      T = T / 2.0;
     #ifndef NDEBUG
-    cout << "datapoint:" << T << ":" << computationalCost << ":" << num_nontrivial_edges(angelLCG, ourAwarenessLevel) << endl;
+    cout << "datapoint:" << computationalCost << ":" << num_nontrivial_edges(angelLCG, ourAwarenessLevel) << endl;
     #endif
+
+    // Start over from the beginning
+    if (steps_counter%(max_steps/num_passes) == 0) {
+      #ifndef NDEBUG
+      cout << "Starting a new SA pass (" << steps_counter << "/" << max_steps << " steps):\tbestNumNontrivialEdges = " << bestNumNontrivialEdges << ", computationalCost_at_bestEdgeCount = " << computationalCost_at_bestEdgeCount << endl;
+      #endif
+      transformationSeqV.clear();
+      computationalCost = 0;
+      previous_numNontrivialEdges = num_nontrivial_edges(angelLCG_orig, ourAwarenessLevel);
+      angelLCG = angelLCG_orig;
+      continue;
+    }
 
     // assess the effect of each viable transformation
     all_viable_transformations(angelLCG, transformationSeqV, allViableTransformationsV);
@@ -815,7 +829,7 @@ void compute_partial_transformation_sequence_sa(const LinearizedComputationalGra
     // calculate probability for going backwards one step
     deltaE[allViableTransformationsV.size()] = (int)previous_numNontrivialEdges - (int)num_nontrivial_edges(angelLCG, ourAwarenessLevel);
 
-    unsigned int choice_index = chooseTarget_sa(deltaE, T);
+    unsigned int choice_index = chooseTarget_sa(deltaE);
     if (choice_index != allViableTransformationsV.size()) { // perform a transformation
       previous_numNontrivialEdges = num_nontrivial_edges(angelLCG, ourAwarenessLevel);
       transformationSeqV.push_back(allViableTransformationsV[choice_index]);

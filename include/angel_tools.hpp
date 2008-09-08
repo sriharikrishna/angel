@@ -906,12 +906,10 @@ inline size_t block_begin (size_t i, size_t p, size_t n) {
 double gen_prob();
 
 /** \brief Randomly chooses an index into the vector \p deltaE
-    \param deltaE a vector of changes in energy.  Normalized probabilities are calculated for each entry according to simulated annealing
-    \param T the temperature
+    \param deltaE a vector of changes in energy.  Normalized probabilities are calculated for each entry
     \sa gen_prob
 */
-unsigned int chooseTarget_sa(std::vector<double>& deltaE,
-			     double T);
+unsigned int chooseTarget_sa(std::vector<double>& deltaE);
 
 } // namespace angel
 

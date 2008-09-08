@@ -345,11 +345,12 @@ double gen_prob() {
 		 : a/b;
 } // end gen_prob()
 
-unsigned int chooseTarget_sa(std::vector<double>& deltaE,
-			     double T) {
+unsigned int chooseTarget_sa(std::vector<double>& deltaE) {
   #define ECONST 2.71828
 
   //write_vector("deltaE (before adjustment): ", deltaE);
+
+  // prefer improvements, if there are any
   double best_improvement = 100;
   for(unsigned int i = 0; i < deltaE.size(); i++)
     if(best_improvement > deltaE[i])
@@ -358,19 +359,21 @@ unsigned int chooseTarget_sa(std::vector<double>& deltaE,
     //cout << "best_improvement of " << best_improvement << " was recognized" << endl;
     for (unsigned int i = 0; i < deltaE.size(); i++)
       if (deltaE[i] > -1)
-	deltaE[i] = 200;
+	deltaE[i] = 0;
+      else
+	deltaE[i] = pow(ECONST, (-deltaE[i]));
   }
   else {
-    //cout << "improvement wasn't recognized" << endl;
+    for (unsigned int i = 0; i < deltaE.size(); i++)
+      deltaE[i] = 1.0/pow(ECONST,deltaE[i] + 1);
   }
+
   //write_vector("deltaE (after adjustment): ", deltaE);
 
   // normalize the probabilities
   double deltasum = 0;
-  for(unsigned int i = 0; i < deltaE.size(); i++) {
-    deltaE[i] = pow(ECONST, -deltaE[i]/T);
+  for(unsigned int i = 0; i < deltaE.size(); i++)
     deltasum += deltaE[i];
-  }
   //cout << "deltasum = " << deltasum << endl;
   for(unsigned int i = 0; i < deltaE.size(); i++)
     deltaE[i] = deltaE[i]/deltasum;
@@ -384,18 +387,6 @@ unsigned int chooseTarget_sa(std::vector<double>& deltaE,
     choice_index++;
     current_ptr += deltaE[choice_index];
   }
-  /*
-  if(gen_prob() > .1) {
-    while(current_ptr < Pr) {
-      choice_index++;
-      current_ptr += deltaE[choice_index];
-    }
-  }
-  else {
-    cout << "last one! ";
-    choice_index = deltaE.size()-1;
-  }
-  */
   //cout << "got index " << choice_index << " with prob " << Pr <<  endl;
   return choice_index;
 } // end chooseTarget_sa()
