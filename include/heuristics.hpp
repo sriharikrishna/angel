@@ -1366,7 +1366,7 @@ int find_best_subset (const vector<Object_t>& v1, const Ad_graph_t& adg,
 */
 int edge_elim_effect (const edge_bool_t be,
 		      const c_graph_t& angelLCG,
-		      const Elimination::AwarenessLevel_E ourAwarenessLevel);
+		      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel);
 
 /** \brief Determines the effect, in terms of nontrivial edge count, of performing edge elimination \p ee
 
@@ -1377,7 +1377,7 @@ int edge_elim_effect (const edge_bool_t be,
 */
 int edge_elim_effect(const EdgeElim ee,
 		     const c_graph_t& angelLCG,
-		     const Elimination::AwarenessLevel_E ourAwarenessLevel);
+		     const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel);
 
 /** \brief Filter that selects edge elimination targets that don't increase the nontrivial edge count
 
@@ -1389,7 +1389,7 @@ int edge_elim_effect(const EdgeElim ee,
 */
 bool maintaining_edge_eliminations (const vector<edge_bool_t>& bev1,
 				    const c_graph_t& angelLCG,
-				    const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				    const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				    vector<edge_bool_t>& bev2);
 
 /** \brief Filter that selects edge elimination targets that decrease the nontrivial edge count
@@ -1402,7 +1402,7 @@ bool maintaining_edge_eliminations (const vector<edge_bool_t>& bev1,
 */
 bool reducing_edge_eliminations (const vector<edge_bool_t>& bev1,
 				 const c_graph_t& angelLCG,
-				 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				 vector<edge_bool_t>& bev2);
 
 /** \brief Filter that selects edge elimination targets whose refill dependences (a possibly empty set of vertices)
@@ -1451,7 +1451,7 @@ size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
 /*
 bool maintaining_reroutings (const vector<edge_reroute_t>& erv,
 			     const c_graph_t& angelLCG,
-			     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			     const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			     vector<edge_reroute_t>& maintainReroutingsV);
 */
 
@@ -1460,7 +1460,7 @@ bool maintaining_reroutings (const vector<edge_reroute_t>& erv,
  */
 bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 			  const c_graph_t& angelLCG,
-			  const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			  vector<edge_reroute_t>& reducingReroutingsV);
 
 // ==============================================================================
@@ -1472,7 +1472,7 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
  */
 int transformation_effect(const Transformation t,
 			  const c_graph_t& angelLCG,
-			  const Elimination::AwarenessLevel_E ourAwarenessLevel);
+			  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel);
 
 /** Filter that populates \p allViableTransformationsV with all possible edge eliminations and
  * all possible reroutings that haven't already been performed (so-called noncyclic reroutings).
@@ -1493,7 +1493,7 @@ bool all_viable_transformations(c_graph_t& angelLCG,
  */
 bool maintaining_transformations (const vector<Transformation_t>& tv,
 				  const c_graph_t& angelLCG,
-				  const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				  vector<Transformation_t>& maintainingTransformationsV);
 
 /** Filter that populates /p reducingTransformationsV with edge eliminations that reduce
@@ -1502,7 +1502,7 @@ bool maintaining_transformations (const vector<Transformation_t>& tv,
  */
 bool reducing_transformations (const vector<Transformation_t>& tv,
 			       c_graph_t& angelLCG,
-			       const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			       const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			       vector<Transformation_t>& reducingTransformationsV);
 
 /** Filter that populates /p refillAvoidingTransformationsV with edge eliminations that
@@ -1510,7 +1510,7 @@ bool reducing_transformations (const vector<Transformation_t>& tv,
  */
 bool refill_avoiding_transformations (const vector<Transformation_t>& tv,
 				      c_graph_t& angelLCG,
-				      const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				      const refillDependenceMap_t& refillDependences,
 				      vector<Transformation_t>& refillAvoidingTransformationsV);
 

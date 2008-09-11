@@ -4,13 +4,14 @@
 #define 	_reroutings_include_
 
 #include "angel_types.hpp"
-#include "eliminations.hpp"
+#include "xaifBooster/algorithms/BasicBlockPreaccumulation/inc/AwarenessLevel.hpp"
+using namespace xaifBoosterBasicBlockPreaccumulation;
+using namespace xaifBoosterCrossCountryInterface;
 
 using std::list;
 using std::vector;
 using std::cout;
 using boost::tie;
-using namespace xaifBoosterCrossCountryInterface;
 
 namespace angel {
 
@@ -29,28 +30,28 @@ void reroutable_edges (c_graph_t& angelLCG,
  */
 int reroute_effect (const edge_reroute_t er,
 		    const c_graph_t& angelLCG,
-		    const Elimination::AwarenessLevel_E ourAwarenessLevel,
+		    const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 		    bool& incrementIsTrivial);
 
 unsigned int preroute_edge_directly (edge_reroute_t er,
 				     c_graph_t& angelLCG,
-				     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				     const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				     list<EdgeRef_t>& edge_ref_list,
 				     JacobianAccumulationExpressionList& jae_list);
 
 unsigned int postroute_edge_directly (edge_reroute_t er,
 				      c_graph_t& angelLCG,
-				      const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				      list<EdgeRef_t>& edge_ref_list,
 				      JacobianAccumulationExpressionList& jae_list);
 
 unsigned int prerouteEdge_noJAE (edge_reroute_t er,
 				 c_graph_t& angelLCG,
-				 const Elimination::AwarenessLevel_E ourAwarenessLevel);
+				 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel);
 
 unsigned int postrouteEdge_noJAE (edge_reroute_t er,
 				  c_graph_t& angelLCG,
-				  const Elimination::AwarenessLevel_E ourAwarenessLevel);
+				  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel);
 
 } // namespace angel
 

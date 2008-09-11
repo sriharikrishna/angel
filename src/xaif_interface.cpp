@@ -17,6 +17,7 @@ namespace angel {
 using namespace std;
 using namespace boost;
 using namespace xaifBoosterCrossCountryInterface;
+using namespace xaifBoosterBasicBlockPreaccumulation;
 
 inline size_t which_index (const LinearizedComputationalGraphVertex * const add,
 			   const vector<const LinearizedComputationalGraphVertex*>& av) {
@@ -221,14 +222,14 @@ void write_graph_xaif_booster (const accu_graph_t& ag,
 } // end write_graph_xaif_booster()
 
 unsigned int num_nontrivial_edges (const c_graph_t& angelLCG,
-				   const Elimination::AwarenessLevel_E ourAwarenessLevel) {
+				   const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel) {
   boost::property_map<c_graph_t, EdgeType>::const_type eType = get (EdgeType(), angelLCG);
   unsigned int numNontrivialEdges = 0;
   c_graph_t::ei_t ei, e_end;
   for (tie (ei, e_end)= edges (angelLCG); ei != e_end; ++ei)
-    if (ourAwarenessLevel == Elimination::NO_AWARENESS
-    || (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*ei] != UNIT_EDGE)
-    || (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*ei] == VARIABLE_EDGE))
+    if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS
+    || (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[*ei] != UNIT_EDGE)
+    || (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[*ei] == VARIABLE_EDGE))
       numNontrivialEdges++;
 
   return numNontrivialEdges;
@@ -410,7 +411,7 @@ void populate_remainderGraph_and_correlationLists (const c_graph_t& angelLCG,
 unsigned int replay_elim_seq (c_graph_t& angelLCG,
 			      const vector<EdgeElim> edgeElimSeqV,
 			      unsigned int& previous_numNontrivialEdges,
-			      const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			      elimSeq_cost_t& dummy_elimSeq_cost,
 			      refillDependenceMap_t& dummy_refillDependenceMap) {
   unsigned int computationalCost = 0;
@@ -430,7 +431,7 @@ unsigned int replay_elim_seq (c_graph_t& angelLCG,
 unsigned int replay_transformation_seq(c_graph_t& angelLCG,
 				       const vector<Transformation> transformationSeqV,
 				       unsigned int& previous_numNontrivialEdges,
-				       const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				       const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				       transformationSeq_cost_t& dummy_transformationSeq_cost,
 				       refillDependenceMap_t& dummy_refillDependenceMap) {
   unsigned int computationalCost = 0;
@@ -462,17 +463,13 @@ unsigned int replay_transformation_seq(c_graph_t& angelLCG,
 using namespace angel;
 
 namespace xaifBoosterCrossCountryInterface {
-void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph& ourLCG,
-					      const Elimination::AwarenessLevel_E ourAwarenessLevel,
-					      const bool allowMaintainingFlag,
-					      JacobianAccumulationExpressionList& jae_list,
-					      LinearizedComputationalGraph& remainderLCG,
-					      VertexCorrelationList& v_cor_list,
-					      EdgeCorrelationList& e_cor_list) {
-#ifndef NDEBUG
-  cout << "ourAwarenessLevel is set to " << Elimination::AwarenessLevelToString(ourAwarenessLevel) << endl;
-#endif
-
+void compute_partial_elimination_sequence_random(const LinearizedComputationalGraph& ourLCG,
+                                                 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                                                 const bool allowMaintainingFlag,
+                                                 JacobianAccumulationExpressionList& jae_list,
+                                                 LinearizedComputationalGraph& remainderLCG,
+                                                 VertexCorrelationList& v_cor_list,
+                                                 EdgeCorrelationList& e_cor_list) {
   // Create internal (angel) LCG from xaifBooster LCG
   vector<const LinearizedComputationalGraphVertex*> ourLCG_verts;
   c_graph_t angelLCG;
@@ -582,20 +579,15 @@ void compute_partial_elimination_sequence_sa (const LinearizedComputationalGraph
   cout << "compute_partial_elimination_sequence: cost " << cost_of_elim_seq << endl;
 #endif
   populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
-} // end compute_partial_elimination_sequence_sa()
+} // end compute_partial_elimination_sequence_random()
 
 void compute_partial_elimination_sequence (const LinearizedComputationalGraph& ourLCG,
-					   const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					   const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					   const bool allowMaintainingFlag,
 					   JacobianAccumulationExpressionList& jae_list,
 					   LinearizedComputationalGraph& remainderLCG,
 					   VertexCorrelationList& v_cor_list,
 					   EdgeCorrelationList& e_cor_list) {
-#ifndef NDEBUG
-  cout << "allowMaintainingFlag is set to "; if (allowMaintainingFlag) cout << "true"; else cout << "false";
-  cout << ", and ourAwarenessLevel is set to " << Elimination::AwarenessLevelToString(ourAwarenessLevel) << endl;
-#endif
-
   // Create internal (angel) LCG from xaifBooster LCG
   vector<const LinearizedComputationalGraphVertex*> ourLCG_verts;
   c_graph_t angelLCG;
@@ -771,18 +763,14 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
 } // end compute_partial_elimination_sequence()
 
-void compute_partial_transformation_sequence_sa(const LinearizedComputationalGraph& ourLCG,
-						const Elimination::AwarenessLevel_E ourAwarenessLevel,
-						const bool allowMaintainingFlag,
-						JacobianAccumulationExpressionList& jae_list,
-						LinearizedComputationalGraph& remainderLCG,
-						VertexCorrelationList& v_cor_list,
-						EdgeCorrelationList& e_cor_list,
-						unsigned int& numReroutings) {
-  #ifndef NDEBUG
-  cout << "ourAwarenessLevel is set to " << Elimination::AwarenessLevelToString(ourAwarenessLevel) << endl;
-  #endif
-
+void compute_partial_transformation_sequence_random(const LinearizedComputationalGraph& ourLCG,
+                                                    const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                                                    const bool allowMaintainingFlag,
+                                                    JacobianAccumulationExpressionList& jae_list,
+                                                    LinearizedComputationalGraph& remainderLCG,
+                                                    VertexCorrelationList& v_cor_list,
+                                                    EdgeCorrelationList& e_cor_list,
+                                                    unsigned int& numReroutings) {
   srand(time(NULL));
 
   // Create internal (angel) LCG from xaifBooster LCG
@@ -918,22 +906,16 @@ void compute_partial_transformation_sequence_sa(const LinearizedComputationalGra
   cout << "compute_partial_transformation_sequence: cost " << cost_of_transformation_seq << endl;
   #endif
   populate_remainderGraph_and_correlationLists (angelLCG_orig, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
-} // end compute_partial_transformation_sequence_sa()
+} // end compute_partial_transformation_sequence_random()
 
 void compute_partial_transformation_sequence (const LinearizedComputationalGraph& ourLCG,
-					      const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					      const bool allowMaintainingFlag,
 					      JacobianAccumulationExpressionList& jae_list,
 					      LinearizedComputationalGraph& remainderLCG,
 					      VertexCorrelationList& v_cor_list,
 					      EdgeCorrelationList& e_cor_list,
 					      unsigned int& numReroutings) {
-#ifndef NDEBUG
-  cout << "allowMaintainingFlag is set to "; if (allowMaintainingFlag) cout << "true"; else cout << "false";
-  cout << ", and ourAwarenessLevel is set to " << Elimination::AwarenessLevelToString(ourAwarenessLevel) << endl;
-  cout << "Creating internal angel LCG...." << endl;
-#endif
-
   // Create internal (angel) LCG from xaifBooster LCG
   vector<const LinearizedComputationalGraphVertex*> ourLCG_verts;
   c_graph_t angelLCG;
@@ -1319,52 +1301,75 @@ namespace xaifBoosterCrossCountryInterface {
 void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
 
   try {
-    if (myType == REGULAR_ELIMTYPE) {
-      compute_elimination_sequence (getLCG(),
-				    getEliminationResult().myJAEList,
-				    getEliminationResult().myRemainderLCG,
-				    getEliminationResult().myVertexCorrelationList,
-				    getEliminationResult().myEdgeCorrelationList);
-    }
-    else if (myType == LSA_VERTEX_ELIMTYPE) {
-      compute_elimination_sequence_lsa_vertex (getLCG(),
-					       getNumIterations(),
-					       getGamma(),
-					       getEliminationResult().myJAEList,
-					       getEliminationResult().myRemainderLCG,
-					       getEliminationResult().myVertexCorrelationList,
-					       getEliminationResult().myEdgeCorrelationList);
-    }
-    else if (myType == LSA_FACE_ELIMTYPE) {
-      compute_elimination_sequence_lsa_face (getLCG(),
-					     getNumIterations(),
-					     getGamma(),
-					     getEliminationResult().myJAEList,
-					     getEliminationResult().myRemainderLCG,
-					     getEliminationResult().myVertexCorrelationList,
-					     getEliminationResult().myEdgeCorrelationList);
-    }
-    else if (myType == SCARCE_ELIMTYPE) {
-      compute_partial_elimination_sequence_sa (getLCG(),
-					    ourAwarenessLevel,
-					    ourAllowMaintainingFlag,
-					    getEliminationResult().myJAEList,
-					    getEliminationResult().myRemainderLCG,
-					    getEliminationResult().myVertexCorrelationList,
-					    getEliminationResult().myEdgeCorrelationList);
-    }
-    else if (myType == SCARCE_TRANSFORMATION_TYPE) {
-      compute_partial_transformation_sequence_sa (getLCG(),
-					       ourAwarenessLevel,
-					       ourAllowMaintainingFlag,
-					       getEliminationResult().myJAEList,
-					       getEliminationResult().myRemainderLCG,
-					       getEliminationResult().myVertexCorrelationList,
-					       getEliminationResult().myEdgeCorrelationList,
-					       getEliminationResult().myNumReroutings);
-    }
-    else throw_exception (true, consistency_exception, "Missing or invalid elimination type");
-  }
+    switch (myType) {
+      case OPS_ELIMTYPE:
+        compute_elimination_sequence(getLCG(),
+                                     getEliminationResult().myJAEList,
+                                     getEliminationResult().myRemainderLCG,
+                                     getEliminationResult().myVertexCorrelationList,
+                                     getEliminationResult().myEdgeCorrelationList);
+        break;
+      case OPS_LSA_VERTEX_ELIMTYPE:
+        compute_elimination_sequence_lsa_vertex(getLCG(),
+                                                getNumIterations(),
+                                                getGamma(),
+                                                getEliminationResult().myJAEList,
+                                                getEliminationResult().myRemainderLCG,
+                                                getEliminationResult().myVertexCorrelationList,
+                                                getEliminationResult().myEdgeCorrelationList);
+        break;
+      case OPS_LSA_FACE_ELIMTYPE:
+        compute_elimination_sequence_lsa_face(getLCG(),
+                                              getNumIterations(),
+                                              getGamma(),
+                                              getEliminationResult().myJAEList,
+                                              getEliminationResult().myRemainderLCG,
+                                              getEliminationResult().myVertexCorrelationList,
+                                              getEliminationResult().myEdgeCorrelationList);
+        break;
+      case SCARCE_ELIMTYPE:
+        compute_partial_elimination_sequence(getLCG(),
+                                             ourAwarenessLevel,
+                                             ourAllowMaintainingFlag,
+                                             getEliminationResult().myJAEList,
+                                             getEliminationResult().myRemainderLCG,
+                                             getEliminationResult().myVertexCorrelationList,
+                                             getEliminationResult().myEdgeCorrelationList);
+        break;
+      case SCARCE_RANDOM_ELIMTYPE:
+        compute_partial_elimination_sequence_random(getLCG(),
+                                                    ourAwarenessLevel,
+                                                    ourAllowMaintainingFlag,
+                                                    getEliminationResult().myJAEList,
+                                                    getEliminationResult().myRemainderLCG,
+                                                    getEliminationResult().myVertexCorrelationList,
+                                                    getEliminationResult().myEdgeCorrelationList);
+        break;
+      case SCARCE_TRANSFORMATIONTYPE:
+        compute_partial_transformation_sequence(getLCG(),
+                                                ourAwarenessLevel,
+                                                ourAllowMaintainingFlag,
+                                                getEliminationResult().myJAEList,
+                                                getEliminationResult().myRemainderLCG,
+                                                getEliminationResult().myVertexCorrelationList,
+                                                getEliminationResult().myEdgeCorrelationList,
+                                                getEliminationResult().myNumReroutings);
+        break;
+      case SCARCE_RANDOM_TRANSFORMATIONTYPE:
+        compute_partial_transformation_sequence_random(getLCG(),
+                                                       ourAwarenessLevel,
+                                                       ourAllowMaintainingFlag,
+                                                       getEliminationResult().myJAEList,
+                                                       getEliminationResult().myRemainderLCG,
+                                                       getEliminationResult().myVertexCorrelationList,
+                                                       getEliminationResult().myEdgeCorrelationList,
+                                                       getEliminationResult().myNumReroutings);
+        break;
+      default:
+       throw_exception (true, consistency_exception, "Missing or invalid elimination type");
+        break;
+    } // end switch (myType)
+  } // end try
   catch (base_exception e) { 
     throw EliminationException(std::string("angel exception caught within Elimination::eliminate() : ")+e.what_reason());
   }

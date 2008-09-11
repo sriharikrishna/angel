@@ -1123,7 +1123,7 @@ int minimal_distance_face_t::operator() (const vector<line_graph_t::face_t>& fv1
 // -------------------------------------------------------------------------
 int edge_elim_effect (const edge_bool_t be,
 		      const c_graph_t& angelLCG,
-		      const Elimination::AwarenessLevel_E ourAwarenessLevel) {
+		      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel) {
   
   boost::property_map<c_graph_t, EdgeType>::const_type eType = get(EdgeType(), angelLCG);
   c_graph_t::oei_t oei, oe_end;
@@ -1136,20 +1136,20 @@ int edge_elim_effect (const edge_bool_t be,
   int nontrivialEdgeChange = 0;
 
   // No awareness: removal of e decreases edge count
-  if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
+  if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS) nontrivialEdgeChange--;
   // unit awareness: e must be nonunit for its removal to decrease nontrivial edges
-  else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[e] != UNIT_EDGE) nontrivialEdgeChange--;
+  else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[e] != UNIT_EDGE) nontrivialEdgeChange--;
   // constant awareness: e must be variable for its removal to decrease nontrivial edges
-  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[e] == VARIABLE_EDGE) nontrivialEdgeChange--;
+  else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[e] == VARIABLE_EDGE) nontrivialEdgeChange--;
 
   if (isFront) { // front-elimination
     // if tgt(e) is isolated by the elimination
     if (in_degree (target (e, angelLCG), angelLCG) == 1) {
       for (tie (oei, oe_end) = out_edges (target (e, angelLCG), angelLCG); oei != oe_end; ++oei) {
 	// all the outedges of tgt(e) will go away.  we need to see how this affects nontrivial edge count
-	if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
-	else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*oei] != UNIT_EDGE) nontrivialEdgeChange--;
-	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*oei] == VARIABLE_EDGE) nontrivialEdgeChange--;
+	if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS) nontrivialEdgeChange--;
+	else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[*oei] != UNIT_EDGE) nontrivialEdgeChange--;
+	else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[*oei] == VARIABLE_EDGE) nontrivialEdgeChange--;
       } // end all outedges of tgt(e)
     }
 
@@ -1159,17 +1159,17 @@ int edge_elim_effect (const edge_bool_t be,
       if (found_absorb) { // absorption
 	//no awareness: no increase in edge count
 	//unit awareness: absorb_e will be nonunit afterwards.  increase only if absorb_e was previously unit 
-	if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE) nontrivialEdgeChange++;
+	if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE) nontrivialEdgeChange++;
 	// constant awareness: increase if absorb edge is nonvariable and either e or *oei is variable
-	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
+	else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
 	  if (eType[e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE) nontrivialEdgeChange++;
       }
       else { // fill-in
-	if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange++;
+	if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS) nontrivialEdgeChange++;
 	// unit awareness: if either is nonunit, the fill-in is nonunit
-	else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e] != UNIT_EDGE || eType[*oei] != UNIT_EDGE)) nontrivialEdgeChange++;
+	else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[e] != UNIT_EDGE || eType[*oei] != UNIT_EDGE)) nontrivialEdgeChange++;
 	// constant awareness: if either is variable, the fill-in is variable
-	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
+	else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
       }
     } // end all successors of tgt(e)
 
@@ -1179,9 +1179,9 @@ int edge_elim_effect (const edge_bool_t be,
     // consider in-edges lost due to isolating src(e) (requires src(e) is not dependent)
     if (out_degree (source (e, angelLCG), angelLCG) == 1 && vertex_type (source (e, angelLCG), angelLCG) != dependent) {
       for (tie (iei, ie_end) = in_edges (source (e, angelLCG), angelLCG); iei != ie_end; ++iei) {
-	if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange--;
-	else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*iei] != UNIT_EDGE) nontrivialEdgeChange--;
-	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*iei] == VARIABLE_EDGE) nontrivialEdgeChange--;
+	if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS) nontrivialEdgeChange--;
+	else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[*iei] != UNIT_EDGE) nontrivialEdgeChange--;
+	else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[*iei] == VARIABLE_EDGE) nontrivialEdgeChange--;
       } // end all inedges of src(e)
     }
 	      
@@ -1191,17 +1191,17 @@ int edge_elim_effect (const edge_bool_t be,
       if (found_absorb) { // absorption
 	//no awareness: no increase in edge count
 	//unit awareness: absorb_e will be nonunit afterwards.  increase only if absorb_e was previously unit
-	if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE) nontrivialEdgeChange++;
+	if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE) nontrivialEdgeChange++;
 	// constant awareness: increase if absorb edge is nonvariable and either e or *oei is variable
-	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
+	else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
 	  if (eType[e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE) nontrivialEdgeChange++;
       }
       else { // fill-in
-	if (ourAwarenessLevel == Elimination::NO_AWARENESS) nontrivialEdgeChange++;
+	if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS) nontrivialEdgeChange++;
 	 // unit awareness: if either is nonunit, the fill-in is nonunit
-	else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e] != UNIT_EDGE || eType[*iei] != UNIT_EDGE)) nontrivialEdgeChange++;
+	else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[e] != UNIT_EDGE || eType[*iei] != UNIT_EDGE)) nontrivialEdgeChange++;
 	// constant awareness: if either is variable, the fill-in is variable
-	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
+	else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)) nontrivialEdgeChange++;
       }
     } // end all predecessors of src(e)
   } // end back-elimination
@@ -1211,13 +1211,13 @@ int edge_elim_effect (const edge_bool_t be,
 
 int edge_elim_effect(const EdgeElim ee,
 		     const c_graph_t& angelLCG,
-		     const Elimination::AwarenessLevel_E ourAwarenessLevel) {
+		     const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel) {
   return edge_elim_effect(make_pair(ee.getE(angelLCG), ee.isFront()), angelLCG, ourAwarenessLevel);
 } // end edge_elim_effect()
 
 bool maintaining_edge_eliminations (const vector<edge_bool_t>& bev1,
 				    const c_graph_t& angelLCG,
-				    const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				    const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				    vector<edge_bool_t>& bev2) {
   bev2.clear();
   if (bev1.empty()) return 0;
@@ -1239,7 +1239,7 @@ bool maintaining_edge_eliminations (const vector<edge_bool_t>& bev1,
 
 bool reducing_edge_eliminations (const vector<edge_bool_t>& bev1,
 				 const c_graph_t& angelLCG,
-				 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				 vector<edge_bool_t>& bev2) {
   bev2.clear();
   if (bev1.empty()) return 0;
@@ -1419,7 +1419,7 @@ size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
 /*
 bool maintaining_reroutings (const vector<edge_reroute_t>& erv,
 			     const c_graph_t& angelLCG,
-			     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			     const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			     vector<edge_reroute_t>& maintainingReroutingsV) {
   maintainingReroutingsV.clear();
   if (erv.empty()) return 0;
@@ -1444,7 +1444,7 @@ bool maintaining_reroutings (const vector<edge_reroute_t>& erv,
 /*
 bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 			  const c_graph_t& angelLCG,
-			  const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			  vector<edge_reroute_t>& reducingReroutingsV) {
   reducingReroutingsV.clear();
   if (erv.empty()) return 0;
@@ -1472,7 +1472,7 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 
 bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 			  const c_graph_t& angelLCG,
-			  const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			  vector<edge_reroute_t>& reducingReroutingsV) {
   reducingReroutingsV.clear();
   if (erv.empty()) return 0;
@@ -1511,14 +1511,14 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 	for (tie(iei, ie_end) = in_edges(source(e, angelLCG), angelLCG); iei != ie_end; ++iei) {
 	  tie(absorb_e, found_absorb_e) = edge(source(*iei, angelLCG), source(pe, angelLCG), angelLCG);
 	  if (found_absorb_e) { // absorption: count when the absorb_e goes from trivial to nontrivial
-	    if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE)		nontrivialEdgeChange_elimIncrement++;
-	    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
+	    if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE)		nontrivialEdgeChange_elimIncrement++;
+	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
 	      if (eType[*iei] == VARIABLE_EDGE || !incrementIsTrivial)						nontrivialEdgeChange_elimIncrement++;
 	  } // end absorption
 	  else { // fill-in: is the fill-in trivial or not?
-	    if (ourAwarenessLevel == Elimination::NO_AWARENESS)										nontrivialEdgeChange_elimIncrement++;
-	    else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[*iei] != UNIT_EDGE || !incrementIsTrivial))		nontrivialEdgeChange_elimIncrement++;
-	    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[*iei] == VARIABLE_EDGE || !incrementIsTrivial))	nontrivialEdgeChange_elimIncrement++;
+	    if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)										nontrivialEdgeChange_elimIncrement++;
+	    else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[*iei] != UNIT_EDGE || !incrementIsTrivial))		nontrivialEdgeChange_elimIncrement++;
+	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[*iei] == VARIABLE_EDGE || !incrementIsTrivial))	nontrivialEdgeChange_elimIncrement++;
 	  } // end fill-in
         } // end all preds of src(e)
 	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimIncrement < 0) erv[i].increment_eliminatable = true;
@@ -1532,27 +1532,27 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
       if (in_degree(target(pe, angelLCG), angelLCG) == 2 && vertex_type(target(pe, angelLCG), angelLCG) != dependent) {
 
 	// determine effect of eliminating the pivot edge
-	if (ourAwarenessLevel == Elimination::NO_AWARENESS)						nontrivialEdgeChange_elimPivot--;
-	else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[pe] != UNIT_EDGE)		nontrivialEdgeChange_elimPivot--;
-	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[pe] == VARIABLE_EDGE)	nontrivialEdgeChange_elimPivot--;
+	if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)						nontrivialEdgeChange_elimPivot--;
+	else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[pe] != UNIT_EDGE)		nontrivialEdgeChange_elimPivot--;
+	else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[pe] == VARIABLE_EDGE)	nontrivialEdgeChange_elimPivot--;
 
 	// iterate over successors of tgt(pe); the fill/absorb edges will have the same source as the pivot edge
 	for (tie (oei, oe_end) = out_edges(target(pe, angelLCG), angelLCG); oei != oe_end; ++oei) {
 	  // determine effect of removing *oei
-	  if (ourAwarenessLevel == Elimination::NO_AWARENESS)							nontrivialEdgeChange_elimPivot--;
-	  else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*oei] != UNIT_EDGE)		nontrivialEdgeChange_elimPivot--;
-	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*oei] == VARIABLE_EDGE)	nontrivialEdgeChange_elimPivot--;
+	  if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)							nontrivialEdgeChange_elimPivot--;
+	  else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[*oei] != UNIT_EDGE)		nontrivialEdgeChange_elimPivot--;
+	  else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[*oei] == VARIABLE_EDGE)	nontrivialEdgeChange_elimPivot--;
 
 	  tie (absorb_e, found_absorb_e) = edge (source(pe, angelLCG), target(*oei, angelLCG), angelLCG);
 	  if (found_absorb_e) { // absorption: we need to detect of it goes from trivial to nontrivial
-	    if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE)		nontrivialEdgeChange_elimPivot++;
-	    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
+	    if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE)		nontrivialEdgeChange_elimPivot++;
+	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
 	      if (eType[pe] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE)					nontrivialEdgeChange_elimPivot++;
 	  } // end absorption case
 	  else { // fill-in
-	    if (ourAwarenessLevel == Elimination::NO_AWARENESS)											nontrivialEdgeChange_elimPivot++;
-	    else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[pe] != UNIT_EDGE || eType[*oei] != UNIT_EDGE))			nontrivialEdgeChange_elimPivot++;
-	    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[pe] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE))	nontrivialEdgeChange_elimPivot++;
+	    if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)											nontrivialEdgeChange_elimPivot++;
+	    else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[pe] != UNIT_EDGE || eType[*oei] != UNIT_EDGE))			nontrivialEdgeChange_elimPivot++;
+	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[pe] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE))	nontrivialEdgeChange_elimPivot++;
 	  } // end fill-in case
 
 	} // end all successors of tgt(e)=tgt(pe)
@@ -1568,23 +1568,23 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 	int nontrivialEdgeChange_backElimination = 0;
 
 	// consider loss of *oei
-	if (ourAwarenessLevel == Elimination::NO_AWARENESS
-	|| (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*oei] != UNIT_EDGE)
-	|| (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*oei] == VARIABLE_EDGE)) nontrivialEdgeChange_backElimination--;
+	if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS
+	|| (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[*oei] != UNIT_EDGE)
+	|| (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[*oei] == VARIABLE_EDGE)) nontrivialEdgeChange_backElimination--;
 
 	// consider fill/absorb effect of back-eliminating *oei
 	for (tie(iei, ie_end) = in_edges(target(e, angelLCG), angelLCG); iei != ie_end; ++iei) {
 	  if (*iei == e) continue; // skip the rerouted edge
 	  tie(absorb_e, found_absorb_e) = edge(source(*iei, angelLCG), target(*oei, angelLCG), angelLCG);
 	  if (found_absorb_e) { // absorption: only counts if it goes from trivial to nontrivial
-	    if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE)		nontrivialEdgeChange_backElimination++;
-	    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
+	    if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE)		nontrivialEdgeChange_backElimination++;
+	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
 	      if (eType[*oei] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)					nontrivialEdgeChange_backElimination++;
 	  }
 	  else { // fill-in
-	    if (ourAwarenessLevel == Elimination::NO_AWARENESS)											nontrivialEdgeChange_backElimination++;
-	    else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[*oei] != UNIT_EDGE || eType[*iei] != UNIT_EDGE))		nontrivialEdgeChange_backElimination++;
-	    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[*oei] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE))	nontrivialEdgeChange_backElimination++;
+	    if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)											nontrivialEdgeChange_backElimination++;
+	    else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[*oei] != UNIT_EDGE || eType[*iei] != UNIT_EDGE))		nontrivialEdgeChange_backElimination++;
+	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[*oei] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE))	nontrivialEdgeChange_backElimination++;
 	  }
 	} // end all inedges of tgt(e)
 	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_backElimination < 0) erv[i].type3EdgeElimVector.push_back(target(*oei, angelLCG));
@@ -1606,14 +1606,14 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 	for (tie (oei, oe_end) = out_edges(target(e, angelLCG), angelLCG); oei != oe_end; ++oei) {
 	  tie (absorb_e, found_absorb_e) = edge(target(pe, angelLCG), target(*oei, angelLCG), angelLCG);
 	  if (found_absorb_e) { // absorption: count when the absorb_e goes from trivial to nontrivial
-	    if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE)		nontrivialEdgeChange_elimIncrement++;
-	    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
+	    if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE)		nontrivialEdgeChange_elimIncrement++;
+	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
 	      if (eType[*oei] == VARIABLE_EDGE || !incrementIsTrivial)						nontrivialEdgeChange_elimIncrement++;
 	  } // end absorption
 	  else { // fill-in: is the fill-in trivial or not?
-	    if (ourAwarenessLevel == Elimination::NO_AWARENESS)										nontrivialEdgeChange_elimIncrement++;
-	    else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[*oei] != UNIT_EDGE || !incrementIsTrivial))		nontrivialEdgeChange_elimIncrement++;
-	    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[*oei] == VARIABLE_EDGE || !incrementIsTrivial))	nontrivialEdgeChange_elimIncrement++;
+	    if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)										nontrivialEdgeChange_elimIncrement++;
+	    else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[*oei] != UNIT_EDGE || !incrementIsTrivial))		nontrivialEdgeChange_elimIncrement++;
+	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[*oei] == VARIABLE_EDGE || !incrementIsTrivial))	nontrivialEdgeChange_elimIncrement++;
 	  } // end fill-in
         } // end all preds of src(e)
 	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimIncrement < 0) erv[i].increment_eliminatable = true;
@@ -1627,28 +1627,28 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
       if (out_degree (source(pe, angelLCG), angelLCG) == 2 && in_degree (source(pe, angelLCG), angelLCG) > 0) {
 
 	// determine effect of eliminating the pivot edge
-	if (ourAwarenessLevel == Elimination::NO_AWARENESS)						nontrivialEdgeChange_elimPivot--;
-	else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[pe] != UNIT_EDGE)		nontrivialEdgeChange_elimPivot--;
-	else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[pe] == VARIABLE_EDGE)	nontrivialEdgeChange_elimPivot--;
+	if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)						nontrivialEdgeChange_elimPivot--;
+	else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[pe] != UNIT_EDGE)		nontrivialEdgeChange_elimPivot--;
+	else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[pe] == VARIABLE_EDGE)	nontrivialEdgeChange_elimPivot--;
 
 	// iterate over predecessors of src(pe)
 	// the fill/absorb edges will have the same target as the pivot edge
 	for (tie (iei, ie_end) = in_edges(source(pe, angelLCG), angelLCG); iei != ie_end; ++iei) {
 	  // determine effect of removing the outedge
-	  if (ourAwarenessLevel == Elimination::NO_AWARENESS)							nontrivialEdgeChange_elimPivot--;
-	  else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*iei] != UNIT_EDGE)		nontrivialEdgeChange_elimPivot--;
-	  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*iei] == VARIABLE_EDGE)	nontrivialEdgeChange_elimPivot--;
+	  if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)							nontrivialEdgeChange_elimPivot--;
+	  else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[*iei] != UNIT_EDGE)		nontrivialEdgeChange_elimPivot--;
+	  else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[*iei] == VARIABLE_EDGE)	nontrivialEdgeChange_elimPivot--;
 
 	  tie (absorb_e, found_absorb_e) = edge (source(*iei, angelLCG), target(pe, angelLCG), angelLCG);
 	  if (found_absorb_e) { // absorption: we need to detect of it goes from trivial to nontrivial
-	    if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE)		nontrivialEdgeChange_elimPivot++;
-	    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
+	    if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE)		nontrivialEdgeChange_elimPivot++;
+	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
 	      if (eType[pe] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)					nontrivialEdgeChange_elimPivot++;
 	  } // end absorption case
 	  else { // fill-in
-	    if (ourAwarenessLevel == Elimination::NO_AWARENESS)											nontrivialEdgeChange_elimPivot++;
-	    else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[pe] != UNIT_EDGE || eType[*iei] != UNIT_EDGE))			nontrivialEdgeChange_elimPivot++;
-	    else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[pe] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE))	nontrivialEdgeChange_elimPivot++;
+	    if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)											nontrivialEdgeChange_elimPivot++;
+	    else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[pe] != UNIT_EDGE || eType[*iei] != UNIT_EDGE))			nontrivialEdgeChange_elimPivot++;
+	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[pe] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE))	nontrivialEdgeChange_elimPivot++;
 	  } // end fill-in case
 
 	} // end all successors of tgt(e)=tgt(pe)
@@ -1665,23 +1665,23 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 	  int nontrivialEdgeChange_frontElimination = 0;
 
 	  // consider loss of *iei
-	  if (ourAwarenessLevel == Elimination::NO_AWARENESS
-	  || (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[*iei] != UNIT_EDGE)
-	  || (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[*iei] == VARIABLE_EDGE)) nontrivialEdgeChange_frontElimination--;
+	  if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS
+	  || (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[*iei] != UNIT_EDGE)
+	  || (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[*iei] == VARIABLE_EDGE)) nontrivialEdgeChange_frontElimination--;
 
 	  // consider fill/absorb effect of front-eliminating *iei
 	  for (tie(oei, oe_end) = out_edges(source(e, angelLCG), angelLCG); oei != oe_end; ++oei) {
 	    if (*oei == e) continue; // skip the rerouted edge
 	    tie(absorb_e, found_absorb_e) = edge(source(*iei, angelLCG), target(*oei, angelLCG), angelLCG);
 	    if (found_absorb_e) { // absorption: only counts if it goes from trivial to nontrivial
-	      if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE)			nontrivialEdgeChange_frontElimination++;
-	      else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
+	      if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[absorb_e] == UNIT_EDGE)			nontrivialEdgeChange_frontElimination++;
+	      else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && eType[absorb_e] != VARIABLE_EDGE)
 		if (eType[*oei] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)					nontrivialEdgeChange_frontElimination++;
 	    }
 	    else { // fill-in
-	      if (ourAwarenessLevel == Elimination::NO_AWARENESS)										nontrivialEdgeChange_frontElimination++;
-	      else if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[*oei] != UNIT_EDGE || eType[*iei] != UNIT_EDGE))		nontrivialEdgeChange_frontElimination++;
-	      else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[*oei] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE))	nontrivialEdgeChange_frontElimination++;
+	      if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)										nontrivialEdgeChange_frontElimination++;
+	      else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[*oei] != UNIT_EDGE || eType[*iei] != UNIT_EDGE))		nontrivialEdgeChange_frontElimination++;
+	      else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[*oei] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE))	nontrivialEdgeChange_frontElimination++;
 	    } // end fill-in
 	  } // end all outedges of src(e)
 	  if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_frontElimination < 0) erv[i].type3EdgeElimVector.push_back(source(*iei, angelLCG));
@@ -1707,7 +1707,7 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 
 int transformation_effect(const Transformation t,
 			  const c_graph_t& angelLCG,
-			  const Elimination::AwarenessLevel_E ourAwarenessLevel) {
+			  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel) {
   int effect;
   if (t.isRerouting) {
     bool dummy_incrementIsTrivial;
@@ -1771,7 +1771,7 @@ bool all_viable_transformations (c_graph_t& angelLCG,
 
 bool maintaining_transformations (const vector<Transformation_t>& tv,
 				  const c_graph_t& angelLCG,
-				  const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				  vector<Transformation_t>& maintainingTransformationsV) {
   maintainingTransformationsV.clear();
   if (tv.empty()) return 0;
@@ -1815,7 +1815,7 @@ bool maintaining_transformations (const vector<Transformation_t>& tv,
 
 bool reducing_transformations (const vector<Transformation_t>& tv,
 			       c_graph_t& angelLCG,
-			       const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			       const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			       vector<Transformation_t>& reducingTransformationsV) {
   reducingTransformationsV.clear();
   if (tv.empty()) return 0;
@@ -1874,7 +1874,7 @@ bool reducing_transformations (const vector<Transformation_t>& tv,
 
 bool refill_avoiding_transformations (const vector<Transformation_t>& tv,
 				      c_graph_t& angelLCG,
-				      const Elimination::AwarenessLevel_E ourAwarenessLevel,
+				      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				      const refillDependenceMap_t& refillDependences,
 				      vector<Transformation_t>& refillAvoidingTransformationsV) {
   refillAvoidingTransformationsV.clear();

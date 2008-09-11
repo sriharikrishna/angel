@@ -5,7 +5,8 @@
 #include "angel_io.hpp"
 
 #ifdef USEXAIFBOOSTER
-  #include "xaifBooster/algorithms/CrossCountryInterface/inc/Elimination.hpp"
+  #include "xaifBooster/algorithms/BasicBlockPreaccumulation/inc/AwarenessLevel.hpp"
+  using namespace xaifBoosterBasicBlockPreaccumulation;
   using namespace xaifBoosterCrossCountryInterface;
   using std::list;
 #endif
@@ -790,7 +791,7 @@ void removeRef (const c_graph_t::edge_t e,
 unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 					  const c_graph_t::edge_t e2,
 					  c_graph_t& angelLCG,
-					  const xaifBoosterCrossCountryInterface::Elimination::AwarenessLevel_E ourAwarenessLevel,
+					  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					  list<EdgeRef_t>& edge_ref_list,
 					  JacobianAccumulationExpressionList& jae_list);
 
@@ -812,7 +813,7 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
  */
 unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 					    c_graph_t& angelLCG,
-					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					    const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					    list<EdgeRef_t>& edge_ref_list,
 					    JacobianAccumulationExpressionList& jae_list);
 
@@ -834,45 +835,45 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
  */
 unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   c_graph_t& angelLCG,
-					   const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					   const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					   list<EdgeRef_t>& edge_ref_list,
 					   JacobianAccumulationExpressionList& jae_list);
 
 unsigned int pair_elim (c_graph_t::edge_t e1,
 			c_graph_t::edge_t e2,
 			c_graph_t& angelLCG,
-			const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			const elimSeq_cost_t& currentElimSeq,
 			refillDependenceMap_t& refillDependences);
 
 unsigned int front_elim (c_graph_t::edge_t e,
 			 c_graph_t& angelLCG,
-			 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			 const elimSeq_cost_t& currentElimSeq,
 			 refillDependenceMap_t& refillDependences);
 
 unsigned int back_elim (c_graph_t::edge_t e,
 			c_graph_t& angelLCG,
-			const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			const elimSeq_cost_t& currentElimSeq,
 			refillDependenceMap_t& refillDependences);
 
 unsigned int pairElim_noJAE (c_graph_t::edge_t e1,
 			     c_graph_t::edge_t e2,
 			     c_graph_t& angelLCG,
-			     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			     const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			     const transformationSeq_cost_t* currentTransformationSequence,
 			     refillDependenceMap_t& refillDependences);
 
 unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,
 					 c_graph_t& angelLCG,
-					 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					 const transformationSeq_cost_t* currentTransformationSequence,
 					 refillDependenceMap_t& refillDependences);
 
 unsigned int backEdgeElimination_noJAE (c_graph_t::edge_t e,
 					c_graph_t& angelLCG,
-					const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					const transformationSeq_cost_t* currentTransformationSequence,
 					refillDependenceMap_t& refillDependences);
 

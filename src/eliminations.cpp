@@ -6,7 +6,7 @@
 namespace angel {
 
 #ifdef USEXAIFBOOSTER
-using namespace xaifBoosterCrossCountryInterface;
+using namespace xaifBoosterBasicBlockPreaccumulation;
 #endif
 
 using namespace std;
@@ -607,7 +607,7 @@ void removeRef (const c_graph_t::edge_t e,
 unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 					  const c_graph_t::edge_t e2,
 					  c_graph_t& angelLCG,
-					  const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					  list<EdgeRef_t>& edge_ref_list,
 					  JacobianAccumulationExpressionList& jae_list) {
 
@@ -658,9 +658,9 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
   }
   
   // determine cost based on awareness level
-  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE))
+  if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE))
     return 0;
-  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE))
+  else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE))
     return 0;
   else
     return 1;
@@ -668,7 +668,7 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 
 unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 					    c_graph_t& angelLCG,
-					    const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					    const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					    list<EdgeRef_t>& edge_ref_list,
 					    JacobianAccumulationExpressionList& jae_list) {
 #ifndef NDEBUG
@@ -702,7 +702,7 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 
 unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   c_graph_t& angelLCG,
-					   const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					   const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					   list<EdgeRef_t>& edge_ref_list,
 					   JacobianAccumulationExpressionList& jae_list) {
 #ifndef NDEBUG
@@ -737,7 +737,7 @@ unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 unsigned int pair_elim (c_graph_t::edge_t e1,
 			c_graph_t::edge_t e2,
 			c_graph_t& angelLCG,
-			const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			const elimSeq_cost_t& currentElimSeq,
 			refillDependenceMap_t& refillDependences) {
   boost::property_map<c_graph_t, EdgeType>::type eType = get (EdgeType(), angelLCG);
@@ -785,9 +785,9 @@ unsigned int pair_elim (c_graph_t::edge_t e1,
   } // end fill-in
 
   // determine cost based on awareness level and return it
-  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE))
+  if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE))
     return 0;
-  else if (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE))
+  else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE))
     return 0;
   else
     return 1;
@@ -795,7 +795,7 @@ unsigned int pair_elim (c_graph_t::edge_t e1,
 
 unsigned int front_elim (c_graph_t::edge_t e,
 			 c_graph_t& angelLCG,
-			 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			 const elimSeq_cost_t& currentElimSeq,
 			 refillDependenceMap_t& refillDependences) {
 #ifndef NDEBUG
@@ -824,7 +824,7 @@ unsigned int front_elim (c_graph_t::edge_t e,
 
 unsigned int back_elim (c_graph_t::edge_t e,
 			c_graph_t& angelLCG,
-			const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			const elimSeq_cost_t& currentElimSeq,
 			refillDependenceMap_t& refillDependences) {
 #ifndef NDEBUG
@@ -854,7 +854,7 @@ unsigned int back_elim (c_graph_t::edge_t e,
 unsigned int pairElim_noJAE (c_graph_t::edge_t e1,
 			     c_graph_t::edge_t e2,
 			     c_graph_t& angelLCG,
-			     const Elimination::AwarenessLevel_E ourAwarenessLevel,
+			     const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			     const transformationSeq_cost_t* currentTransformationSequence,
 			     refillDependenceMap_t& refillDependences) {
   boost::property_map<c_graph_t, EdgeType>::type eType = get (EdgeType(), angelLCG);
@@ -906,15 +906,15 @@ unsigned int pairElim_noJAE (c_graph_t::edge_t e1,
   } // end fill-in
 
   // determine cost based on awareness level and return it
-  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE)
-  || (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE)))
+  if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE)
+  || (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE)))
     return 0;
   else return 1;
 } // end pairElim_noJAE()
 
 unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,
 					 c_graph_t& angelLCG,
-					 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					 const transformationSeq_cost_t* currentTransformationSequence,
 					 refillDependenceMap_t& refillDependences) {
 #ifndef NDEBUG
@@ -943,7 +943,7 @@ unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,
 
 unsigned int backEdgeElimination_noJAE (c_graph_t::edge_t e,
 					 c_graph_t& angelLCG,
-					 const Elimination::AwarenessLevel_E ourAwarenessLevel,
+					 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					 const transformationSeq_cost_t* currentTransformationSequence,
 					 refillDependenceMap_t& refillDependences) {
 #ifndef NDEBUG
