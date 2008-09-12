@@ -460,39 +460,51 @@ void accu_graph_t::set_jacobi_entries () {
   EdgeElim::EdgeElim(const c_graph_t::edge_t& e,
 		     bool isFront,
 		     const c_graph_t& angelLCG) :
-		       src (source(e, angelLCG)),
-		       tgt (target(e, angelLCG)),
-		       front (isFront) {
+                       myIsFrontFlag (isFront),
+		       mySource (source(e, angelLCG)),
+		       myTarget (target(e, angelLCG)) {
   }
 
   EdgeElim::EdgeElim(const edge_bool_t& be,
 		     const c_graph_t& angelLCG) :
-		       src (source(be.first, angelLCG)),
-		       tgt (target(be.first, angelLCG)),
-		       front (be.second) {
+                       myIsFrontFlag (be.second),
+		       mySource (source(be.first, angelLCG)),
+		       myTarget (target(be.first, angelLCG)) {
   }
 
   EdgeElim::EdgeElim(const edge_ij_elim_t& eij) :
-		       src (eij.i),
-		       tgt (eij.j),
-		       front (eij.front) {
+                       myIsFrontFlag (eij.front),
+		       mySource (eij.i),
+		       myTarget (eij.j) {
   }
 
   std::string EdgeElim::debug() const {
     std::ostringstream out;
-    front ? out << "front"
-	  : out << "back";
-    out << "eliminate edge (" << src << "," << tgt << ")" << std::ends;
+    myIsFrontFlag ? out << "front"
+                  : out << "back";
+    out << "eliminate edge (" << mySource << "," << myTarget << ")" << std::ends;
     return out.str();
   } // end EdgeElim::debug()
 
   bool EdgeElim::isFront() const {
-    return front;
+    return myIsFrontFlag;
   } // end EdgeElim::isFront()
 
+  unsigned int EdgeElim::getSource() const {
+    return mySource;
+  } // end EdgeElim::getSource()
+
+  unsigned int EdgeElim::getTarget() const {
+    return myTarget;
+  } // end EdgeElim::getTarget()
+
   c_graph_t::edge_t EdgeElim::getE(const c_graph_t& angelLCG) const {
-    return getEdge(src, tgt, angelLCG);
+    return getEdge(mySource, myTarget, angelLCG);
   } // end EdgeElim::getE()
+
+  edge_bool_t EdgeElim::getBool(const c_graph_t& angelLCG) const {
+    return make_pair(getEdge(mySource, myTarget, angelLCG), myIsFrontFlag);
+  } // end EdgeElim::getBool()
 
   Rerouting::Rerouting() {
   }
@@ -534,29 +546,27 @@ void accu_graph_t::set_jacobi_entries () {
     return edge_reroute_t (getE(angelLCG), getPivotE(angelLCG), pre);
   } // end Rerouting::getER()
 
-  bool Rerouting::isIdenticalTo(const edge_reroute_t& er,
-				const c_graph_t& angelLCG) const {
-    if (pre) { // i am a prerouting
-      if (!er.isPre)
-	return false;
-      // now we know they're both preroutings
-      if (i == source(er.e, angelLCG) && j == source(er.pivot_e, angelLCG)
-       && k == target(er.e, angelLCG) && k == target(er.pivot_e, angelLCG))
-	return true;
-      else
-	return false;
-    }
-    else { // i am a postrouting
-      if (er.isPre)
-	return false;
-      // now we know they're both postroutings
-      if (k == target(er.e, angelLCG) && j == target(er.pivot_e, angelLCG)
-       && i == source(er.e, angelLCG) && i == source(er.pivot_e, angelLCG))
-	return true;
-      else
-	return false;
-    }
-  } // end Rerouting::isIdenticalTo()
+  unsigned int Rerouting::getI() const {
+    return i;
+  } // end Rerouting::getI()
+
+  unsigned int Rerouting::getJ() const {
+    return j;
+  } // end Rerouting::getJ()
+
+  unsigned int Rerouting::getK() const {
+    return k;
+  } // end Rerouting::getK()
+
+  bool Rerouting::operator==(const Rerouting& anotherRerouting) const {
+    if (this->isPre() == anotherRerouting.isPre()
+     && this->getI() == anotherRerouting.getI()
+     && this->getJ() == anotherRerouting.getJ()
+     && this->getK() == anotherRerouting.getK())
+      return true;
+    else
+      return false;
+  } // end Rerouting::operator==()
 
   void Rerouting::init(const c_graph_t::edge_t& e,
 		       const c_graph_t::edge_t& pivot_e,
@@ -582,45 +592,42 @@ void accu_graph_t::set_jacobi_entries () {
   } // end Rerouting::init()
 
   Transformation::Transformation(const EdgeElim& anEdgeElim) :
-				   isRerouting (false),
+				   myIsReroutingFlag (false),
 				   myEdgeElim (anEdgeElim) {
   }
 
   Transformation::Transformation(const edge_bool_t& be,
 				 const c_graph_t& angelLCG) :
-				   isRerouting (false),
+				   myIsReroutingFlag (false),
 				   myEdgeElim (be, angelLCG) {
   }
 
   Transformation::Transformation(const edge_ij_elim_t& an_ij_elim) :
-				   isRerouting (false),
+				   myIsReroutingFlag (false),
 				   myEdgeElim (an_ij_elim) {
   }
 
   Transformation::Transformation(const Rerouting& aRerouting) :
-				   isRerouting (true),
+				   myIsReroutingFlag (true),
 				   myRerouting (aRerouting) {
   }
 
   Transformation::Transformation(const edge_reroute_t& aRerouteElim,
 				 const c_graph_t& angelLCG) :
-				   isRerouting (true),
+				   myIsReroutingFlag (true),
 				   myRerouting (aRerouteElim, angelLCG) {
-  }
-
-  Transformation::Transformation(const Transformation_t& anOldTransformation,
-				 const c_graph_t& angelLCG) :
-				   isRerouting (anOldTransformation.isRerouting),
-				   myRerouting (anOldTransformation.myRerouteElim, angelLCG),
-				   myEdgeElim (anOldTransformation.myElim) {
   }
 
   std::string Transformation::debug() const {
     std::ostringstream out;
-    isRerouting ? out << myRerouting.debug().c_str()
-		: out << myEdgeElim.debug().c_str();
+    myIsReroutingFlag ? out << myRerouting.debug().c_str()
+                      : out << myEdgeElim.debug().c_str();
     return out.str();
   } // end Transformation::debug()
+
+  bool Transformation::isRerouting() const {
+    return myIsReroutingFlag;
+  } // end Transformation::isRerouting()
 
   const EdgeElim& Transformation::getEdgeElim() const {
     return myEdgeElim;

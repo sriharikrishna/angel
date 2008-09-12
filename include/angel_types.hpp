@@ -695,31 +695,6 @@ struct EdgeRef_t {
     my_JAE_vertex_p(_JAEvert_p) {}
 };
 
-struct elimSeq_cost_t {
-  std::vector<edge_ij_elim_t> edgeElimVector;
-  unsigned int bestNumNontrivialEdges;
-  unsigned int cost;
-  unsigned int costAtBestEdgecount;
-  unsigned int numIntermediatesAtBestEdgecount;
-  unsigned int numIntermediatesWithoutUnitEdgeAtBestEdgecount;
-  size_t lastDesiredElim;		// unused for now
-  mutable bool revealedNewDependence;
-
-  elimSeq_cost_t (unsigned int _bestNumNontrivialEdges,
-		  unsigned int _cost,
-		  unsigned int _costAtBestEdgecount,
-		  unsigned int _numIntermediatesAtBestEdgecount,
-		  unsigned int _numIntermediatesWithoutUnitEdgeAtBestEdgecount,
-		  size_t _lastDesiredElim) :
-    bestNumNontrivialEdges (_bestNumNontrivialEdges),
-    cost (_cost),
-    costAtBestEdgecount (_costAtBestEdgecount),
-    numIntermediatesAtBestEdgecount (_numIntermediatesAtBestEdgecount),
-    numIntermediatesWithoutUnitEdgeAtBestEdgecount (_numIntermediatesWithoutUnitEdgeAtBestEdgecount),
-    lastDesiredElim (_lastDesiredElim),
-    revealedNewDependence (false) {}
-};
-
 struct edge_reroute_t {
   c_graph_t::edge_t e;
   c_graph_t::edge_t pivot_e;
@@ -741,29 +716,6 @@ struct edge_reroute_t {
     pivot_eliminatable (0),
     increment_eliminatable (0) { type3EdgeElimVector.clear(); }
 }; // end struct edge_reroute_t
-
-struct Transformation_t {
-  bool isRerouting;
-  edge_reroute_t myRerouteElim;
-  edge_ij_elim_t myElim;
-
-  Transformation_t (const edge_bool_t& a_bool_elim_,
-		    const c_graph_t& angelLCG) :
-		      isRerouting (false) {
-    myElim = edge_ij_elim_t (source(a_bool_elim_.first, angelLCG), target(a_bool_elim_.first, angelLCG), a_bool_elim_.second);
-  };
-
-  Transformation_t (const edge_ij_elim_t& an_ij_elim_) :
-    isRerouting (false), myElim (an_ij_elim_) {};
-
-  Transformation_t (const edge_reroute_t& aRerouteElim_) :
-    isRerouting (true), myRerouteElim (aRerouteElim_) {};
-
-  private:
-
-  Transformation_t ();
-
-}; // end struct Transformation_t
 
   /// Graph-independent edge elimination.
   /** Class for representing an edge elimination.
@@ -788,12 +740,19 @@ struct Transformation_t {
 
     bool isFront() const;
 
+    unsigned int getSource() const;
+
+    unsigned int getTarget() const;
+
     c_graph_t::edge_t getE(const c_graph_t& angelLCG) const;
+
+    edge_bool_t getBool(const c_graph_t& angelLCG) const;
 
   private:
 
-    unsigned int src, tgt;
-    bool front;
+    bool myIsFrontFlag;
+    unsigned int mySource;
+    unsigned int myTarget;
 
   }; // end class EdgeElim
 
@@ -825,11 +784,11 @@ struct Transformation_t {
 
     edge_reroute_t getER(const c_graph_t& angelLCG) const;
 
-    /** Returns true iff this rerouting is the same as \p er.
-     *  Two reroutings are equivalent if and only if their edges and pivot edges have identical sources and targets, respectively.
-     */
-    bool isIdenticalTo(const edge_reroute_t& er,
-		       const c_graph_t& angelLCG) const;
+    unsigned int getI() const;
+    unsigned int getJ() const;
+    unsigned int getK() const;
+
+    bool operator==(const Rerouting& anotherRerouting) const;
 
   private:
 
@@ -863,27 +822,52 @@ struct Transformation_t {
     Transformation(const edge_reroute_t& aRerouteElim,
 		   const c_graph_t& angelLCG);
 
-    Transformation(const Transformation_t& anOldTransformation,
-		   const c_graph_t& angelLCG);
-
     std::string debug() const;
+
+    /// returns true iff this Transformation is a rerouting
+    bool isRerouting() const;
 
     const EdgeElim& getEdgeElim() const;
     const Rerouting& getRerouting() const;
 
-    bool isRerouting;
-
   private:
 
     Transformation();
+
+    bool myIsReroutingFlag;
 
     Rerouting myRerouting;
     EdgeElim myEdgeElim;
 
   }; // end class Transformation
 
+struct elimSeq_cost_t {
+  std::vector<EdgeElim> edgeElimVector;
+  unsigned int bestNumNontrivialEdges;
+  unsigned int cost;
+  unsigned int costAtBestEdgecount;
+  unsigned int numIntermediatesAtBestEdgecount;
+  unsigned int numIntermediatesWithoutUnitEdgeAtBestEdgecount;
+  size_t lastDesiredElim;		// unused for now
+  mutable bool revealedNewDependence;
+
+  elimSeq_cost_t (unsigned int _bestNumNontrivialEdges,
+		  unsigned int _cost,
+		  unsigned int _costAtBestEdgecount,
+		  unsigned int _numIntermediatesAtBestEdgecount,
+		  unsigned int _numIntermediatesWithoutUnitEdgeAtBestEdgecount,
+		  size_t _lastDesiredElim) :
+    bestNumNontrivialEdges (_bestNumNontrivialEdges),
+    cost (_cost),
+    costAtBestEdgecount (_costAtBestEdgecount),
+    numIntermediatesAtBestEdgecount (_numIntermediatesAtBestEdgecount),
+    numIntermediatesWithoutUnitEdgeAtBestEdgecount (_numIntermediatesWithoutUnitEdgeAtBestEdgecount),
+    lastDesiredElim (_lastDesiredElim),
+    revealedNewDependence (false) {}
+};
+
 struct transformationSeq_cost_t {
-  std::vector<Transformation_t> transformationVector;
+  std::vector<Transformation> transformationVector;
   unsigned int bestNumNontrivialEdges;
   unsigned int cost;
   unsigned int costAtBestEdgecount;

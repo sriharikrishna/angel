@@ -24,6 +24,9 @@ namespace angel {
 void reroutable_edges (c_graph_t& angelLCG,
 		       vector<edge_reroute_t>& erv);
 
+unsigned int reroutable_edges(c_graph_t& angelLCG,
+                              vector<Rerouting>& allReroutingsV);
+
 /** Calculates the change in nontrivial edge count from \p er
     without actually performing it.  In addition,
     incrementIsTrivial is returned by reference

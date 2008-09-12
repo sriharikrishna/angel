@@ -754,8 +754,8 @@ unsigned int pair_elim (c_graph_t::edge_t e1,
     
     // check for refill.  If found, add tgt to dependence vertex set for respective edge (from src to succ of tgt)
     for (size_t c = 0; c < currentElimSeq.edgeElimVector.size(); c++) {
-      unsigned int i = currentElimSeq.edgeElimVector[c].i;
-      unsigned int j = currentElimSeq.edgeElimVector[c].j;
+      unsigned int i = currentElimSeq.edgeElimVector[c].getSource();
+      unsigned int j = currentElimSeq.edgeElimVector[c].getTarget();
       if (source (e1, angelLCG) == i && target (e2, angelLCG) == j) {
 #ifndef NDEBUG
 	cout << endl << "refilledge (" << i << "," << j << "), adding this information to the refillDependences map..." << endl << endl;
@@ -863,10 +863,11 @@ unsigned int pairElim_noJAE (c_graph_t::edge_t e1,
 
   // check for refill.  If found, add tgt to dependence vertex set for respective edge (from src to succ of tgt)
   for (size_t c = 0; c < currentTransformationSequence->transformationVector.size(); c++) {
-    if (currentTransformationSequence->transformationVector[c].isRerouting) continue; // ignore reroutings
+    if (currentTransformationSequence->transformationVector[c].isRerouting())
+      continue; // ignore reroutings
 
-    unsigned int i = currentTransformationSequence->transformationVector[c].myElim.i;
-    unsigned int j = currentTransformationSequence->transformationVector[c].myElim.j;
+    unsigned int i = currentTransformationSequence->transformationVector[c].getEdgeElim().getSource();
+    unsigned int j = currentTransformationSequence->transformationVector[c].getEdgeElim().getTarget();
 
     // the fill/absorb edge was previously eliminated
     if (source (e1, angelLCG) == i && target (e2, angelLCG) == j) {

@@ -1215,10 +1215,10 @@ int edge_elim_effect(const EdgeElim ee,
   return edge_elim_effect(make_pair(ee.getE(angelLCG), ee.isFront()), angelLCG, ourAwarenessLevel);
 } // end edge_elim_effect()
 
-bool maintaining_edge_eliminations (const vector<edge_bool_t>& bev1,
-				    const c_graph_t& angelLCG,
-				    const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
-				    vector<edge_bool_t>& bev2) {
+bool maintaining_edge_eliminations(const vector<EdgeElim>& bev1,
+                                   const c_graph_t& angelLCG,
+                                   const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                                   vector<EdgeElim>& bev2) {
   bev2.clear();
   if (bev1.empty()) return 0;
 
@@ -1237,10 +1237,10 @@ bool maintaining_edge_eliminations (const vector<edge_bool_t>& bev1,
   else return true;
 } // end count_maintain_edge_eliminations()
 
-bool reducing_edge_eliminations (const vector<edge_bool_t>& bev1,
-				 const c_graph_t& angelLCG,
-				 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
-				 vector<edge_bool_t>& bev2) {
+bool reducing_edge_eliminations(const vector<EdgeElim>& bev1,
+                                const c_graph_t& angelLCG,
+                                const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                                vector<EdgeElim>& bev2) {
   bev2.clear();
   if (bev1.empty()) return 0;
 
@@ -1248,9 +1248,10 @@ bool reducing_edge_eliminations (const vector<edge_bool_t>& bev1,
     if (edge_elim_effect (bev1[c], angelLCG, ourAwarenessLevel) < 0)
       bev2.push_back (bev1[c]);
 
-#ifndef NDEBUG
-  cout << "	Of " << bev1.size() << " edge eliminations passed to reducing_edge_eliminations(), " << bev2.size() << " reduce the nontrivial edge count" << endl;
-#endif
+  #ifndef NDEBUG
+  cout << "	Of " << bev1.size() << " edge eliminations passed to reducing_edge_eliminations()"
+       << ", " << bev2.size() << " reduce the nontrivial edge count" << endl;
+  #endif
 
   if(bev2.empty()) {
     bev2 = bev1;
@@ -1259,12 +1260,13 @@ bool reducing_edge_eliminations (const vector<edge_bool_t>& bev1,
   else return true;
 } // end count_maintain_edge_eliminations()
 
-bool refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
-					c_graph_t& angelLCG,
-					const refillDependenceMap_t refillDependences,
-					vector<edge_bool_t>& bev2) {
+bool refill_avoiding_edge_eliminations(const vector<EdgeElim>& bev1,
+                                       c_graph_t& angelLCG,
+                                       const refillDependenceMap_t refillDependences,
+                                       vector<EdgeElim>& bev2) {
   bev2.clear();
-  if (bev1.empty()) return 0;
+  if (bev1.empty())
+    return 0;
 
   c_graph_t::iei_t iei, ie_end;
   c_graph_t::oei_t oei, oe_end;
@@ -1274,9 +1276,7 @@ bool refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
   c_graph_t::vi_t cleari, clear_end;
 
   for (size_t c = 0; c < bev1.size(); c++) {
-    c_graph_t::edge_t e = bev1[c].first; // the direction of elimination (front/back) doesn't matter
-
-    //cout << "checking edge " << e << " for refill dependences..." << endl;
+    c_graph_t::edge_t e = bev1[c].getE(angelLCG); // the direction of elimination (front/back) doesn't matter
 
     depMap_i = refillDependences.find(make_pair(source (e, angelLCG), target(e, angelLCG)));
     if (depMap_i != refillDependences.end()) { // we have refill dependences to consider for e
@@ -1303,8 +1303,8 @@ bool refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
       } // end all vertex dependences
 
       // all vertex dependences for this edge have been met
-      if (vDepSet_i == vDepSet.end()) bev2.push_back(bev1[c]);
-
+      if (vDepSet_i == vDepSet.end())
+        bev2.push_back(bev1[c]);
     } // end if vertex dependences exist
     else bev2.push_back(bev1[c]);
 
@@ -1321,38 +1321,41 @@ bool refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
   else return true;
 } // end refill_avoiding_edge_eliminations()
 
-bool rerouting_considerate_edge_eliminations (const vector<edge_bool_t>& bev,
-                                              const c_graph_t& angelLCG,
-                                              const std::vector<Transformation_t>& transformationsPerformedV,
-                                              vector<edge_bool_t>& reroutingConsiderateEdgeElimsV) {
+bool rerouting_considerate_edge_eliminations(const vector<EdgeElim>& bev,
+                                             const c_graph_t& angelLCG,
+                                             const std::vector<Transformation>& transformationsPerformedV,
+                                             vector<EdgeElim>& reroutingConsiderateEdgeElimsV) {
   reroutingConsiderateEdgeElimsV.clear();
-  if (bev.empty()) return false;
-
-  size_t j;
+  if (bev.empty())
+    return false;
 
   // Check every for every possible edge elimination
   for (size_t i = 0; i < bev.size(); i++) {
+    size_t j;
 
-    if (bev[i].second) { // front-elimination
+    if (bev[i].isFront()) { // front-elimination
       // check all previously performed reroutings to see if the edge elim undoes it
       for (j = 0; j < transformationsPerformedV.size(); j++) {
-	if (transformationsPerformedV[j].isRerouting && transformationsPerformedV[j].myRerouteElim.isPre
-	 && source(transformationsPerformedV[j].myRerouteElim.e, angelLCG)       == source(bev[i].first, angelLCG)
-	 && source(transformationsPerformedV[j].myRerouteElim.pivot_e, angelLCG) == target(bev[i].first, angelLCG))
+	if (transformationsPerformedV[j].isRerouting()
+         && transformationsPerformedV[j].getRerouting().isPre()
+	 && source(transformationsPerformedV[j].getRerouting().getE(angelLCG), angelLCG) == bev[i].getSource()
+	 && source(transformationsPerformedV[j].getRerouting().getPivotE(angelLCG), angelLCG) == bev[i].getTarget())
 	    break;
       }
     } // end front-elimination
 
     else { // back-elimination
       for (j = 0; j < transformationsPerformedV.size(); j++) {
-	if (transformationsPerformedV[j].isRerouting && !transformationsPerformedV[j].myRerouteElim.isPre
-	 && target(transformationsPerformedV[j].myRerouteElim.e, angelLCG)       == target(bev[i].first, angelLCG)
-	 && target(transformationsPerformedV[j].myRerouteElim.pivot_e, angelLCG) == source(bev[i].first, angelLCG))
+	if (transformationsPerformedV[j].isRerouting()
+         && !transformationsPerformedV[j].getRerouting().isPre()
+	 && target(transformationsPerformedV[j].getRerouting().getE(angelLCG), angelLCG) == bev[i].getTarget()
+	 && target(transformationsPerformedV[j].getRerouting().getPivotE(angelLCG), angelLCG) == bev[i].getSource())
 	    break;
       } // end all transformations
     } // end back-elimination
 
-    if (j == transformationsPerformedV.size()) reroutingConsiderateEdgeElimsV.push_back(bev[i]);
+    if (j == transformationsPerformedV.size())
+      reroutingConsiderateEdgeElimsV.push_back(bev[i]);
   } // end iterate over bev
 
 #ifndef NDEBUG
@@ -1366,39 +1369,54 @@ bool rerouting_considerate_edge_eliminations (const vector<edge_bool_t>& bev,
   else return true;
 } // end rerouting_considerate_edge_eliminations()
 
+unsigned int lowestMarkowitzEdgeElim(const vector<EdgeElim>& inEEV,
+                                     const c_graph_t& angelLCG,
+                                     vector<EdgeElim>& outEEV) {
+  outEEV.clear();
+  if (inEEV.empty())
+    return 0;
+
+  vector<edge_bool_t> inBEV, outBEV;
+
+  for (size_t i = 0; i < inEEV.size(); i++)
+    inBEV.push_back(inEEV[i].getBool(angelLCG));
+
+  lowest_markowitz_edge(inBEV, angelLCG, outBEV);
+
+  for (size_t i = 0; i < outBEV.size(); i++)
+    outEEV.push_back(EdgeElim (outBEV[i], angelLCG));
+
+  return outEEV.size();
+} // end lowestMarkowitzEdgeElim()
+
+bool reverseModeEdgeElim(const vector<EdgeElim>& inEEV,
+                         const c_graph_t& angelLCG,
+                         vector<EdgeElim>& outEEV) {
+  outEEV.clear();
+  if (inEEV.empty())
+    return false;
+
+  vector<edge_bool_t> inBEV, outBEV;
+
+  for (size_t i = 0; i < inEEV.size(); i++)
+    inBEV.push_back(inEEV[i].getBool(angelLCG));
+
+  reverse_mode_edge(inBEV, angelLCG, outBEV);
+
+  for (size_t i = 0; i < outBEV.size(); i++)
+    outEEV.push_back(EdgeElim (outBEV[i], angelLCG));
+
+  return true;
+} // end reverseModeEdgeElim()
+
 // ==============================================================================
 // |                    FILTERS FOR REROUTINGS                                  |
 // ==============================================================================
 
-size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
-			    const std::vector<Transformation_t>& transformationsPerformedV,
-			    const c_graph_t& angelLCG,
-			    vector<edge_reroute_t>& noncyclicReroutingsV) {
-  noncyclicReroutingsV.clear();
-  if (erv.empty()) return 0;
-  size_t j;
-
-  // check each rerouting in erv to see whether it has already been performed
-  for (size_t i = 0; i < erv.size(); i++) {
-    // go through the history 
-    for (j = 0; j < transformationsPerformedV.size(); j++)
-      if (transformationsPerformedV[j].isRerouting
-       && source(transformationsPerformedV[j].myRerouteElim.e, angelLCG) == source(erv[i].e, angelLCG)
-       && target(transformationsPerformedV[j].myRerouteElim.e, angelLCG) == target(erv[i].e, angelLCG)
-       && source(transformationsPerformedV[j].myRerouteElim.pivot_e, angelLCG) == source(erv[i].pivot_e, angelLCG)
-       && target(transformationsPerformedV[j].myRerouteElim.pivot_e, angelLCG) == target(erv[i].pivot_e, angelLCG)) break;
-
-    // if it made it all the way through, the rerouting hasn't already been performed
-    if (j == transformationsPerformedV.size()) noncyclicReroutingsV.push_back(erv[i]);
-  } // end iterate over erv
-
-  return noncyclicReroutingsV.size();
-} // end noncyclicReroutings()
-
-size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
+size_t noncyclicReroutings (const vector<Rerouting>& erv,
 			    const std::vector<Transformation>& transformationsPerformedV,
 			    const c_graph_t& angelLCG,
-			    vector<edge_reroute_t>& noncyclicReroutingsV) {
+			    vector<Rerouting>& noncyclicReroutingsV) {
   noncyclicReroutingsV.clear();
   if (erv.empty())
     return 0;
@@ -1407,8 +1425,8 @@ size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
   for (size_t i = 0; i < erv.size(); i++) {
     // go through the history 
     for (j = 0; j < transformationsPerformedV.size(); j++)
-      if (transformationsPerformedV[j].isRerouting
-       && transformationsPerformedV[j].getRerouting().isIdenticalTo(erv[i], angelLCG))
+      if (transformationsPerformedV[j].isRerouting()
+       && transformationsPerformedV[j].getRerouting() == erv[i]);
 	  break;
     if (j == transformationsPerformedV.size()) // if it made it all the way through, the rerouting hasn't already been performed
       noncyclicReroutingsV.push_back(erv[i]);
@@ -1470,12 +1488,13 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 } // end reducing_reroutings()
 */
 
-bool reducing_reroutings (const vector<edge_reroute_t>& erv,
+bool reducing_reroutings (const vector<Rerouting>& erv,
 			  const c_graph_t& angelLCG,
 			  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
-			  vector<edge_reroute_t>& reducingReroutingsV) {
+			  vector<Rerouting>& reducingReroutingsV) {
   reducingReroutingsV.clear();
-  if (erv.empty()) return 0;
+  if (erv.empty())
+    return 0;
 
   boost::property_map<c_graph_t, EdgeType>::const_type eType = get(EdgeType(), angelLCG);
   c_graph_t::iei_t iei, ie_end;
@@ -1484,20 +1503,21 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
   bool found_absorb_e;
 
   for (size_t i = 0; i < erv.size(); i++) {
+    edge_reroute_t er = erv[i].getER(angelLCG);
     // first record effect of the rerouting itself
     bool incrementIsTrivial;
-    int nontrivialEdgeChange_rerouting = reroute_effect (erv[i], angelLCG, ourAwarenessLevel, incrementIsTrivial);
+    int nontrivialEdgeChange_rerouting = reroute_effect (er, angelLCG, ourAwarenessLevel, incrementIsTrivial);
 
-    c_graph_t::edge_t e = erv[i].e;
-    c_graph_t::edge_t pe = erv[i].pivot_e;
-    erv[i].pivot_eliminatable = false;
-    erv[i].increment_eliminatable = false;
-    erv[i].type3EdgeElimVector.clear();
+    c_graph_t::edge_t e = er.e;
+    c_graph_t::edge_t pe = er.pivot_e;
+    er.pivot_eliminatable = false;
+    er.increment_eliminatable = false;
+    er.type3EdgeElimVector.clear();
 
     int nontrivialEdgeChange_elimIncrement = 0;
     int nontrivialEdgeChange_elimPivot = 0;
 
-    if (erv[i].isPre) { // pre-routing
+    if (er.isPre) { // pre-routing
       //---------------------------------------------------------------------------------------------------------------------------
       // determine effect of back-eliminating the increment edge on the nontrivial edge count (nontrivialEdgeChange_elimIncrement)
       //---------------------------------------------------------------------------------------------------------------------------
@@ -1521,7 +1541,7 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[*iei] == VARIABLE_EDGE || !incrementIsTrivial))	nontrivialEdgeChange_elimIncrement++;
 	  } // end fill-in
         } // end all preds of src(e)
-	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimIncrement < 0) erv[i].increment_eliminatable = true;
+	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimIncrement < 0) er.increment_eliminatable = true;
       } // end if increment edge can be back-eliminated
       
       //------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1556,7 +1576,7 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 	  } // end fill-in case
 
 	} // end all successors of tgt(e)=tgt(pe)
-	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimPivot < 0) erv[i].pivot_eliminatable = true;
+	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimPivot < 0) er.pivot_eliminatable = true;
       } // end determine nontrivialEdgeChange_elimPivot
 
       //------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1587,7 +1607,7 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[*oei] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE))	nontrivialEdgeChange_backElimination++;
 	  }
 	} // end all inedges of tgt(e)
-	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_backElimination < 0) erv[i].type3EdgeElimVector.push_back(target(*oei, angelLCG));
+	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_backElimination < 0) er.type3EdgeElimVector.push_back(target(*oei, angelLCG));
       } // end all outedges of tgt(e) (end type 3)
 
     } // end pre-routing
@@ -1616,7 +1636,7 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 	    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[*oei] == VARIABLE_EDGE || !incrementIsTrivial))	nontrivialEdgeChange_elimIncrement++;
 	  } // end fill-in
         } // end all preds of src(e)
-	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimIncrement < 0) erv[i].increment_eliminatable = true;
+	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimIncrement < 0) er.increment_eliminatable = true;
       } // end if increment edge can be front-eliminated
 
       //------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1652,7 +1672,7 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 	  } // end fill-in case
 
 	} // end all successors of tgt(e)=tgt(pe)
-	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimPivot < 0) erv[i].pivot_eliminatable = true;
+	if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_elimPivot < 0) er.pivot_eliminatable = true;
       } // end determine nontrivialEdgeChange_elimPivot
 
       //------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1684,13 +1704,13 @@ bool reducing_reroutings (const vector<edge_reroute_t>& erv,
 	      else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[*oei] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE))	nontrivialEdgeChange_frontElimination++;
 	    } // end fill-in
 	  } // end all outedges of src(e)
-	  if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_frontElimination < 0) erv[i].type3EdgeElimVector.push_back(source(*iei, angelLCG));
+	  if (nontrivialEdgeChange_rerouting + nontrivialEdgeChange_frontElimination < 0) er.type3EdgeElimVector.push_back(source(*iei, angelLCG));
 	} // end all inedges of src(e)
       } // end type 3
     } // end post-routing
 
-    if (erv[i].pivot_eliminatable || erv[i].increment_eliminatable || !erv[i].type3EdgeElimVector.empty())
-      reducingReroutingsV.push_back(erv[i]);
+    if (er.pivot_eliminatable || er.increment_eliminatable || !er.type3EdgeElimVector.empty())
+      reducingReroutingsV.push_back(Rerouting (er, angelLCG));
 
   } // end iterate through erv
 
@@ -1709,7 +1729,7 @@ int transformation_effect(const Transformation t,
 			  const c_graph_t& angelLCG,
 			  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel) {
   int effect;
-  if (t.isRerouting) {
+  if (t.isRerouting()) {
     bool dummy_incrementIsTrivial;
     effect = reroute_effect(t.getRerouting().getER(angelLCG), angelLCG, ourAwarenessLevel, dummy_incrementIsTrivial);
   }
@@ -1717,34 +1737,6 @@ int transformation_effect(const Transformation t,
     effect = edge_elim_effect(t.getEdgeElim(), angelLCG, ourAwarenessLevel);
   return effect;
 } // end transformation_effect()
-
-bool all_viable_transformations (c_graph_t& angelLCG,
-				 const std::vector<Transformation_t>& transformationsPerformedV,
-				 vector<Transformation_t>& allViableTransformationsV) {
-  allViableTransformationsV.clear();
-  vector<edge_reroute_t> allReroutingsV, noncyclicReroutingsV;
-  vector<edge_ij_elim_t> allEdgeElimsV;
-  size_t i;
-
-  // all eliminatable edges
-  eliminatable_objects(angelLCG, allEdgeElimsV);
-  for (i = 0; i < allEdgeElimsV.size(); i++)
-    allViableTransformationsV.push_back(Transformation_t (allEdgeElimsV[i]));
-
-  reroutable_edges (angelLCG, allReroutingsV);
-  noncyclicReroutings (allReroutingsV, transformationsPerformedV, angelLCG, noncyclicReroutingsV);
-
-  for (size_t i = 0; i < noncyclicReroutingsV.size(); i++)
-    allViableTransformationsV.push_back(Transformation_t (noncyclicReroutingsV[i]));
-
-#ifndef NDEBUG
-  cout << "\tThere are " << allEdgeElimsV.size() << " viable Edge eliminations in G" << endl;
-  cout << "\tOf " << allReroutingsV.size() << " possible reroutings, " << noncyclicReroutingsV.size() << " are noncyclic" << endl;
-  cout << "\t\tThere are " << allViableTransformationsV.size() << " viable transformations in G" << endl;
-#endif
-
-  return !allViableTransformationsV.empty();
-} // end all_viable_transformations()
 
 bool all_viable_transformations (c_graph_t& angelLCG,
 				 const std::vector<Transformation>& transformationsPerformedV,
@@ -1756,11 +1748,11 @@ bool all_viable_transformations (c_graph_t& angelLCG,
   for (size_t i = 0; i < allEdgeElimsV.size(); i++)
     allViableTransformationsV.push_back(Transformation (allEdgeElimsV[i]));
   // find viable reroutings
-  vector<edge_reroute_t> allReroutingsV, noncyclicReroutingsV;
+  vector<Rerouting> allReroutingsV, noncyclicReroutingsV;
   reroutable_edges (angelLCG, allReroutingsV);
   noncyclicReroutings (allReroutingsV, transformationsPerformedV, angelLCG, noncyclicReroutingsV);
   for (size_t i = 0; i < noncyclicReroutingsV.size(); i++)
-    allViableTransformationsV.push_back(Transformation (noncyclicReroutingsV[i], angelLCG));
+    allViableTransformationsV.push_back(Transformation (noncyclicReroutingsV[i]));
   #ifndef NDEBUG
   cout << "\tThere are " << allEdgeElimsV.size() << " viable Edge eliminations in G" << endl;
   cout << "\tOf " << allReroutingsV.size() << " possible reroutings, " << noncyclicReroutingsV.size() << " are noncyclic" << endl;
@@ -1769,41 +1761,35 @@ bool all_viable_transformations (c_graph_t& angelLCG,
   return !allViableTransformationsV.empty();
 } // end all_viable_transformations()
 
-bool maintaining_transformations (const vector<Transformation_t>& tv,
-				  const c_graph_t& angelLCG,
-				  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
-				  vector<Transformation_t>& maintainingTransformationsV) {
+bool maintaining_transformations(const vector<Transformation>& tv,
+				 const c_graph_t& angelLCG,
+				 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+				 vector<Transformation>& maintainingTransformationsV) {
   maintainingTransformationsV.clear();
-  if (tv.empty()) return 0;
+  if (tv.empty())
+    return false;
 
-  vector<edge_reroute_t> tempReroutingsV;
-  vector<edge_bool_t> tempEdgeElimsV, tempMaintainingEdgeElimsV;
-  c_graph_t::edge_t e;
-  bool found_e;
-  size_t i;
+  vector<Rerouting> tempReroutingsV;
+  vector<EdgeElim> tempEdgeElimsV, tempMaintainingEdgeElimsV;
 
   // create temporary lists
-  for (i = 0; i < tv.size(); i++) {
-    if (tv[i].isRerouting) tempReroutingsV.push_back(tv[i].myRerouteElim);
-    else { // edge elimination
-      tie(e, found_e) = edge (tv[i].myElim.i, tv[i].myElim.j, angelLCG);
-      throw_exception (!found_e, consistency_exception, "Could not find edge from edge_ij_elim_t representation");
-      tempEdgeElimsV.push_back(make_pair<c_graph_t::edge_t, bool> (e, tv[i].myElim.front));
-    }
-  }
+  for (size_t i = 0; i < tv.size(); i++)
+    tv[i].isRerouting() ? tempReroutingsV.push_back(tv[i].getRerouting())
+                        : tempEdgeElimsV.push_back(tv[i].getEdgeElim());
 
   // if there are edge elims, push them to the transformation vector
   if (maintaining_edge_eliminations(tempEdgeElimsV, angelLCG, ourAwarenessLevel, tempMaintainingEdgeElimsV)) 
-    for (i = 0; i < tempMaintainingEdgeElimsV.size(); i++)
-      maintainingTransformationsV.push_back(Transformation_t (tempMaintainingEdgeElimsV[i], angelLCG));
+    for (size_t i = 0; i < tempMaintainingEdgeElimsV.size(); i++)
+      maintainingTransformationsV.push_back(Transformation (tempMaintainingEdgeElimsV[i]));
 
   // push all reroutings to the transformation vector
-  for (i = 0; i < tempReroutingsV.size(); i++)
-    maintainingTransformationsV.push_back(Transformation_t (tempReroutingsV[i]));
+  for (size_t i = 0; i < tempReroutingsV.size(); i++)
+    maintainingTransformationsV.push_back(Transformation (tempReroutingsV[i]));
 
-#ifndef NDEBUG
-  cout << "Of " << tv.size() << " transformations passed to maintaining_transformations(), " << maintainingTransformationsV.size() << " maintain the nontrivial edge count" << endl;
-#endif
+  #ifndef NDEBUG
+  cout << "Of " << tv.size() << " transformations passed to maintaining_transformations()"
+       << ", " << maintainingTransformationsV.size() << " maintain the nontrivial edge count" << endl;
+  #endif
 
   // if there are neither edge elims nor reroutings, return the transformation vector we were passed
   if (maintainingTransformationsV.empty()) {
@@ -1813,38 +1799,31 @@ bool maintaining_transformations (const vector<Transformation_t>& tv,
   else return true;
 } // end count_maintaining_transformations()
 
-bool reducing_transformations (const vector<Transformation_t>& tv,
-			       c_graph_t& angelLCG,
-			       const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
-			       vector<Transformation_t>& reducingTransformationsV) {
+bool reducing_transformations(const vector<Transformation>& tv,
+			      const c_graph_t& angelLCG,
+			      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+			      vector<Transformation>& reducingTransformationsV) {
   reducingTransformationsV.clear();
-  if (tv.empty()) return 0;
+  if (tv.empty())
+    return 0;
 
-  vector<edge_reroute_t> tempReroutingsV, tempReducingReroutingsV;
-  vector<edge_bool_t> tempEdgeElimsV, tempReducingEdgeElimsV;
-  c_graph_t::edge_t e;
-  bool found_e;
-  size_t i;
+  vector<Rerouting> tempReroutingsV, tempReducingReroutingsV;
+  vector<EdgeElim> tempEdgeElimsV, tempReducingEdgeElimsV;
 
-  // create temporary lists
-  for (i = 0; i < tv.size(); i++) {
-    if (tv[i].isRerouting) tempReroutingsV.push_back(tv[i].myRerouteElim);
-    else { // edge elimination
-      tie(e, found_e) = edge (tv[i].myElim.i, tv[i].myElim.j, angelLCG);
-      throw_exception (!found_e, consistency_exception, "Could not find edge from edge_ij_elim_t representation");
-      tempEdgeElimsV.push_back(make_pair<c_graph_t::edge_t, bool> (e, tv[i].myElim.front));
-    }
-  }
+  // split tv into separate temporary lists
+  for (size_t i = 0; i < tv.size(); i++)
+    tv[i].isRerouting() ? tempReroutingsV.push_back(tv[i].getRerouting())
+                        : tempEdgeElimsV.push_back(tv[i].getEdgeElim());
 
   // if there are edge elims, push them to the transformation vector
   if (reducing_edge_eliminations(tempEdgeElimsV, angelLCG, ourAwarenessLevel, tempReducingEdgeElimsV)) 
-    for (i = 0; i < tempReducingEdgeElimsV.size(); i++)
-      reducingTransformationsV.push_back(Transformation_t (tempReducingEdgeElimsV[i], angelLCG));
+    for (size_t i = 0; i < tempReducingEdgeElimsV.size(); i++)
+      reducingTransformationsV.push_back(Transformation (tempReducingEdgeElimsV[i]));
 
   // if there are reroutings, push them to the transformation vector
   if (reducing_reroutings(tempReroutingsV, angelLCG, ourAwarenessLevel, tempReducingReroutingsV))
-    for (i = 0; i < tempReducingReroutingsV.size(); i++)
-      reducingTransformationsV.push_back(Transformation_t (tempReducingReroutingsV[i]));
+    for (size_t i = 0; i < tempReducingReroutingsV.size(); i++)
+      reducingTransformationsV.push_back(Transformation (tempReducingReroutingsV[i]));
 
 #ifndef NDEBUG
   cout << "Of " << tv.size() << " transformations passed to reducing_transformations(), " << reducingTransformationsV.size() << " reduce the nontrivial edge count" << endl;
@@ -1852,13 +1831,14 @@ bool reducing_transformations (const vector<Transformation_t>& tv,
 
   // if there are neither edge elims nor reroutings, return only the edge elims
   if (reducingTransformationsV.empty()) {
-    for (i = 0; i < tempEdgeElimsV.size(); i++) // push back all the edge elims
-      reducingTransformationsV.push_back(Transformation_t (tempEdgeElimsV[i], angelLCG));
+    for (size_t i = 0; i < tempEdgeElimsV.size(); i++) // push back all the edge elims
+      reducingTransformationsV.push_back(Transformation (tempEdgeElimsV[i]));
     // if there are no edge elims that maintain or reduce, and no reroutings that reduce: push back all edge elims
     if (reducingTransformationsV.empty()) {
-      vector<edge_bool_t> allEdgeElimsV;
-      eliminatable_objects(angelLCG, allEdgeElimsV);
-      for (i = 0; i < allEdgeElimsV.size(); i++) reducingTransformationsV.push_back(Transformation_t (allEdgeElimsV[i], angelLCG));
+      vector<EdgeElim> allEdgeElimsV;
+      eliminatable_edges(angelLCG, allEdgeElimsV);
+      for (size_t j = 0; j < allEdgeElimsV.size(); j++)
+        reducingTransformationsV.push_back(Transformation (allEdgeElimsV[j]));
     }
     return false;
   }    
@@ -1872,37 +1852,31 @@ bool reducing_transformations (const vector<Transformation_t>& tv,
 
 } // end count_reducing_transformations()
 
-bool refill_avoiding_transformations (const vector<Transformation_t>& tv,
-				      c_graph_t& angelLCG,
-				      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
-				      const refillDependenceMap_t& refillDependences,
-				      vector<Transformation_t>& refillAvoidingTransformationsV) {
+bool refill_avoiding_transformations(const vector<Transformation>& tv,
+				     c_graph_t& angelLCG,
+				     const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+				     const refillDependenceMap_t& refillDependences,
+				     vector<Transformation>& refillAvoidingTransformationsV) {
   refillAvoidingTransformationsV.clear();
-  if (tv.empty()) return false;
+  if (tv.empty())
+    return false;
 
-  vector<edge_reroute_t> tempReroutingsV;
-  vector<edge_bool_t> tempEdgeElimsV, tempRefillAvoidingEdgeElimsV;
-  c_graph_t::edge_t e;
-  bool found_e;
-  size_t i;
+  vector<Rerouting> tempReroutingsV;
+  vector<EdgeElim> tempEdgeElimsV, tempRefillAvoidingEdgeElimsV;
 
   // create temporary edge elim and rerouting vectors
-  for (i = 0; i < tv.size(); i++)
-    if (tv[i].isRerouting) tempReroutingsV.push_back(tv[i].myRerouteElim);
-    else { // edge elimination
-      tie(e, found_e) = edge (tv[i].myElim.i, tv[i].myElim.j, angelLCG);
-      throw_exception (!found_e, consistency_exception, "Could not find edge from edge_ij_elim_t representation");
-      tempEdgeElimsV.push_back(make_pair<c_graph_t::edge_t, bool> (e, tv[i].myElim.front));
-    }
+  for (size_t i = 0; i < tv.size(); i++)
+    tv[i].isRerouting() ? tempReroutingsV.push_back(tv[i].getRerouting())
+                        : tempEdgeElimsV.push_back(tv[i].getEdgeElim());
 
   // run edge elims through the refill filter
-  if (refill_avoiding_edge_eliminations (tempEdgeElimsV, angelLCG, refillDependences, tempRefillAvoidingEdgeElimsV)) {
+  if (refill_avoiding_edge_eliminations(tempEdgeElimsV, angelLCG, refillDependences, tempRefillAvoidingEdgeElimsV)) {
     // push refill avoiding edge elims to the transformation vector
-    for (i = 0; i < tempRefillAvoidingEdgeElimsV.size(); i++)
-      refillAvoidingTransformationsV.push_back(Transformation_t (tempRefillAvoidingEdgeElimsV[i], angelLCG));
+    for (size_t i = 0; i < tempRefillAvoidingEdgeElimsV.size(); i++)
+      refillAvoidingTransformationsV.push_back(Transformation (tempRefillAvoidingEdgeElimsV[i]));
     // push all reroutings to the transformation vector
-    for (i = 0; i < tempReroutingsV.size(); i++)
-      refillAvoidingTransformationsV.push_back(Transformation_t (tempReroutingsV[i]));
+    for (size_t i = 0; i < tempReroutingsV.size(); i++)
+      refillAvoidingTransformationsV.push_back(Transformation (tempReroutingsV[i]));
     return true;
   } // end if refill avoiders were found
 
@@ -1912,37 +1886,30 @@ bool refill_avoiding_transformations (const vector<Transformation_t>& tv,
   }
 } // end refill_avoiding_transformations()
 
-bool rerouting_considerate_transformations (const vector<Transformation_t>& tv,
-					    const c_graph_t& angelLCG,
-					    const std::vector<Transformation_t>& transformationsPerformedV,
-					    vector<Transformation_t>& reroutingConsiderateTransformationsV) {
+bool rerouting_considerate_transformations(const vector<Transformation>& tv,
+					   const c_graph_t& angelLCG,
+					   const std::vector<Transformation>& transformationsPerformedV,
+					   vector<Transformation>& reroutingConsiderateTransformationsV) {
   reroutingConsiderateTransformationsV.clear();
-  if (tv.empty()) return false;
+  if (tv.empty())
+    return false;
 
-  vector<Transformation_t> tempReroutingsV;
-  vector<edge_bool_t> tempEdgeElimsV, tempReroutingConsiderateEdgeElimsV;
-  c_graph_t::edge_t e;
-  bool found_e;
-  size_t i;
+  vector<Transformation> tempReroutingsV;
+  vector<EdgeElim> tempEdgeElimsV, tempReroutingConsiderateEdgeElimsV;
 
   // create temporary edge elim and rerouting vectors
-  for (i = 0; i < tv.size(); i++) {
-    if (tv[i].isRerouting) tempReroutingsV.push_back(tv[i].myRerouteElim);
-    else  {
-      tie(e, found_e) = edge (tv[i].myElim.i, tv[i].myElim.j, angelLCG);
-      throw_exception (!found_e, consistency_exception, "Could not find edge from edge_ij_elim_t representation");
-      tempEdgeElimsV.push_back(make_pair<c_graph_t::edge_t, bool> (e, tv[i].myElim.front));
-    }
-  }
+  for (size_t i = 0; i < tv.size(); i++)
+    tv[i].isRerouting() ? tempReroutingsV.push_back(tv[i].getRerouting())
+                        : tempEdgeElimsV.push_back(tv[i].getEdgeElim());
 
   // pass all edge elims through the edge elim filter
-  if (rerouting_considerate_edge_eliminations (tempEdgeElimsV, angelLCG, transformationsPerformedV, tempReroutingConsiderateEdgeElimsV)) {
+  if (rerouting_considerate_edge_eliminations(tempEdgeElimsV, angelLCG, transformationsPerformedV, tempReroutingConsiderateEdgeElimsV)) {
     // add preferred edge elims to the transformations vector to be returned
-    for (i = 0; i < tempReroutingConsiderateEdgeElimsV.size(); i++)
-      reroutingConsiderateTransformationsV.push_back(Transformation_t (tempReroutingConsiderateEdgeElimsV[i], angelLCG));
+    for (size_t i = 0; i < tempReroutingConsiderateEdgeElimsV.size(); i++)
+      reroutingConsiderateTransformationsV.push_back(Transformation (tempReroutingConsiderateEdgeElimsV[i]));
     // push all reroutings to the transformation vector
-    for (i = 0; i < tempReroutingsV.size(); i++)
-      reroutingConsiderateTransformationsV.push_back(Transformation_t (tempReroutingsV[i]));
+    for (size_t i = 0; i < tempReroutingsV.size(); i++)
+      reroutingConsiderateTransformationsV.push_back(Transformation (tempReroutingsV[i]));
     return true;
   } // end if rerouting considerate edge elims were found
 
@@ -1952,73 +1919,50 @@ bool rerouting_considerate_transformations (const vector<Transformation_t>& tv,
   }
 } // end rerouting_considerate_transformations ()
 
-bool lowest_markowitz_transformations (const vector<Transformation_t>& tv,
-				       const c_graph_t& angelLCG,
-				       vector<Transformation_t>& lowestMarkowitzTransformationsV) {
+bool lowest_markowitz_transformations(const vector<Transformation>& tv,
+                                      const c_graph_t& angelLCG,
+                                      vector<Transformation>& lowestMarkowitzTransformationsV) {
   lowestMarkowitzTransformationsV.clear();
-  if (tv.empty()) return false;
-
-  vector<edge_bool_t> tempEdgeElimsV, tempLowestMarkowitzEdgeElimsV;
-  c_graph_t::edge_t e;
-  bool found_e;
-  size_t i;
-
+  if (tv.empty())
+    return false;
   // create temporary edge elim vector
-  for (i = 0; i < tv.size(); i++) {
-    if (!tv[i].isRerouting) {
-      tie(e, found_e) = edge (tv[i].myElim.i, tv[i].myElim.j, angelLCG);
-      throw_exception (!found_e, consistency_exception, "Could not find edge from edge_ij_elim_t representation");
-      tempEdgeElimsV.push_back(make_pair<c_graph_t::edge_t, bool> (e, tv[i].myElim.front));
-    }
-  }
-
+  vector<EdgeElim> tempEdgeElimsV, tempLowestMarkowitzEdgeElimsV;
+  for (size_t i = 0; i < tv.size(); i++)
+    if (!tv[i].isRerouting())
+      tempEdgeElimsV.push_back(tv[i].getEdgeElim());
+  // if no edge elims, return exactly what we got
   if (tempEdgeElimsV.empty()) {
     lowestMarkowitzTransformationsV = tv;
     return false;
   }
-
-  lowest_markowitz_edge (tempEdgeElimsV, angelLCG, tempLowestMarkowitzEdgeElimsV);
-
+  lowestMarkowitzEdgeElim(tempEdgeElimsV, angelLCG, tempLowestMarkowitzEdgeElimsV);
   // add preferred edge elims to the transformations vector to be returned
-  for (i = 0; i < tempLowestMarkowitzEdgeElimsV.size(); i++)
-    lowestMarkowitzTransformationsV.push_back(Transformation_t (tempLowestMarkowitzEdgeElimsV[i], angelLCG));
-
+  for (size_t i = 0; i < tempLowestMarkowitzEdgeElimsV.size(); i++)
+    lowestMarkowitzTransformationsV.push_back(Transformation (tempLowestMarkowitzEdgeElimsV[i]));
   return true;
 } // end lowest_markowitz_transformations()
 
-bool reverse_mode_transformations (const vector<Transformation_t>& tv,
-                                   const c_graph_t& angelLCG,
-                                   vector<Transformation_t>& reverseModeTransformationsV) {
+bool reverse_mode_transformations(const vector<Transformation>& tv,
+                                  const c_graph_t& angelLCG,
+                                  vector<Transformation>& reverseModeTransformationsV) {
   reverseModeTransformationsV.clear();
-  if (tv.empty()) return false;
-
-  vector<edge_bool_t> tempEdgeElimsV, tempReverseModeEdgeElimsV;
-  c_graph_t::edge_t e;
-  bool found_e;
-  size_t i;
-
+  if (tv.empty())
+    return false;
   // create temporary edge elim vector
-  for (i = 0; i < tv.size(); i++) {
-    if (!tv[i].isRerouting) {
-      tie(e, found_e) = edge (tv[i].myElim.i, tv[i].myElim.j, angelLCG);
-      throw_exception (!found_e, consistency_exception, "Could not find edge from edge_ij_elim_t representation");
-      tempEdgeElimsV.push_back(make_pair<c_graph_t::edge_t, bool> (e, tv[i].myElim.front));
-    }
-  }
-
+  vector<EdgeElim> tempEdgeElimsV, tempReverseModeEdgeElimsV;
+  for (size_t i = 0; i < tv.size(); i++)
+    if (!tv[i].isRerouting())
+      tempEdgeElimsV.push_back(tv[i].getEdgeElim());
+  // if no edge elims, return exactly what we got
   if (tempEdgeElimsV.empty()) {
     reverseModeTransformationsV = tv;
     return false;
   }
-
-  reverse_mode_edge (tempEdgeElimsV, angelLCG, tempReverseModeEdgeElimsV);
-
+  reverseModeEdgeElim(tempEdgeElimsV, angelLCG, tempReverseModeEdgeElimsV);
   // add preferred edge elims to the transformations vector to be returned
-  for (i = 0; i < tempReverseModeEdgeElimsV.size(); i++)
-    reverseModeTransformationsV.push_back(Transformation_t (tempReverseModeEdgeElimsV[i], angelLCG));
-
+  for (size_t i = 0; i < tempReverseModeEdgeElimsV.size(); i++)
+    reverseModeTransformationsV.push_back(Transformation (tempReverseModeEdgeElimsV[i]));
   return true;
-
 } // end reverse_mode_transformations()
 
 #endif // USEXAIFBOOSTER

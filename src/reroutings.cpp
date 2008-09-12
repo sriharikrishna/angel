@@ -86,6 +86,19 @@ void reroutable_edges (c_graph_t& angelLCG,
   
 } // end reroutable_edges()
 
+unsigned int reroutable_edges(c_graph_t& angelLCG,
+                              vector<Rerouting>& allReroutingsV) {
+  allReroutingsV.clear();
+  vector <edge_reroute_t> tempRerouteTV;
+  reroutable_edges(angelLCG, tempRerouteTV);
+  if (tempRerouteTV.empty())
+    return 0;
+
+  for (size_t i = 0; i < tempRerouteTV.size(); i++)
+   allReroutingsV.push_back(Rerouting (tempRerouteTV[i], angelLCG));
+  return allReroutingsV.size();
+} // end reroutable_edges()
+
 int reroute_effect (const edge_reroute_t er,
 		    const c_graph_t& angelLCG,
 		    const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
@@ -290,7 +303,7 @@ unsigned int preroute_edge_directly (edge_reroute_t er,
     JacobianAccumulationExpression& new_jae = jae_list.addExpression();
     JacobianAccumulationExpressionVertex& jaev_divide = new_jae.addVertex();
     //jaev_divide.setOperation (JacobianAccumulationExpressionVertex::DIVIDE_OP);
-    jaev_divide.setOperation (JacobianAccumulationExpressionVertex::ADD_OP);
+    jaev_divide.setOperation (JacobianAccumulationExpressionVertex::MULT_OP);
     JacobianAccumulationExpressionVertex& jaev_e = new_jae.addVertex();
     JacobianAccumulationExpressionVertex& jaev_pivot_e = new_jae.addVertex();
     setJaevRef (er.e, jaev_e, angelLCG, edge_ref_list);
@@ -434,7 +447,7 @@ unsigned int postroute_edge_directly (edge_reroute_t er,
     JacobianAccumulationExpression& new_jae = jae_list.addExpression(); 
     JacobianAccumulationExpressionVertex& jaev_divide = new_jae.addVertex();
     //jaev_divide.setOperation (JacobianAccumulationExpressionVertex::DIVIDE_OP);
-    jaev_divide.setOperation (JacobianAccumulationExpressionVertex::ADD_OP);
+    jaev_divide.setOperation(JacobianAccumulationExpressionVertex::MULT_OP);
     JacobianAccumulationExpressionVertex& jaev_e = new_jae.addVertex();
     JacobianAccumulationExpressionVertex& jaev_pivot_e = new_jae.addVertex();
     setJaevRef (er.e, jaev_e, angelLCG, edge_ref_list);
@@ -456,7 +469,7 @@ unsigned int postroute_edge_directly (edge_reroute_t er,
       JacobianAccumulationExpressionVertex& jaev_decrement_e = new_jae.addVertex();
       JacobianAccumulationExpressionVertex& jaev_subtract = new_jae.addVertex();
       //jaev_subtract.setOperation (JacobianAccumulationExpressionVertex::SUBTRACT_OP);
-      jaev_subtract.setOperation (JacobianAccumulationExpressionVertex::ADD_OP);
+      jaev_subtract.setOperation(JacobianAccumulationExpressionVertex::ADD_OP);
       new_jae.addEdge(jaev_mult, jaev_subtract);
       new_jae.addEdge(jaev_decrement_e, jaev_subtract);
 

@@ -1387,10 +1387,10 @@ int edge_elim_effect(const EdgeElim ee,
     \param bev2 set of edge elims that don't increase the nontrivial edge count
     \return size of bev2
 */
-bool maintaining_edge_eliminations (const vector<edge_bool_t>& bev1,
-				    const c_graph_t& angelLCG,
-				    const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
-				    vector<edge_bool_t>& bev2);
+bool maintaining_edge_eliminations(const vector<EdgeElim>& bev1,
+                                   const c_graph_t& angelLCG,
+                                   const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                                   vector<EdgeElim>& bev2);
 
 /** \brief Filter that selects edge elimination targets that decrease the nontrivial edge count
 
@@ -1400,10 +1400,10 @@ bool maintaining_edge_eliminations (const vector<edge_bool_t>& bev1,
     \param bev2 set of edge elims that decrease the nontrivial edge count
     \return size of bev2
 */
-bool reducing_edge_eliminations (const vector<edge_bool_t>& bev1,
-				 const c_graph_t& angelLCG,
-				 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
-				 vector<edge_bool_t>& bev2);
+bool reducing_edge_eliminations(const vector<EdgeElim>& bev1,
+                                const c_graph_t& angelLCG,
+                                const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                                vector<EdgeElim>& bev2);
 
 /** \brief Filter that selects edge elimination targets whose refill dependences (a possibly empty set of vertices)
  * have been met (meaning that there is no alternate path for the edge through the vertex).
@@ -1415,18 +1415,26 @@ bool reducing_edge_eliminations (const vector<edge_bool_t>& bev1,
     \param bev2 set of edge elims that dont violate refill dependences (returned by reference)
     \return size of bev2
 */
-bool refill_avoiding_edge_eliminations (const vector<edge_bool_t>& bev1,
-					c_graph_t& angelLCG,
-					const refillDependenceMap_t refillDependences,
-					vector<edge_bool_t>& bev2);
+bool refill_avoiding_edge_eliminations(const vector<EdgeElim>& bev1,
+                                       c_graph_t& angelLCG,
+                                       const refillDependenceMap_t refillDependences,
+                                       vector<EdgeElim>& bev2);
 
 /** Filter for selecting those edge eliminations that don't undo a rerouting
  * (a front-elimination can undo a pre-routing, and a back-elimination can undo a post-routing)
  */
-bool rerouting_considerate_edge_eliminations (const vector<edge_bool_t>& bev,
-					      const c_graph_t& angelLCG,
-					      const std::vector<Transformation_t>& transformationsPerformedV,
-					      vector<edge_bool_t>& reroutingConsiderateEdgeElimsV);
+bool rerouting_considerate_edge_eliminations(const vector<EdgeElim>& bev,
+                                             const c_graph_t& angelLCG,
+                                             const std::vector<Transformation>& transformationsPerformedV,
+                                             vector<EdgeElim>& reroutingConsiderateEdgeElimsV);
+
+unsigned int lowestMarkowitzEdgeElim(const vector<EdgeElim>& inEEV,
+                                     const c_graph_t& angelLCG,
+                                     vector<EdgeElim>& outEEV);
+
+bool reverseModeEdgeElim(const vector<EdgeElim>& inEEV,
+                         const c_graph_t& angelLCG,
+                         vector<EdgeElim>& outEEV);
 
 // ==============================================================================
 // |			FILTERS FOR REROUTINGS					|
@@ -1435,19 +1443,10 @@ bool rerouting_considerate_edge_eliminations (const vector<edge_bool_t>& bev,
 /** Filter that populates \p noncyclicReroutingsV with (strictly) those reroutings
  * that have not already been performed, based on \p transformationsPerformedV
  */
-size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
-			    const std::vector<Transformation_t>& transformationsPerformedV,
-			    const c_graph_t& angelLCG,
-			    vector<edge_reroute_t>& noncyclicReroutingsV);
-
-/** Filter that populates \p noncyclicReroutingsV with (strictly) those reroutings
- * that have not already been performed, based on \p transformationsPerformedV
- */
-size_t noncyclicReroutings (const vector<edge_reroute_t>& erv,
-			    const std::vector<Transformation>& transformationsPerformedV,
-			    const c_graph_t& angelLCG,
-			    vector<edge_reroute_t>& noncyclicReroutingsV);
-
+size_t noncyclicReroutings(const vector<Rerouting>& erv,
+			   const std::vector<Transformation>& transformationsPerformedV,
+			   const c_graph_t& angelLCG,
+			   vector<Rerouting>& noncyclicReroutingsV);
 /*
 bool maintaining_reroutings (const vector<edge_reroute_t>& erv,
 			     const c_graph_t& angelLCG,
@@ -1458,10 +1457,10 @@ bool maintaining_reroutings (const vector<edge_reroute_t>& erv,
 /** Filter that populates /p reducingReroutingsV with those reroutings that can be followed
  * by an edge elimination with an overall reduction in the nontrivial edgecount.
  */
-bool reducing_reroutings (const vector<edge_reroute_t>& erv,
+bool reducing_reroutings (const vector<Rerouting>& erv,
 			  const c_graph_t& angelLCG,
 			  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
-			  vector<edge_reroute_t>& reducingReroutingsV);
+			  vector<Rerouting>& reducingReroutingsV);
 
 // ==============================================================================
 // |		FILTERS FOR ELIMINATIONS AND REROUTINGS	(TRANSFORMATIONS)	|
@@ -1477,13 +1476,6 @@ int transformation_effect(const Transformation t,
 /** Filter that populates \p allViableTransformationsV with all possible edge eliminations and
  * all possible reroutings that haven't already been performed (so-called noncyclic reroutings).
  */
-bool all_viable_transformations (c_graph_t& angelLCG,
-				 const std::vector<Transformation_t>& transformationsPerformedV,
-				 vector<Transformation_t>& allViableTransformationsV);
-
-/** Filter that populates \p allViableTransformationsV with all possible edge eliminations and
- * all possible reroutings that haven't already been performed (so-called noncyclic reroutings).
- */
 bool all_viable_transformations(c_graph_t& angelLCG,
 				const std::vector<Transformation>& transformationsPerformedV,
 				vector<Transformation>& allViableTransformationsV);
@@ -1491,50 +1483,50 @@ bool all_viable_transformations(c_graph_t& angelLCG,
 /** Filter that populates /p maintainingTransformationsV with those edge eliminations and
  * reroutings that maintain the nontrivial edge count (in particular, this includes all reroutings).
  */
-bool maintaining_transformations (const vector<Transformation_t>& tv,
-				  const c_graph_t& angelLCG,
-				  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
-				  vector<Transformation_t>& maintainingTransformationsV);
+bool maintaining_transformations(const vector<Transformation>& tv,
+                                 const c_graph_t& angelLCG,
+                                 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                                 vector<Transformation>& maintainingTransformationsV);
 
 /** Filter that populates /p reducingTransformationsV with edge eliminations that reduce
  * the nontrivial edge count and reroutings that can be followed by an edge elimination
  * with an overall reduction in the nontrivial edgecount.
  */
-bool reducing_transformations (const vector<Transformation_t>& tv,
-			       c_graph_t& angelLCG,
-			       const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
-			       vector<Transformation_t>& reducingTransformationsV);
+bool reducing_transformations(const vector<Transformation>& tv,
+                              const c_graph_t& angelLCG,
+                              const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                              vector<Transformation>& reducingTransformationsV);
 
 /** Filter that populates /p refillAvoidingTransformationsV with edge eliminations that
  * aren't known to be refillable in the future.  Any reroutings are passed straight through.
  */
-bool refill_avoiding_transformations (const vector<Transformation_t>& tv,
-				      c_graph_t& angelLCG,
-				      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
-				      const refillDependenceMap_t& refillDependences,
-				      vector<Transformation_t>& refillAvoidingTransformationsV);
+bool refill_avoiding_transformations(const vector<Transformation>& tv,
+                                     c_graph_t& angelLCG,
+                                     const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                                     const refillDependenceMap_t& refillDependences,
+                                     vector<Transformation>& refillAvoidingTransformationsV);
 
 /** Filter that populates /p reroutingConsiderateTransformationsV with edge eliminations
  * that don't undo reroutings.  Any reroutings are passed straight through.
  */
-bool rerouting_considerate_transformations (const vector<Transformation_t>& tv,
-					    const c_graph_t& angelLCG,
-					    const std::vector<Transformation_t>& transformationsPerformedV,
-					    vector<Transformation_t>& reroutingConsiderateTransformationsV); 
+bool rerouting_considerate_transformations(const vector<Transformation>& tv,
+					   const c_graph_t& angelLCG,
+					   const std::vector<Transformation>& transformationsPerformedV,
+					   vector<Transformation>& reroutingConsiderateTransformationsV); 
 
 /** Filter that populates /p lowestMarkowitzTransformationsV with those edge eliminations
  * that have the lowest markowitz degree.  Any reroutings are passed straight through.
  */
-bool lowest_markowitz_transformations (const vector<Transformation_t>& tv,
-				       const c_graph_t& angelLCG,
-				       vector<Transformation_t>& lowestMarkowitzTransformationsV);
+bool lowest_markowitz_transformations(const vector<Transformation>& tv,
+                                      const c_graph_t& angelLCG,
+                                      vector<Transformation>& lowestMarkowitzTransformationsV);
 
 /** Filter that populates /p lowestMarkowitzTransformationsV with an edge elimination
  * that is chosen by reverse topological order.  Any reroutings are passed straight through.
  */
-bool reverse_mode_transformations (const vector<Transformation_t>& tv,
+bool reverse_mode_transformations (const vector<Transformation>& tv,
 				   const c_graph_t& angelLCG,
-				   vector<Transformation_t>& reverseModeTransformationsV);
+				   vector<Transformation>& reverseModeTransformationsV);
 
 #endif // USEXAIFBOOSTER
 
