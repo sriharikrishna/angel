@@ -911,6 +911,9 @@ double gen_prob();
 */
 unsigned int chooseTarget_sa(std::vector<double>& deltaE);
 
+int chooseEdgeElimRandomly(std::vector<double>& deltaE);
+int chooseEdgeElimRandomlyGreedy(std::vector<double>& deltaE);
+
 } // namespace angel
 
 

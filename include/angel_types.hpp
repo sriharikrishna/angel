@@ -748,6 +748,9 @@ struct edge_reroute_t {
 
     edge_bool_t getBool(const c_graph_t& angelLCG) const;
 
+    /// returns cost (nontrivial mults) of performing this edge elim on \p angelLCG
+    unsigned int getCost(const c_graph_t& angelLCG) const;
+
   private:
 
     bool myIsFrontFlag;

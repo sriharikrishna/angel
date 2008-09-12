@@ -1041,6 +1041,126 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
   populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
 } // end compute_partial_transformation_sequence()
 
+void computeEliminationSequenceRandom(const LinearizedComputationalGraph& ourLCG,
+                                      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                                      const bool allowMaintainingFlag,
+                                      JacobianAccumulationExpressionList& jae_list,
+                                      LinearizedComputationalGraph& remainderLCG,
+                                      VertexCorrelationList& v_cor_list,
+                                      EdgeCorrelationList& e_cor_list) {
+  srand(time(NULL));
+
+  // Create internal (angel) LCG from xaifBooster LCG
+  vector<const LinearizedComputationalGraphVertex*> ourLCG_verts;
+  c_graph_t angelLCG_orig;
+  list<EdgeRef_t> edge_ref_list;
+  ourLCG_to_angelLCG (ourLCG, ourLCG_verts, angelLCG_orig, edge_ref_list);
+
+  unsigned int max_steps = 500 * num_edges(angelLCG_orig);
+  unsigned int num_passes = 5;
+
+  c_graph_t angelLCG_copy (angelLCG_orig);
+  elimSeq_cost_t dummy_elimSeq_cost (0, 0, 0, 0, 0, 0);
+  refillDependenceMap_t dummy_refillDependenceMap;
+  vector<EdgeElim> allEdgeElimsV, edgeElimSeqV, best_edgeElimSeqV;
+  unsigned int previous_computationalCost = 0;
+  unsigned int computationalCost = 0;
+  int best_computationalCost = -1;
+  for (unsigned int steps_counter = 0; steps_counter < max_steps; steps_counter++) {
+    #ifndef NDEBUG
+    cout << "datapoint:" << edgeElimSeqV.size() << ":" << computationalCost << endl;
+    #endif
+
+/*
+    // Start over from the beginning
+    if (steps_counter%(max_steps/num_passes) == 0) {
+      #ifndef NDEBUG
+      cout << "Starting a new random pass (" << steps_counter << "/" << max_steps << " steps):\tbest_computationalCost = " << best_computationalCost << endl;
+      #endif
+      edgeElimSeqV.clear();
+      computationalCost = 0;
+      previous_computationalCost = 0;
+      angelLCG_copy = angelLCG_orig;
+      continue;
+    }
+*/
+
+    eliminatable_edges(angelLCG_copy, allEdgeElimsV);
+    if (allEdgeElimsV.empty()) {
+      cout << "Sequence complete. length = " << edgeElimSeqV.size() << ", cost = " << computationalCost;
+      if (best_computationalCost == -1 // this is our first sequence
+       || (int)computationalCost < best_computationalCost) {
+        #ifndef NDEBUG
+	cout << " (this sequence is new best) " << endl;
+        #endif
+        best_computationalCost = computationalCost;
+        best_edgeElimSeqV = edgeElimSeqV;
+      }
+      else
+        cout << endl;
+      edgeElimSeqV.clear();
+      computationalCost = 0;
+      previous_computationalCost = 0;
+      angelLCG_copy = angelLCG_orig;
+      continue;
+    } // end sequence is finished
+
+    // calculate relative probabilities for each possible edge elim
+    vector<double> deltaE(allEdgeElimsV.size());
+    for (size_t c = 0; c < allEdgeElimsV.size(); c++)
+      deltaE[c] = allEdgeElimsV[c].getCost(angelLCG_copy);
+    int choice_index = chooseEdgeElimRandomly(deltaE);
+    if (choice_index == -1) { // BACKTRACKING
+      #ifndef NDEBUG
+      cout << "Performing a BACKTRACKING step" << endl;
+      #endif
+      if (edgeElimSeqV.empty())
+	continue;
+      angelLCG_copy = angelLCG_orig;
+      edgeElimSeqV.pop_back();
+      computationalCost = 0;
+      for (size_t i = 0; i < edgeElimSeqV.size(); i++) {
+        if (i == edgeElimSeqV.size() - 1) // save previous_computationalCost
+          previous_computationalCost = computationalCost;
+        #ifndef NDEBUG
+        cout << "\t";
+        #endif
+        computationalCost += edgeElimSeqV[i].isFront() ?
+           front_elim(edgeElimSeqV[i].getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap)
+         : back_elim(edgeElimSeqV[i].getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap);
+      } // end iterate over edge elims
+    } // end backtracking
+    else { // eliminate an edge
+      previous_computationalCost = computationalCost;
+      edgeElimSeqV.push_back(allEdgeElimsV[choice_index]);
+      computationalCost += allEdgeElimsV[choice_index].isFront() ?
+	 front_elim(allEdgeElimsV[choice_index].getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap)
+       : back_elim(allEdgeElimsV[choice_index].getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap);
+    } // end edge elim.
+  } // end outer loop
+
+#ifndef NDEBUG
+  cout << "Achieved cost " << best_computationalCost << endl;
+  cout << "Best sequence of edge elims: ";
+  for (size_t c = 0; c < best_edgeElimSeqV.size(); c++)
+    cout << endl << best_edgeElimSeqV[c].debug().c_str();
+  cout << endl << endl << "****** Now re-performing best_edgeElimSeqV" << endl;
+#endif
+
+  unsigned int cost_of_elim_seq = 0;
+  for (size_t c = 0; c < best_edgeElimSeqV.size(); c++)
+    cost_of_elim_seq += best_edgeElimSeqV[c].isFront() ?
+       front_eliminate_edge_directly(best_edgeElimSeqV[c].getE(angelLCG_orig), angelLCG_orig, ourAwarenessLevel, edge_ref_list, jae_list)
+     : back_eliminate_edge_directly(best_edgeElimSeqV[c].getE(angelLCG_orig), angelLCG_orig, ourAwarenessLevel, edge_ref_list, jae_list);
+
+#ifndef NDEBUG
+  write_graph ("angelLCG_orig after complete edge elimination sequence (G prime): ", angelLCG_orig);
+  writeVertexAndEdgeTypes (cout, angelLCG_orig);
+  cout << "compute_partial_elimination_sequence: cost " << cost_of_elim_seq << endl;
+#endif
+  populate_remainderGraph_and_correlationLists (angelLCG_orig, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
+} // end compute_elimination_sequence_random()
+
 void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
 				   JacobianAccumulationExpressionList& JAElist,
 				   LinearizedComputationalGraph& remainderLCG,
@@ -1068,7 +1188,6 @@ void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
   vector<edge_ij_elim_t>        eseq; 
 
   if (vertex_eliminatable (cg)) {
-
 #ifndef NDEBUG
     int costs= best_heuristic (cg, vseq, forward_mode_vertex, reverse_mode_vertex, 
 			       lm_rm_v, lmmd_rm_v, momr_lm_rm_v);
@@ -1214,11 +1333,13 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
   try {
     switch (myType) {
       case OPS_ELIMTYPE:
-        compute_elimination_sequence(getLCG(),
-                                     getEliminationResult().myJAEList,
-                                     getEliminationResult().myRemainderLCG,
-                                     getEliminationResult().myVertexCorrelationList,
-                                     getEliminationResult().myEdgeCorrelationList);
+        computeEliminationSequenceRandom(getLCG(),
+                                         ourAwarenessLevel,
+                                         ourAllowMaintainingFlag,
+                                         getEliminationResult().myJAEList,
+                                         getEliminationResult().myRemainderLCG,
+                                         getEliminationResult().myVertexCorrelationList,
+                                         getEliminationResult().myEdgeCorrelationList);
         break;
       case OPS_LSA_VERTEX_ELIMTYPE:
         compute_elimination_sequence_lsa_vertex(getLCG(),

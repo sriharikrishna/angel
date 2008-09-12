@@ -391,4 +391,76 @@ unsigned int chooseTarget_sa(std::vector<double>& deltaE) {
   return choice_index;
 } // end chooseTarget_sa()
 
+int chooseEdgeElimRandomly(std::vector<double>& deltaE) {
+  if (gen_prob() > 0.95)
+    return -1;
+
+  #define ECONST 2.71828
+  //write_vector("deltaE (before adjustment): ", deltaE);
+  for (unsigned int i = 0; i < deltaE.size(); i++)
+    deltaE[i] = 1.0/pow(ECONST,deltaE[i] + 1);
+  //write_vector("deltaE (after adjustment): ", deltaE);
+
+  // normalize the probabilities
+  double deltasum = 0;
+  for(unsigned int i = 0; i < deltaE.size(); i++)
+    deltasum += deltaE[i];
+  //cout << "deltasum = " << deltasum << endl;
+  for(unsigned int i = 0; i < deltaE.size(); i++)
+    deltaE[i] = deltaE[i]/deltasum;
+  //write_vector("deltaE (normalized): ", deltaE);
+
+  // choose a vector index randomly
+  double Pr = gen_prob();
+  double current_ptr = deltaE[0];
+  unsigned int choice_index = 0;
+  while(current_ptr < Pr) {
+    choice_index++;
+    current_ptr += deltaE[choice_index];
+  }
+  return choice_index;
+} // end chooseEdgeElimRandomly()
+
+int chooseEdgeElimRandomlyGreedy(std::vector<double>& deltaE) {
+  #define ECONST 2.71828
+  //write_vector("deltaE (before adjustment): ", deltaE);
+
+  // select against those that arent best
+  double best = deltaE[0];
+  size_t best_index = 0;
+  for (size_t i = 0; i < deltaE.size(); i++) {
+    if (deltaE[i] < best) {
+      best = deltaE[i];
+      best_index = i;
+    }
+  }
+  for (size_t i = 0; i < deltaE.size(); i++)
+    if (deltaE[i] > best)
+      deltaE[i] += 30000;
+
+  for (unsigned int i = 0; i < deltaE.size(); i++)
+    deltaE[i] = 1.0/pow(ECONST,deltaE[i] + 1);
+  //write_vector("deltaE (after adjustment): ", deltaE);
+
+  // normalize the probabilities
+  double deltasum = 0;
+  for(unsigned int i = 0; i < deltaE.size(); i++)
+    deltasum += deltaE[i];
+  //cout << "deltasum = " << deltasum << endl;
+  for(unsigned int i = 0; i < deltaE.size(); i++)
+    deltaE[i] = deltaE[i]/deltasum;
+  //write_vector("deltaE (normalized): ", deltaE);
+
+  // choose a vector index randomly
+  double Pr = gen_prob();
+  double current_ptr = deltaE[0];
+  unsigned int choice_index = 0;
+  while(current_ptr < Pr) {
+    choice_index++;
+    current_ptr += deltaE[choice_index];
+  }
+
+  return choice_index;
+} // end chooseEdgeElimRandomly()
+
 } // namespace angel

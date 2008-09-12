@@ -506,6 +506,27 @@ void accu_graph_t::set_jacobi_entries () {
     return make_pair(getEdge(mySource, myTarget, angelLCG), myIsFrontFlag);
   } // end EdgeElim::getBool()
 
+  unsigned int EdgeElim::getCost(const c_graph_t& angelLCG) const {
+    boost::property_map<c_graph_t, EdgeType>::const_type eType = get(EdgeType(), angelLCG);
+    if (eType[getE(angelLCG)] == UNIT_EDGE)
+      return 0;
+    // this edge is nonunit => cost unless the other edge is unit
+    unsigned int cost = 0;
+    if (myIsFrontFlag) { // front elimination
+      c_graph_t::oei_t oei, oe_end;
+      for (tie(oei, oe_end) = out_edges(myTarget, angelLCG); oei != oe_end; ++oei)
+        if (eType[*oei] != UNIT_EDGE)
+          cost++;
+    }
+    else { // back elimination
+      c_graph_t::iei_t iei, ie_end;
+      for (tie(iei, ie_end) = in_edges(mySource, angelLCG); iei != ie_end; ++iei)
+        if (eType[*iei] != UNIT_EDGE)
+          cost++;
+    }
+    return cost;
+  } // end EdgeElim::getCost()
+
   Rerouting::Rerouting() {
   }
 
