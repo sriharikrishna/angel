@@ -519,7 +519,7 @@ bool convert_elimination_sequence (const vector<edge_ij_elim_t>& ev,
       for (boost::tie (oi, oend) = out_edges (ledge, lgc); oi != oend; ++oi) {
         triplet_t t (ledge, target (*oi, lgc), -1); tv.push_back (t);
 #ifndef NDEBUG
-        cout << "new face " << t;
+        cout << "new face " << t << endl;
 #endif
       }
       front_edge_elimination (ee.i, ee.j, lgc);
@@ -528,7 +528,7 @@ bool convert_elimination_sequence (const vector<edge_ij_elim_t>& ev,
       for (boost::tie (ii, iend) = in_edges (ledge, lgc); ii != iend; ++ii) {
         triplet_t t (source (*ii, lgc), ledge, -1); tv.push_back (t);
 #ifndef NDEBUG
-        cout << "new face " << t;
+        cout << "new face " << t << endl;
 #endif
       }
       back_edge_elimination (ee.i, ee.j, lgc); }
