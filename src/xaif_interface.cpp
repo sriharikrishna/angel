@@ -1035,7 +1035,7 @@ void computeEliminationSequenceRandom(const LinearizedComputationalGraph& ourLCG
   list<EdgeRef_t> edge_ref_list;
   ourLCG_to_angelLCG (ourLCG, ourLCG_verts, angelLCG_orig, edge_ref_list);
 
-  unsigned int max_steps = 500 * num_edges(angelLCG_orig);
+  unsigned int max_steps = 100 * num_edges(angelLCG_orig);
 
   c_graph_t angelLCG_copy (angelLCG_orig);
   elimSeq_cost_t dummy_elimSeq_cost (0, 0, 0, 0, 0, 0);
@@ -1311,73 +1311,73 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
     switch (myType) {
       case OPS_ELIMTYPE:
         compute_elimination_sequence(getLCG(),
-                                     getEliminationResult().myJAEList,
-                                     getEliminationResult().myRemainderLCG,
-                                     getEliminationResult().myVertexCorrelationList,
-                                     getEliminationResult().myEdgeCorrelationList);
+                                     myJAEList,
+                                     myRemainderLCG,
+                                     myVertexCorrelationList,
+                                     myEdgeCorrelationList);
         break;
       case OPS_RANDOM_ELIMTYPE:
         computeEliminationSequenceRandom(getLCG(),
-                                         getEliminationResult().myJAEList,
-                                         getEliminationResult().myRemainderLCG,
-                                         getEliminationResult().myVertexCorrelationList,
-                                         getEliminationResult().myEdgeCorrelationList);
+                                         myJAEList,
+                                         myRemainderLCG,
+                                         myVertexCorrelationList,
+                                         myEdgeCorrelationList);
         break;
       case OPS_LSA_VERTEX_ELIMTYPE:
         compute_elimination_sequence_lsa_vertex(getLCG(),
                                                 getNumIterations(),
                                                 getGamma(),
-                                                getEliminationResult().myJAEList,
-                                                getEliminationResult().myRemainderLCG,
-                                                getEliminationResult().myVertexCorrelationList,
-                                                getEliminationResult().myEdgeCorrelationList);
+                                                myJAEList,
+                                                myRemainderLCG,
+                                                myVertexCorrelationList,
+                                                myEdgeCorrelationList);
         break;
       case OPS_LSA_FACE_ELIMTYPE:
         compute_elimination_sequence_lsa_face(getLCG(),
                                               getNumIterations(),
                                               getGamma(),
-                                              getEliminationResult().myJAEList,
-                                              getEliminationResult().myRemainderLCG,
-                                              getEliminationResult().myVertexCorrelationList,
-                                              getEliminationResult().myEdgeCorrelationList);
+                                              myJAEList,
+                                              myRemainderLCG,
+                                              myVertexCorrelationList,
+                                              myEdgeCorrelationList);
         break;
       case SCARCE_ELIMTYPE:
         compute_partial_elimination_sequence(getLCG(),
                                              ourAwarenessLevel,
                                              ourAllowMaintainingFlag,
-                                             getEliminationResult().myJAEList,
-                                             getEliminationResult().myRemainderLCG,
-                                             getEliminationResult().myVertexCorrelationList,
-                                             getEliminationResult().myEdgeCorrelationList);
+                                             myJAEList,
+                                             myRemainderLCG,
+                                             myVertexCorrelationList,
+                                             myEdgeCorrelationList);
         break;
       case SCARCE_RANDOM_ELIMTYPE:
         compute_partial_elimination_sequence_random(getLCG(),
                                                     ourAwarenessLevel,
                                                     ourAllowMaintainingFlag,
-                                                    getEliminationResult().myJAEList,
-                                                    getEliminationResult().myRemainderLCG,
-                                                    getEliminationResult().myVertexCorrelationList,
-                                                    getEliminationResult().myEdgeCorrelationList);
+                                                    myJAEList,
+                                                    myRemainderLCG,
+                                                    myVertexCorrelationList,
+                                                    myEdgeCorrelationList);
         break;
       case SCARCE_TRANSFORMATIONTYPE:
         compute_partial_transformation_sequence(getLCG(),
                                                 ourAwarenessLevel,
                                                 ourAllowMaintainingFlag,
-                                                getEliminationResult().myJAEList,
-                                                getEliminationResult().myRemainderLCG,
-                                                getEliminationResult().myVertexCorrelationList,
-                                                getEliminationResult().myEdgeCorrelationList,
-                                                getEliminationResult().myNumReroutings);
+                                                myJAEList,
+                                                myRemainderLCG,
+                                                myVertexCorrelationList,
+                                                myEdgeCorrelationList,
+                                                myNumReroutings);
         break;
       case SCARCE_RANDOM_TRANSFORMATIONTYPE:
         compute_partial_transformation_sequence_random(getLCG(),
                                                        ourAwarenessLevel,
                                                        ourAllowMaintainingFlag,
-                                                       getEliminationResult().myJAEList,
-                                                       getEliminationResult().myRemainderLCG,
-                                                       getEliminationResult().myVertexCorrelationList,
-                                                       getEliminationResult().myEdgeCorrelationList,
-                                                       getEliminationResult().myNumReroutings);
+                                                       myJAEList,
+                                                       myRemainderLCG,
+                                                       myVertexCorrelationList,
+                                                       myEdgeCorrelationList,
+                                                       myNumReroutings);
         break;
       default:
        throw_exception (true, consistency_exception, "Missing or invalid elimination type");
