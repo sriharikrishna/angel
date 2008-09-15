@@ -422,8 +422,8 @@ unsigned int replay_elim_seq (c_graph_t& angelLCG,
     cout << "\t";
     #endif
     computationalCost += edgeElimSeqV[i].isFront() ?
-       front_elim(edgeElimSeqV[i].getE(angelLCG), angelLCG, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap)
-     : back_elim(edgeElimSeqV[i].getE(angelLCG), angelLCG, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap);
+       front_elim(edgeElimSeqV[i].getE(angelLCG), angelLCG, dummy_elimSeq_cost, dummy_refillDependenceMap)
+     : back_elim(edgeElimSeqV[i].getE(angelLCG), angelLCG, dummy_elimSeq_cost, dummy_refillDependenceMap);
   } // end iterate over edge elims
   return computationalCost;
 } // end replay_elim_seq()
@@ -444,13 +444,13 @@ unsigned int replay_transformation_seq(c_graph_t& angelLCG,
     // REROUTING
     if (transformationSeqV[i].isRerouting())
       computationalCost += transformationSeqV[i].getRerouting().isPre() ?
-	 prerouteEdge_noJAE(transformationSeqV[i].getRerouting().getER(angelLCG), angelLCG, ourAwarenessLevel)
-       : postrouteEdge_noJAE(transformationSeqV[i].getRerouting().getER(angelLCG), angelLCG, ourAwarenessLevel);
+	 prerouteEdge_noJAE(transformationSeqV[i].getRerouting().getER(angelLCG), angelLCG)
+       : postrouteEdge_noJAE(transformationSeqV[i].getRerouting().getER(angelLCG), angelLCG);
     // EDGE ELIMINATION
     else {
       computationalCost += transformationSeqV[i].getEdgeElim().isFront() ?
-	 frontEdgeElimination_noJAE(transformationSeqV[i].getEdgeElim().getE(angelLCG), angelLCG, ourAwarenessLevel, &dummy_transformationSeq_cost, dummy_refillDependenceMap)
-       : backEdgeElimination_noJAE(transformationSeqV[i].getEdgeElim().getE(angelLCG), angelLCG, ourAwarenessLevel, &dummy_transformationSeq_cost, dummy_refillDependenceMap);
+	 frontEdgeElimination_noJAE(transformationSeqV[i].getEdgeElim().getE(angelLCG), angelLCG, &dummy_transformationSeq_cost, dummy_refillDependenceMap)
+       : backEdgeElimination_noJAE(transformationSeqV[i].getEdgeElim().getE(angelLCG), angelLCG, &dummy_transformationSeq_cost, dummy_refillDependenceMap);
     } // end edge elimination
   } // end iterate over transformations
   return computationalCost;
@@ -520,8 +520,8 @@ void compute_partial_elimination_sequence_random(const LinearizedComputationalGr
       previous_numNontrivialEdges = num_nontrivial_edges(angelLCG_copy, ourAwarenessLevel);
       edgeElimSeqV.push_back(allEdgeElimsV[choice_index]);
       computationalCost += allEdgeElimsV[choice_index].isFront() ?
-	 front_elim(allEdgeElimsV[choice_index].getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap)
-       : back_elim(allEdgeElimsV[choice_index].getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap);
+	 front_elim(allEdgeElimsV[choice_index].getE(angelLCG_copy), angelLCG_copy, dummy_elimSeq_cost, dummy_refillDependenceMap)
+       : back_elim(allEdgeElimsV[choice_index].getE(angelLCG_copy), angelLCG_copy, dummy_elimSeq_cost, dummy_refillDependenceMap);
       // check whether we've beaten our CURRENT best
       if (num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel) < bestNumNontrivialEdges
        || (num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel) == bestNumNontrivialEdges && computationalCost < computationalCost_at_bestEdgeCount)) {
@@ -563,8 +563,8 @@ void compute_partial_elimination_sequence_random(const LinearizedComputationalGr
   else { //replay the elimination sequence until we reach edge count goal
     for (size_t c = 0; c < best_edgeElimSeqV.size(); c++) {
       cost_of_elim_seq += best_edgeElimSeqV[c].isFront() ?
-	 front_eliminate_edge_directly(best_edgeElimSeqV[c].getE(angelLCG), angelLCG, ourAwarenessLevel, edge_ref_list, jae_list)
-       : back_eliminate_edge_directly(best_edgeElimSeqV[c].getE(angelLCG), angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+	 front_eliminate_edge_directly(best_edgeElimSeqV[c].getE(angelLCG), angelLCG, edge_ref_list, jae_list)
+       : back_eliminate_edge_directly(best_edgeElimSeqV[c].getE(angelLCG), angelLCG, edge_ref_list, jae_list);
       if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestNumNontrivialEdges) {
 	#ifndef NDEBUG
 	cout << "Goal of " << bestNumNontrivialEdges << " reached" << endl;
@@ -657,8 +657,8 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
       EdgeElim thisEdgeElim (eeV5[0]);
       currentEliminationSequence->edgeElimVector.push_back(thisEdgeElim);
       currentEliminationSequence->cost += thisEdgeElim.isFront() ?
-         front_elim (thisEdgeElim.getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, *currentEliminationSequence, refillDependences)
-       : back_elim (thisEdgeElim.getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, *currentEliminationSequence, refillDependences);
+         front_elim (thisEdgeElim.getE(angelLCG_copy), angelLCG_copy, *currentEliminationSequence, refillDependences)
+       : back_elim (thisEdgeElim.getE(angelLCG_copy), angelLCG_copy, *currentEliminationSequence, refillDependences);
 
       // check whether we've beaten our CURRENT best
       if (num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel) < currentEliminationSequence->bestNumNontrivialEdges) {
@@ -721,8 +721,8 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) > bestEliminationSequence->bestNumNontrivialEdges) {
     for (size_t c = 0; c < bestEliminationSequence->edgeElimVector.size(); c++) {
       bestEliminationSequence->edgeElimVector[c].isFront() ?
-         front_eliminate_edge_directly (bestEliminationSequence->edgeElimVector[c].getE(angelLCG), angelLCG, ourAwarenessLevel, edge_ref_list, jae_list)
-       : back_eliminate_edge_directly (bestEliminationSequence->edgeElimVector[c].getE(angelLCG), angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+         front_eliminate_edge_directly (bestEliminationSequence->edgeElimVector[c].getE(angelLCG), angelLCG, edge_ref_list, jae_list)
+       : back_eliminate_edge_directly (bestEliminationSequence->edgeElimVector[c].getE(angelLCG), angelLCG, edge_ref_list, jae_list);
       if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestEliminationSequence->bestNumNontrivialEdges)
         break;
     } // end iterate over bestEliminationSequence->edgeElimVector
@@ -800,14 +800,14 @@ void compute_partial_transformation_sequence_random(const LinearizedComputationa
       // REROUTING
       if (allViableTransformationsV[choice_index].isRerouting()) {
 	computationalCost += allViableTransformationsV[choice_index].getRerouting().isPre() ?
-	   prerouteEdge_noJAE(allViableTransformationsV[choice_index].getRerouting().getER(angelLCG), angelLCG, ourAwarenessLevel)
-	 : postrouteEdge_noJAE(allViableTransformationsV[choice_index].getRerouting().getER(angelLCG), angelLCG, ourAwarenessLevel);
+	   prerouteEdge_noJAE(allViableTransformationsV[choice_index].getRerouting().getER(angelLCG), angelLCG)
+	 : postrouteEdge_noJAE(allViableTransformationsV[choice_index].getRerouting().getER(angelLCG), angelLCG);
       }
       // EDGE ELIM
       else {
 	computationalCost += allViableTransformationsV[choice_index].getEdgeElim().isFront() ?
-	   frontEdgeElimination_noJAE(allViableTransformationsV[choice_index].getEdgeElim().getE(angelLCG), angelLCG, ourAwarenessLevel, &dummy_transformationSeq_cost, dummy_refillDependenceMap)
-	 : backEdgeElimination_noJAE(allViableTransformationsV[choice_index].getEdgeElim().getE(angelLCG), angelLCG, ourAwarenessLevel, &dummy_transformationSeq_cost, dummy_refillDependenceMap);
+	   frontEdgeElimination_noJAE(allViableTransformationsV[choice_index].getEdgeElim().getE(angelLCG), angelLCG, &dummy_transformationSeq_cost, dummy_refillDependenceMap)
+	 : backEdgeElimination_noJAE(allViableTransformationsV[choice_index].getEdgeElim().getE(angelLCG), angelLCG, &dummy_transformationSeq_cost, dummy_refillDependenceMap);
       } // end edge elim
 
       // check whether we've beaten our CURRENT best
@@ -850,13 +850,13 @@ void compute_partial_transformation_sequence_random(const LinearizedComputationa
       if (best_transformationSeqV[c].isRerouting()) { // REROUTING
 	numReroutings++;
 	best_transformationSeqV[c].getRerouting().isPre() ?
-           preroute_edge_directly(best_transformationSeqV[c].getRerouting().getER(angelLCG_orig), angelLCG_orig, ourAwarenessLevel, edge_ref_list, jae_list)
-         : postroute_edge_directly(best_transformationSeqV[c].getRerouting().getER(angelLCG_orig), angelLCG_orig, ourAwarenessLevel, edge_ref_list, jae_list);
+           preroute_edge_directly(best_transformationSeqV[c].getRerouting().getER(angelLCG_orig), angelLCG_orig, edge_ref_list, jae_list)
+         : postroute_edge_directly(best_transformationSeqV[c].getRerouting().getER(angelLCG_orig), angelLCG_orig, edge_ref_list, jae_list);
       }
       else { // EDGE ELIMINATION
 	best_transformationSeqV[c].getEdgeElim().isFront() ?
-           front_eliminate_edge_directly(best_transformationSeqV[c].getEdgeElim().getE(angelLCG_orig), angelLCG_orig, ourAwarenessLevel, edge_ref_list, jae_list)
-	 : back_eliminate_edge_directly(best_transformationSeqV[c].getEdgeElim().getE(angelLCG_orig), angelLCG_orig, ourAwarenessLevel, edge_ref_list, jae_list);
+           front_eliminate_edge_directly(best_transformationSeqV[c].getEdgeElim().getE(angelLCG_orig), angelLCG_orig, edge_ref_list, jae_list)
+	 : back_eliminate_edge_directly(best_transformationSeqV[c].getEdgeElim().getE(angelLCG_orig), angelLCG_orig, edge_ref_list, jae_list);
       }
       if (num_nontrivial_edges (angelLCG_orig, ourAwarenessLevel) == bestNumNontrivialEdges) {
 	#ifndef NDEBUG
@@ -951,12 +951,12 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
 
       if (chosenTransformation.isRerouting())
         currentTransformationSequence->cost += chosenTransformation.getRerouting().isPre() ?
-           prerouteEdge_noJAE(chosenTransformation.getRerouting().getER(angelLCG_copy), angelLCG_copy, ourAwarenessLevel)
-         : postrouteEdge_noJAE(chosenTransformation.getRerouting().getER(angelLCG_copy), angelLCG_copy, ourAwarenessLevel);
+           prerouteEdge_noJAE(chosenTransformation.getRerouting().getER(angelLCG_copy), angelLCG_copy)
+         : postrouteEdge_noJAE(chosenTransformation.getRerouting().getER(angelLCG_copy), angelLCG_copy);
       else
 	currentTransformationSequence->cost += chosenTransformation.getEdgeElim().isFront() ?
-           frontEdgeElimination_noJAE(chosenTransformation.getEdgeElim().getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, currentTransformationSequence, refillDependences)
-         : backEdgeElimination_noJAE(chosenTransformation.getEdgeElim().getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, currentTransformationSequence, refillDependences);
+           frontEdgeElimination_noJAE(chosenTransformation.getEdgeElim().getE(angelLCG_copy), angelLCG_copy, currentTransformationSequence, refillDependences)
+         : backEdgeElimination_noJAE(chosenTransformation.getEdgeElim().getE(angelLCG_copy), angelLCG_copy, currentTransformationSequence, refillDependences);
 
       // check whether we've beaten our CURRENT best
       if (num_nontrivial_edges (angelLCG_copy, ourAwarenessLevel) < currentTransformationSequence->bestNumNontrivialEdges) {
@@ -1020,13 +1020,13 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
     if (bestTransformationSequence->transformationVector[i].isRerouting()) { // rerouting
       numReroutings++;
       bestTransformationSequence->transformationVector[i].getRerouting().isPre() ?
-         preroute_edge_directly(bestTransformationSequence->transformationVector[i].getRerouting().getER(angelLCG), angelLCG, ourAwarenessLevel, edge_ref_list, jae_list)
-       : postroute_edge_directly(bestTransformationSequence->transformationVector[i].getRerouting().getER(angelLCG), angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+         preroute_edge_directly(bestTransformationSequence->transformationVector[i].getRerouting().getER(angelLCG), angelLCG, edge_ref_list, jae_list)
+       : postroute_edge_directly(bestTransformationSequence->transformationVector[i].getRerouting().getER(angelLCG), angelLCG, edge_ref_list, jae_list);
     } // end rerouting
     else { // edge elimination
       bestTransformationSequence->transformationVector[i].getEdgeElim().isFront() ?
-         front_eliminate_edge_directly(bestTransformationSequence->transformationVector[i].getEdgeElim().getE(angelLCG), angelLCG, ourAwarenessLevel, edge_ref_list, jae_list)
-       : back_eliminate_edge_directly(bestTransformationSequence->transformationVector[i].getEdgeElim().getE(angelLCG), angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+         front_eliminate_edge_directly(bestTransformationSequence->transformationVector[i].getEdgeElim().getE(angelLCG), angelLCG, edge_ref_list, jae_list)
+       : back_eliminate_edge_directly(bestTransformationSequence->transformationVector[i].getEdgeElim().getE(angelLCG), angelLCG, edge_ref_list, jae_list);
     } // end edge elimination
     // break when we've reached our goal
     if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestTransformationSequence->bestNumNontrivialEdges)
@@ -1126,16 +1126,16 @@ void computeEliminationSequenceRandom(const LinearizedComputationalGraph& ourLCG
         cout << "\t";
         #endif
         computationalCost += edgeElimSeqV[i].isFront() ?
-           front_elim(edgeElimSeqV[i].getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap)
-         : back_elim(edgeElimSeqV[i].getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap);
+           front_elim(edgeElimSeqV[i].getE(angelLCG_copy), angelLCG_copy, dummy_elimSeq_cost, dummy_refillDependenceMap)
+         : back_elim(edgeElimSeqV[i].getE(angelLCG_copy), angelLCG_copy, dummy_elimSeq_cost, dummy_refillDependenceMap);
       } // end iterate over edge elims
     } // end backtracking
     else { // eliminate an edge
       previous_computationalCost = computationalCost;
       edgeElimSeqV.push_back(allEdgeElimsV[choice_index]);
       computationalCost += allEdgeElimsV[choice_index].isFront() ?
-	 front_elim(allEdgeElimsV[choice_index].getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap)
-       : back_elim(allEdgeElimsV[choice_index].getE(angelLCG_copy), angelLCG_copy, ourAwarenessLevel, dummy_elimSeq_cost, dummy_refillDependenceMap);
+	 front_elim(allEdgeElimsV[choice_index].getE(angelLCG_copy), angelLCG_copy, dummy_elimSeq_cost, dummy_refillDependenceMap)
+       : back_elim(allEdgeElimsV[choice_index].getE(angelLCG_copy), angelLCG_copy, dummy_elimSeq_cost, dummy_refillDependenceMap);
     } // end edge elim.
   } // end outer loop
 
@@ -1150,13 +1150,13 @@ void computeEliminationSequenceRandom(const LinearizedComputationalGraph& ourLCG
   unsigned int cost_of_elim_seq = 0;
   for (size_t c = 0; c < best_edgeElimSeqV.size(); c++)
     cost_of_elim_seq += best_edgeElimSeqV[c].isFront() ?
-       front_eliminate_edge_directly(best_edgeElimSeqV[c].getE(angelLCG_orig), angelLCG_orig, ourAwarenessLevel, edge_ref_list, jae_list)
-     : back_eliminate_edge_directly(best_edgeElimSeqV[c].getE(angelLCG_orig), angelLCG_orig, ourAwarenessLevel, edge_ref_list, jae_list);
+       front_eliminate_edge_directly(best_edgeElimSeqV[c].getE(angelLCG_orig), angelLCG_orig, edge_ref_list, jae_list)
+     : back_eliminate_edge_directly(best_edgeElimSeqV[c].getE(angelLCG_orig), angelLCG_orig, edge_ref_list, jae_list);
 
 #ifndef NDEBUG
   write_graph ("angelLCG_orig after complete edge elimination sequence (G prime): ", angelLCG_orig);
   writeVertexAndEdgeTypes (cout, angelLCG_orig);
-  cout << "compute_partial_elimination_sequence: cost " << cost_of_elim_seq << endl;
+  cout << "computeEliminationSequenceRandom: cost " << cost_of_elim_seq << endl;
 #endif
   populate_remainderGraph_and_correlationLists (angelLCG_orig, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
 } // end compute_elimination_sequence_random()
@@ -1333,6 +1333,11 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
   try {
     switch (myType) {
       case OPS_ELIMTYPE:
+//        compute_elimination_sequence(getLCG(),
+//                                     getEliminationResult().myJAEList,
+//                                     getEliminationResult().myRemainderLCG,
+//                                     getEliminationResult().myVertexCorrelationList,
+//                                     getEliminationResult().myEdgeCorrelationList);
         computeEliminationSequenceRandom(getLCG(),
                                          ourAwarenessLevel,
                                          ourAllowMaintainingFlag,

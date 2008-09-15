@@ -607,7 +607,6 @@ void removeRef (const c_graph_t::edge_t e,
 unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 					  const c_graph_t::edge_t e2,
 					  c_graph_t& angelLCG,
-					  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					  list<EdgeRef_t>& edge_ref_list,
 					  JacobianAccumulationExpressionList& jae_list) {
 
@@ -657,10 +656,7 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
     else								eType[fill_or_absorb_e] = CONSTANT_EDGE;
   }
   
-  // determine cost based on awareness level
-  if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE))
-    return 0;
-  else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE))
+  if (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE)
     return 0;
   else
     return 1;
@@ -668,7 +664,6 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 
 unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 					    c_graph_t& angelLCG,
-					    const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					    list<EdgeRef_t>& edge_ref_list,
 					    JacobianAccumulationExpressionList& jae_list) {
 #ifndef NDEBUG
@@ -686,7 +681,7 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 
   // multiply all edge pairs
   for (size_t i = 0; i < tgtOutEdges.size(); i++)
-    cost += multiply_edge_pair_directly (e, tgtOutEdges[i], angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+    cost += multiply_edge_pair_directly (e, tgtOutEdges[i], angelLCG, edge_ref_list, jae_list);
 
   // remove tgt of e and incident edges if it becomes isolated
   if (in_degree (tgt, angelLCG) == 1)
@@ -702,7 +697,6 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 
 unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   c_graph_t& angelLCG,
-					   const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					   list<EdgeRef_t>& edge_ref_list,
 					   JacobianAccumulationExpressionList& jae_list) {
 #ifndef NDEBUG
@@ -720,7 +714,7 @@ unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 
   // multiply all edge pairs
   for (size_t i = 0; i < srcInEdges.size(); i++)
-    cost += multiply_edge_pair_directly (srcInEdges[i], e, angelLCG, ourAwarenessLevel, edge_ref_list, jae_list);
+    cost += multiply_edge_pair_directly (srcInEdges[i], e, angelLCG, edge_ref_list, jae_list);
 
   // remove src of e and incident edges if it becomes isolated and isn't a dependent
   if (out_degree (src, angelLCG) == 1 && vertex_type (src, angelLCG) != dependent)
@@ -737,7 +731,6 @@ unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 unsigned int pair_elim (c_graph_t::edge_t e1,
 			c_graph_t::edge_t e2,
 			c_graph_t& angelLCG,
-			const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			const elimSeq_cost_t& currentElimSeq,
 			refillDependenceMap_t& refillDependences) {
   boost::property_map<c_graph_t, EdgeType>::type eType = get (EdgeType(), angelLCG);
@@ -784,10 +777,7 @@ unsigned int pair_elim (c_graph_t::edge_t e1,
     else								eType[fill_or_absorb_e] = CONSTANT_EDGE;
   } // end fill-in
 
-  // determine cost based on awareness level and return it
-  if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE))
-    return 0;
-  else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE))
+  if (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE)
     return 0;
   else
     return 1;
@@ -795,7 +785,6 @@ unsigned int pair_elim (c_graph_t::edge_t e1,
 
 unsigned int front_elim (c_graph_t::edge_t e,
 			 c_graph_t& angelLCG,
-			 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			 const elimSeq_cost_t& currentElimSeq,
 			 refillDependenceMap_t& refillDependences) {
 #ifndef NDEBUG
@@ -811,7 +800,7 @@ unsigned int front_elim (c_graph_t::edge_t e,
     tgtOutEdges.push_back(*oei);
 
   for (size_t i = 0; i < tgtOutEdges.size(); i++)
-    cost += pair_elim (e, tgtOutEdges[i], angelLCG, ourAwarenessLevel, currentElimSeq, refillDependences);
+    cost += pair_elim (e, tgtOutEdges[i], angelLCG, currentElimSeq, refillDependences);
  
   // if elimination isolates the target, remove vertex and incident edges
   if (in_degree (target (e, angelLCG), angelLCG) == 1)
@@ -824,7 +813,6 @@ unsigned int front_elim (c_graph_t::edge_t e,
 
 unsigned int back_elim (c_graph_t::edge_t e,
 			c_graph_t& angelLCG,
-			const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			const elimSeq_cost_t& currentElimSeq,
 			refillDependenceMap_t& refillDependences) {
 #ifndef NDEBUG
@@ -840,7 +828,7 @@ unsigned int back_elim (c_graph_t::edge_t e,
     srcInEdges.push_back(*iei);
 
   for (size_t i = 0; i < srcInEdges.size(); i++)
-    cost += pair_elim (srcInEdges[i], e, angelLCG, ourAwarenessLevel, currentElimSeq, refillDependences);
+    cost += pair_elim (srcInEdges[i], e, angelLCG, currentElimSeq, refillDependences);
 
   // remove src of e and incident edges if it becomes isolated and isn't a dependent
   if (out_degree (source (e, angelLCG), angelLCG) == 1 && vertex_type (source (e, angelLCG), angelLCG) != dependent)
@@ -854,7 +842,6 @@ unsigned int back_elim (c_graph_t::edge_t e,
 unsigned int pairElim_noJAE (c_graph_t::edge_t e1,
 			     c_graph_t::edge_t e2,
 			     c_graph_t& angelLCG,
-			     const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 			     const transformationSeq_cost_t* currentTransformationSequence,
 			     refillDependenceMap_t& refillDependences) {
   boost::property_map<c_graph_t, EdgeType>::type eType = get (EdgeType(), angelLCG);
@@ -906,16 +893,14 @@ unsigned int pairElim_noJAE (c_graph_t::edge_t e1,
     else								eType[fill_or_absorb_e] = CONSTANT_EDGE;
   } // end fill-in
 
-  // determine cost based on awareness level and return it
-  if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE)
-  || (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE)))
+  if (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE)
     return 0;
-  else return 1;
+  else
+    return 1;
 } // end pairElim_noJAE()
 
 unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,
 					 c_graph_t& angelLCG,
-					 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					 const transformationSeq_cost_t* currentTransformationSequence,
 					 refillDependenceMap_t& refillDependences) {
 #ifndef NDEBUG
@@ -931,7 +916,7 @@ unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,
     tgtOutEdges.push_back(*oei);
 
   for (size_t i = 0; i < tgtOutEdges.size(); i++)
-    cost += pairElim_noJAE (e, tgtOutEdges[i], angelLCG, ourAwarenessLevel, currentTransformationSequence, refillDependences);
+    cost += pairElim_noJAE (e, tgtOutEdges[i], angelLCG, currentTransformationSequence, refillDependences);
  
   // if elimination isolates the target, remove vertex and incident edges
   if (in_degree (target (e, angelLCG), angelLCG) == 1)
@@ -944,7 +929,6 @@ unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,
 
 unsigned int backEdgeElimination_noJAE (c_graph_t::edge_t e,
 					 c_graph_t& angelLCG,
-					 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 					 const transformationSeq_cost_t* currentTransformationSequence,
 					 refillDependenceMap_t& refillDependences) {
 #ifndef NDEBUG
@@ -960,7 +944,7 @@ unsigned int backEdgeElimination_noJAE (c_graph_t::edge_t e,
     srcInEdges.push_back(*iei);
 
   for (size_t i = 0; i < srcInEdges.size(); i++)
-    cost += pairElim_noJAE (srcInEdges[i], e, angelLCG, ourAwarenessLevel, currentTransformationSequence, refillDependences);
+    cost += pairElim_noJAE (srcInEdges[i], e, angelLCG, currentTransformationSequence, refillDependences);
 
   // remove src of e and incident edges if it becomes isolated and isn't a dependent
   if (out_degree (source (e, angelLCG), angelLCG) == 1 && vertex_type (source (e, angelLCG), angelLCG) != dependent)

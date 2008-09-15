@@ -229,7 +229,6 @@ int reroute_effect (const edge_reroute_t er,
 // pre-/post-routing an edge cannot isolate a vertex
 unsigned int preroute_edge_directly (edge_reroute_t er,
 				     c_graph_t& angelLCG,
-				     const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				     list<EdgeRef_t>& edge_ref_list,
 				     JacobianAccumulationExpressionList& jae_list) {
   #ifndef NDEBUG
@@ -287,12 +286,8 @@ unsigned int preroute_edge_directly (edge_reroute_t er,
     else									eType[increment_e] = CONSTANT_EDGE;
   }
 
-  // determine cost of creating increment edge
-  if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)
-    cost++;
-  else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[er.e] != UNIT_EDGE || eType[er.pivot_e] != UNIT_EDGE))
-    cost++;
-  else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE))
+  // determine cost of creating increment edge (we divide e/pivot_e, so trivial iff pivot_e is unit)
+  if (eType[er.pivot_e] != UNIT_EDGE)
     cost++;
 
   // DECREMENT OPERATIONS
@@ -357,13 +352,9 @@ unsigned int preroute_edge_directly (edge_reroute_t er,
 	eType[decrement_e] = CONSTANT_EDGE;
     }
 
-    if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)
+    // eval cost for decrements: trivial if both e and pivot_e are unit or if decrement is unit
+    if (!((eType[er.e] == UNIT_EDGE && eType[er.pivot_e] == UNIT_EDGE) || eType[*oei] == UNIT_EDGE))
       cost++;
-    else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[er.e] != UNIT_EDGE || eType[er.pivot_e] != UNIT_EDGE || eType[*oei] != UNIT_EDGE))
-      cost++;
-    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE|| eType[*oei] == VARIABLE_EDGE))
-      cost++;
-
   } // end all decrements
 
   remove_edge (er.e, angelLCG);
@@ -373,7 +364,6 @@ unsigned int preroute_edge_directly (edge_reroute_t er,
 
 unsigned int postroute_edge_directly (edge_reroute_t er,
 				      c_graph_t& angelLCG,
-				      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 				      list<EdgeRef_t>& edge_ref_list,
 				      JacobianAccumulationExpressionList& jae_list) {
   #ifndef NDEBUG
@@ -431,12 +421,8 @@ unsigned int postroute_edge_directly (edge_reroute_t er,
     else									eType[increment_e] = CONSTANT_EDGE;
   }
 
-  // determine cost of creating increment edge
-  if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)
-    cost++;
-  else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[er.e] != UNIT_EDGE || eType[er.pivot_e] != UNIT_EDGE))
-    cost++;
-  else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE))
+  // determine cost of creating increment edge (we divide e/pivot_e, so trivial iff pivot_e is unit)
+  if (eType[er.pivot_e] != UNIT_EDGE)
     cost++;
 
   // DECREMENT OPERATIONS
@@ -500,11 +486,8 @@ unsigned int postroute_edge_directly (edge_reroute_t er,
 	eType[decrement_e] = CONSTANT_EDGE;
     }
 
-    if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS)
-      cost++;
-    else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[er.e] != UNIT_EDGE || eType[er.pivot_e] != UNIT_EDGE || eType[*iei] != UNIT_EDGE))
-      cost++;
-    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE|| eType[*iei] == VARIABLE_EDGE))
+    // eval cost for decrements: trivial if both e and pivot_e are unit or if decrement is unit
+    if (!((eType[er.e] == UNIT_EDGE && eType[er.pivot_e] == UNIT_EDGE) || eType[*iei] == UNIT_EDGE))
       cost++;
   } // end all decrements
 
@@ -514,8 +497,7 @@ unsigned int postroute_edge_directly (edge_reroute_t er,
 } // end postroute_edge_directly()
 
 unsigned int prerouteEdge_noJAE (edge_reroute_t er,
-                                 c_graph_t& angelLCG,
-                                 const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel) {
+                                 c_graph_t& angelLCG) {
   #ifndef NDEBUG
     cout << "prerouting edge " << er.e << " about pivot edge " << er.pivot_e << "\t(without creating any JAEs)" << endl;
   #endif
@@ -541,10 +523,9 @@ unsigned int prerouteEdge_noJAE (edge_reroute_t er,
     else if (eType[er.e] == UNIT_EDGE && eType[er.pivot_e] == UNIT_EDGE)	eType[increment_e] = UNIT_EDGE;
     else									eType[increment_e] = CONSTANT_EDGE;
   }
-  // determine cost of creating increment edge
-  if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS) cost++;
-  else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[er.e] != UNIT_EDGE || eType[er.pivot_e] != UNIT_EDGE)) cost++;
-  else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE)) cost++;
+  // determine cost of creating increment edge (we divide e/pivot_e, so trivial iff pivot_e is unit)
+  if (eType[er.pivot_e] != UNIT_EDGE)
+    cost++;
 
   // DECREMENT EDGES
   for (tie (oei, oe_end) = out_edges (source (er.pivot_e, angelLCG), angelLCG); oei != oe_end; oei++) {
@@ -564,17 +545,16 @@ unsigned int prerouteEdge_noJAE (edge_reroute_t er,
       else if (eType[er.e] == UNIT_EDGE && eType[er.pivot_e] == UNIT_EDGE && eType[*oei] == UNIT_EDGE)		eType[decrement_e] = UNIT_EDGE;
       else													eType[decrement_e] = CONSTANT_EDGE;
     }
-    if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS) cost++;
-    else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[er.e] != UNIT_EDGE || eType[er.pivot_e] != UNIT_EDGE || eType[*oei] != UNIT_EDGE)) cost++;
-    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE || eType[*oei] == VARIABLE_EDGE)) cost++;
+    // eval cost for decrements: trivial if both e and pivot_e are unit or if decrement is unit
+    if (!((eType[er.e] == UNIT_EDGE && eType[er.pivot_e] == UNIT_EDGE) || eType[*iei] == UNIT_EDGE))
+      cost++;
   } // end all decrements
   remove_edge (er.e, angelLCG);
   return cost;
 } // end prerouteEdge_noJAE()
 
 unsigned int postrouteEdge_noJAE (edge_reroute_t er,
-                                  c_graph_t& angelLCG,
-                                  const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel) {
+                                  c_graph_t& angelLCG) {
   #ifndef NDEBUG
     cout << "postrouting edge " << er.e << " about pivot edge " << er.pivot_e << "\t(without creating any JAEs)" << endl;
   #endif
@@ -600,10 +580,9 @@ unsigned int postrouteEdge_noJAE (edge_reroute_t er,
     else if (eType[er.e] == UNIT_EDGE && eType[er.pivot_e] == UNIT_EDGE)	eType[increment_e] = UNIT_EDGE;
     else									eType[increment_e] = CONSTANT_EDGE;
   }
-  // determine cost of creating increment edge
-  if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS) cost++;
-  else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[er.e] != UNIT_EDGE || eType[er.pivot_e] != UNIT_EDGE)) cost++;
-  else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE)) cost++;
+  // determine cost of creating increment edge (we divide e/pivot_e, so trivial iff pivot_e is unit)
+  if (eType[er.pivot_e] != UNIT_EDGE)
+    cost++;
 
   // DECREMENT EDGES
   for (tie (iei, ie_end) = in_edges (target (er.pivot_e, angelLCG), angelLCG); iei != ie_end; iei++) {
@@ -623,9 +602,9 @@ unsigned int postrouteEdge_noJAE (edge_reroute_t er,
       else if (eType[er.e] == UNIT_EDGE && eType[er.pivot_e] == UNIT_EDGE && eType[*iei] == UNIT_EDGE)		eType[decrement_e] = UNIT_EDGE;
       else													eType[decrement_e] = CONSTANT_EDGE;
     }
-    if (ourAwarenessLevel == AwarenessLevel::NO_AWARENESS) cost++;
-    else if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && (eType[er.e] != UNIT_EDGE || eType[er.pivot_e] != UNIT_EDGE || eType[*iei] != UNIT_EDGE)) cost++;
-    else if (ourAwarenessLevel == AwarenessLevel::CONSTANT_AWARENESS && (eType[er.e] == VARIABLE_EDGE || eType[er.pivot_e] == VARIABLE_EDGE || eType[*iei] == VARIABLE_EDGE)) cost++;
+    // eval cost for decrements: trivial if both e and pivot_e are unit or if decrement is unit
+    if (!((eType[er.e] == UNIT_EDGE && eType[er.pivot_e] == UNIT_EDGE) || eType[*iei] == UNIT_EDGE))
+      cost++;
   } // end all decrements
   remove_edge (er.e, angelLCG);
   return cost;
