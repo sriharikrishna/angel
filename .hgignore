@@ -1,4 +1,6 @@
 syntax: glob
+doc/html*
+*.swp
 *.o
 *.a
 *~
