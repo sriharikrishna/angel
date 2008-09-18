@@ -1310,21 +1310,21 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
   try {
     switch (myType) {
       case OPS_ELIMTYPE:
-        compute_elimination_sequence(getLCG(),
+        compute_elimination_sequence(*myLCG_p,
                                      myJAEList,
                                      myRemainderLCG,
                                      myVertexCorrelationList,
                                      myEdgeCorrelationList);
         break;
       case OPS_RANDOM_ELIMTYPE:
-        computeEliminationSequenceRandom(getLCG(),
+        computeEliminationSequenceRandom(*myLCG_p,
                                          myJAEList,
                                          myRemainderLCG,
                                          myVertexCorrelationList,
                                          myEdgeCorrelationList);
         break;
       case OPS_LSA_VERTEX_ELIMTYPE:
-        compute_elimination_sequence_lsa_vertex(getLCG(),
+        compute_elimination_sequence_lsa_vertex(*myLCG_p,
                                                 getNumIterations(),
                                                 getGamma(),
                                                 myJAEList,
@@ -1333,7 +1333,7 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
                                                 myEdgeCorrelationList);
         break;
       case OPS_LSA_FACE_ELIMTYPE:
-        compute_elimination_sequence_lsa_face(getLCG(),
+        compute_elimination_sequence_lsa_face(*myLCG_p,
                                               getNumIterations(),
                                               getGamma(),
                                               myJAEList,
@@ -1342,7 +1342,7 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
                                               myEdgeCorrelationList);
         break;
       case SCARCE_ELIMTYPE:
-        compute_partial_elimination_sequence(getLCG(),
+        compute_partial_elimination_sequence(*myLCG_p,
                                              ourAwarenessLevel,
                                              ourAllowMaintainingFlag,
                                              myJAEList,
@@ -1351,7 +1351,7 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
                                              myEdgeCorrelationList);
         break;
       case SCARCE_RANDOM_ELIMTYPE:
-        compute_partial_elimination_sequence_random(getLCG(),
+        compute_partial_elimination_sequence_random(*myLCG_p,
                                                     ourAwarenessLevel,
                                                     ourAllowMaintainingFlag,
                                                     myJAEList,
@@ -1360,7 +1360,7 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
                                                     myEdgeCorrelationList);
         break;
       case SCARCE_TRANSFORMATIONTYPE:
-        compute_partial_transformation_sequence(getLCG(),
+        compute_partial_transformation_sequence(*myLCG_p,
                                                 ourAwarenessLevel,
                                                 ourAllowMaintainingFlag,
                                                 myJAEList,
@@ -1370,7 +1370,7 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
                                                 myNumReroutings);
         break;
       case SCARCE_RANDOM_TRANSFORMATIONTYPE:
-        compute_partial_transformation_sequence_random(getLCG(),
+        compute_partial_transformation_sequence_random(*myLCG_p,
                                                        ourAwarenessLevel,
                                                        ourAllowMaintainingFlag,
                                                        myJAEList,
