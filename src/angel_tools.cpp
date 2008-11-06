@@ -75,7 +75,7 @@ bool lex_less_face (line_graph_t::face_t e1, line_graph_t::face_t e2,
     write_vertex_property (std::cout, "edge names ", evn, lg); }
 #endif
 
-  return vj1 < vj2 || vj1 == vj2 && vi1 < vi2 || vj1 == vj2 && vi1 == vi2 && vk1 <= vk2;
+  return vj1 < vj2 || (vj1 == vj2 && vi1 < vi2) || (vj1 == vj2 && vi1 == vi2 && vk1 <= vk2);
 }
 
 // =====================================================

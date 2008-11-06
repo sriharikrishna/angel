@@ -191,13 +191,13 @@ int markowitz_enlargement_front (c_graph_t::edge_t e, const c_graph_t& cg,
 				 bool eliminate_parallel_edges= false) {
   int ee= 0; // number of eliminated edges
   c_graph_t::vertex_t s= source (e, cg), t= target (e, cg);
-  if (vertex_type (t, cg) == intermediate) // if dependent edges are not eliminated
+  if (vertex_type (t, cg) == intermediate){ // if dependent edges are not eliminated
     if (eliminate_parallel_edges) {
       c_graph_t::oei_t soei, soe_end;
       for (tie (soei, soe_end)= out_edges (s, cg); soei != soe_end; soei++)
 	ee+= target (*soei, cg) == t;
     } else ee= 1;
-
+  }
   return in_degree (source (e, cg), cg) * (new_out_edges (e, cg) - ee);
 }
 

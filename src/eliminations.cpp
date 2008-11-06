@@ -358,7 +358,8 @@ int semi_eliminatable_vertices (const c_graph_t& cg, vector<c_graph_t::vertex_t>
   for (tie(vi, v_end)= vertices(cg); vi != v_end; ++vi)
     // either intermediate or dependent with outgoing edges
     if (cg.vertex_type (*vi) == intermediate 
-	|| cg.vertex_type (*vi) == dependent && out_degree (*vi, cg) > 0)
+	|| 
+	(cg.vertex_type (*vi) == dependent && out_degree (*vi, cg) > 0))
       vv.push_back (*vi);
   return vv.size();
 }
@@ -891,8 +892,11 @@ unsigned int pairElim_noJAE (c_graph_t::edge_t e1,
   } // end fill-in
 
   // determine cost based on awareness level and return it
-  if (ourAwarenessLevel == Elimination::UNIT_AWARENESS && (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE)
-  || (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE)))
+  if ((ourAwarenessLevel == Elimination::UNIT_AWARENESS 
+       && 
+      (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE))
+      || 
+      (ourAwarenessLevel == Elimination::CONSTANT_AWARENESS && (eType[e1] != VARIABLE_EDGE || eType[e2] != VARIABLE_EDGE)))
     return 0;
   else return 1;
 } // end pairElim_noJAE()
