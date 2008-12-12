@@ -386,8 +386,7 @@ inline int face_elimination (triplet_t& t, line_graph_t& lg, accu_graph_t& ac) {
  */
 inline int was_non_trivial_elimination (int i, int j, int k, const line_graph_t& lg) {
   line_graph_t::const_ed_t   el= get(boost::vertex_degree, lg);  // edge label
-  return k != -1 && (el[i] != 1 && el[j] != 1 
-		     || k < lg.v()-1); // absorption -> a+= b in accumulation
+  return ((k != -1 && el[i] != 1 && el[j] != 1) || k < lg.v()-1); // absorption -> a+= b in accumulation
 }
 
 /** Returns whether face elimination 

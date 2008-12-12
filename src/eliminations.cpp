@@ -358,7 +358,8 @@ int semi_eliminatable_vertices (const c_graph_t& cg, vector<c_graph_t::vertex_t>
   for (tie(vi, v_end)= vertices(cg); vi != v_end; ++vi)
     // either intermediate or dependent with outgoing edges
     if (cg.vertex_type (*vi) == intermediate 
-	|| cg.vertex_type (*vi) == dependent && out_degree (*vi, cg) > 0)
+	|| 
+	(cg.vertex_type (*vi) == dependent && out_degree (*vi, cg) > 0))
       vv.push_back (*vi);
   return vv.size();
 }
@@ -895,8 +896,7 @@ unsigned int pairElim_noJAE (c_graph_t::edge_t e1,
 
   if (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE)
     return 0;
-  else
-    return 1;
+  else return 1;
 } // end pairElim_noJAE()
 
 unsigned int frontEdgeElimination_noJAE (c_graph_t::edge_t e,

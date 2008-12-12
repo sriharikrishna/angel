@@ -91,10 +91,16 @@ inline int best_heuristic (const Ad_graph_t& adg, vector<Object_t>& el_seq,
   results[3].first= use_heuristic (adg, results[3].second, h4);
   results[4].first= use_heuristic (adg, results[4].second, h5);
 
-  int index_best= 0, lcosts= results[0].first, c= 1;
-  for (; c < 5; c++) if (results[c].first < lcosts) index_best= c;
-  el_seq= results[index_best].second;
-  return lcosts;
+  size_t bestIndex = 0;
+  int bestCost = results[0].first;
+  for (size_t c = 1; c < 5; c++) {
+    if (results[c].first < bestCost) {
+      bestIndex = c;
+      bestCost = results[c].first;
+    }
+  }
+  el_seq = results[bestIndex].second;
+  return bestCost;
 }
 
 #ifdef USE_MPI

@@ -442,14 +442,16 @@ void accu_graph_t::set_jacobi_entries () {
   throw_debug_exception (!lg.is_tripartite(), consistency_exception, "Line graph not tripartite"); 
   line_graph_t::const_evn_t evn= get(vertex_name, lg);
   line_graph_t::ei_t ei, e_end;
-  for (tie (ei, e_end)= vertices (lg); ei != e_end; ei++)
-    if (lg.vertex_type (*ei) == intermediate) 
+  for (tie (ei, e_end)= vertices (lg); ei != e_end; ei++) {
+    if (lg.vertex_type (*ei) == intermediate) {
       if (exp_nr[*ei] == -1) {
 	accu_exp.resize (accu_exp.size() + 1);
 	accu_exp[accu_exp.size()-1].set_graph(*ei);
 	jacobi_entries.push_back (evn[*ei]);
       } else
 	jacobi_entries[exp_nr[*ei]]= evn[*ei]; 
+    }
+  }
   throw_debug_exception (accu_exp.size() != jacobi_entries.size(), consistency_exception, 
 			 "Wrong number of Jacobi entries");
 }

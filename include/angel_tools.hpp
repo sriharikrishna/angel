@@ -378,7 +378,7 @@ struct edge_less_t : public std::binary_function<typename Ad_graph_t::edge_descr
   bool operator() (typename Ad_graph_t::edge_descriptor e1,
 		   typename Ad_graph_t::edge_descriptor e2) {
     typename Ad_graph_t::vertex_descriptor s1= source (e1, g1), s2= source (e2, g2);
-    return s1 < s2 || s1 == s2 && target (e1, g1) < target (e2, g2);}
+    return s1 < s2 || (s1 == s2 && target (e1, g1) < target (e2, g2));}
 };
 
 template <typename Ad_graph_t> 
@@ -407,7 +407,7 @@ inline bool lex_greater (c_graph_t::edge_t e1, c_graph_t::edge_t e2,
 
   c_graph_t::vertex_t s1= source (e1, cg), s2= source (e2, cg);
 
-  return s1 > s2 || s1 == s2 && target (e1, cg) >= target (e2, cg);
+  return s1 > s2 || (s1 == s2 && target (e1, cg) >= target (e2, cg));
 
 }
 
@@ -417,7 +417,7 @@ inline bool lex_less (c_graph_t::edge_t e1, c_graph_t::edge_t e2,
 
   c_graph_t::vertex_t s1= source (e1, cg), s2= source (e2, cg);
 
-  return s1 < s2 || s1 == s2 && target (e1, cg) <= target (e2, cg);
+  return s1 < s2 || (s1 == s2 && target (e1, cg) <= target (e2, cg));
 
 }
 
@@ -427,7 +427,7 @@ inline bool inv_lex_greater (c_graph_t::edge_t e1, c_graph_t::edge_t e2,
 
   c_graph_t::vertex_t s1= source (e1, cg), s2= source (e2, cg),
                       t1= target (e1, cg), t2= target (e2, cg); 
-  return t1 > t2 || t1 == t2 && s1 >= s2;
+  return t1 > t2 || (t1 == t2 && s1 >= s2);
 }
 
 /// Returns whether \p e1 is lexicographically less than \p e2 w.r.t. target and source 
@@ -436,7 +436,7 @@ inline bool inv_lex_less (c_graph_t::edge_t e1, c_graph_t::edge_t e2,
 
   c_graph_t::vertex_t s1= source (e1, cg), s2= source (e2, cg),
                       t1= target (e1, cg), t2= target (e2, cg);
-  return t1 < t2 || t1 == t2 && s1 <= s2; 
+  return t1 < t2 || (t1 == t2 && s1 <= s2); 
 }
 
 inline bool lex_greater (edge_bool_t eb1, edge_bool_t eb2, const c_graph_t& cg) {
