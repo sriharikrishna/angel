@@ -8,6 +8,7 @@
 #include "angel/include/angel_tools.hpp"
 #ifdef USEXAIFBOOSTER
 #include "angel/include/reroutings.hpp"
+using namespace xaifBoosterCrossCountryInterface;
 #endif
 
 namespace angel {

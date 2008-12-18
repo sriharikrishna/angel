@@ -5,10 +5,6 @@
 
 namespace angel {
 
-#ifdef USEXAIFBOOSTER
-using namespace xaifBoosterBasicBlockPreaccumulation;
-#endif
-
 using namespace std;
 using namespace boost;
 
@@ -552,7 +548,7 @@ EdgeRefType_E getRefType (const c_graph_t::edge_t e, const c_graph_t& angelLCG, 
   throw_exception (true, consistency_exception, "can't return reference type - no reference entry could be found for edge");
 } // end getRef_type ()
 
-const LinearizedComputationalGraphEdge* getLCG_p (const c_graph_t::edge_t e,
+const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* getLCG_p (const c_graph_t::edge_t e,
 						  const c_graph_t& angelLCG,
 						  const list<EdgeRef_t>& edge_ref_list) {
   c_graph_t::const_eind_t eind = get(edge_index, angelLCG);
@@ -565,9 +561,9 @@ const LinearizedComputationalGraphEdge* getLCG_p (const c_graph_t::edge_t e,
   throw_exception (true, consistency_exception, "can't return LCG_p - no reference entry could be found for edge");
 } // end getLCG_p ()
 
-JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
-						const c_graph_t& angelLCG,
-						const list<EdgeRef_t>& edge_ref_list) {
+xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
+                                                                                  const c_graph_t& angelLCG,
+                                                                                  const list<EdgeRef_t>& edge_ref_list) {
   c_graph_t::const_eind_t eind = get(edge_index, angelLCG);
   for (list<EdgeRef_t>::const_iterator ref_it = edge_ref_list.begin(); ref_it != edge_ref_list.end(); ref_it++)
     if (source (e, angelLCG) == source (ref_it->my_angelLCGedge, angelLCG) &&
@@ -578,14 +574,17 @@ JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
   throw_exception (true, consistency_exception, "can't return JAE_p - no reference entry could be found for edge");
 } // end getJAE_p ()
 
-void setJaevRef (const c_graph_t::edge_t e, JacobianAccumulationExpressionVertex& jaev, const c_graph_t& angelLCG, const list<EdgeRef_t>& edge_ref_list) {
+void setJaevRef (const c_graph_t::edge_t e,
+                 xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex& jaev,
+                 const c_graph_t& angelLCG,
+                 const list<EdgeRef_t>& edge_ref_list) {
   EdgeRefType_E e_ref_type = getRefType (e, angelLCG, edge_ref_list);
   if (e_ref_type == LCG_EDGE) {
-    const LinearizedComputationalGraphEdge* LCG_p = getLCG_p (e, angelLCG, edge_ref_list);
+    const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* LCG_p = getLCG_p (e, angelLCG, edge_ref_list);
     jaev.setExternalReference (*LCG_p);
   }
   else if (e_ref_type == JAE_VERT) {
-    JacobianAccumulationExpressionVertex* JAE_p = getJAE_p (e, angelLCG, edge_ref_list);
+    xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* JAE_p = getJAE_p (e, angelLCG, edge_ref_list);
     jaev.setInternalReference (*JAE_p);
   }
   else throw_exception (true, consistency_exception, "cannot set JAE vertex ref because edge reference type is UNDEFINED");
@@ -609,14 +608,14 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 					  const c_graph_t::edge_t e2,
 					  c_graph_t& angelLCG,
 					  list<EdgeRef_t>& edge_ref_list,
-					  JacobianAccumulationExpressionList& jae_list) {
+                                          xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& jae_list) {
 
   // Create JAE with vertices for multiply and for the two edges being multiplied
-  JacobianAccumulationExpression& new_jae = jae_list.addExpression();
-  JacobianAccumulationExpressionVertex& jaev_mult = new_jae.addVertex();
-  jaev_mult.setOperation (JacobianAccumulationExpressionVertex::MULT_OP);
-  JacobianAccumulationExpressionVertex& jaev_e1 = new_jae.addVertex();
-  JacobianAccumulationExpressionVertex& jaev_e2 = new_jae.addVertex();
+  xaifBoosterCrossCountryInterface::JacobianAccumulationExpression& new_jae = jae_list.addExpression();
+  xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex& jaev_mult = new_jae.addVertex();
+  jaev_mult.setOperation (xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex::MULT_OP);
+  xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex& jaev_e1 = new_jae.addVertex();
+  xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex& jaev_e2 = new_jae.addVertex();
   setJaevRef (e1, jaev_e1, angelLCG, edge_ref_list);
   setJaevRef (e2, jaev_e2, angelLCG, edge_ref_list);
   new_jae.addEdge(jaev_e1, jaev_mult);
@@ -630,9 +629,9 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
   tie (fill_or_absorb_e, found_absorb_e) = edge (source (e1, angelLCG), target (e2, angelLCG), angelLCG);
   if (found_absorb_e) { // absorption
     //create add vertex and absorb vertex, connect them up
-    JacobianAccumulationExpressionVertex& jaev_add = new_jae.addVertex();
-    jaev_add.setOperation (JacobianAccumulationExpressionVertex::ADD_OP);
-    JacobianAccumulationExpressionVertex& jaev_absorb_e = new_jae.addVertex();
+    xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex& jaev_add = new_jae.addVertex();
+    jaev_add.setOperation (xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex::ADD_OP);
+    xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex& jaev_absorb_e = new_jae.addVertex();
     setJaevRef (fill_or_absorb_e, jaev_absorb_e, angelLCG, edge_ref_list);
     new_jae.addEdge(jaev_absorb_e, jaev_add);
     new_jae.addEdge(jaev_mult, jaev_add);
@@ -666,7 +665,7 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 					    c_graph_t& angelLCG,
 					    list<EdgeRef_t>& edge_ref_list,
-					    JacobianAccumulationExpressionList& jae_list) {
+                                            xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& jae_list) {
 #ifndef NDEBUG
   cout << "front eliminating edge " << e << endl;
 #endif
@@ -699,7 +698,7 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   c_graph_t& angelLCG,
 					   list<EdgeRef_t>& edge_ref_list,
-					   JacobianAccumulationExpressionList& jae_list) {
+                                           xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& jae_list) {
 #ifndef NDEBUG
   cout << "back eliminating edge " << e << endl;
 #endif

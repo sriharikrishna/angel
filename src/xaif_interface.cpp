@@ -17,7 +17,6 @@ namespace angel {
 using namespace std;
 using namespace boost;
 using namespace xaifBoosterCrossCountryInterface;
-using namespace xaifBoosterBasicBlockPreaccumulation;
 
 inline size_t which_index (const LinearizedComputationalGraphVertex * const add,
 			   const vector<const LinearizedComputationalGraphVertex*>& av) {
@@ -560,7 +559,7 @@ void compute_partial_elimination_sequence_random(const LinearizedComputationalGr
   cout << "Cost of partial edge elimination sequence: " << cost_of_elim_seq << endl;
 #endif
   populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
-} // end compute_partial_elimination_sequence_random()
+} // end xaifBoosterCrossCountryInterface::compute_partial_elimination_sequence_random()
 
 void compute_partial_elimination_sequence (const LinearizedComputationalGraph& ourLCG,
 					   const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
@@ -718,7 +717,7 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
 
   delete bestEliminationSequence;
   populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
-} // end compute_partial_elimination_sequence()
+} // end xaifBoosterCrossCountryInterface::compute_partial_elimination_sequence()
 
 void compute_partial_transformation_sequence_random(const LinearizedComputationalGraph& ourLCG,
                                                     const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
@@ -857,7 +856,7 @@ void compute_partial_transformation_sequence_random(const LinearizedComputationa
   writeVertexAndEdgeTypes (cout, angelLCG_orig);
   #endif
   populate_remainderGraph_and_correlationLists (angelLCG_orig, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
-} // end compute_partial_transformation_sequence_random()
+} // end xaifBoosterCrossCountryInterface::compute_partial_transformation_sequence_random()
 
 void compute_partial_transformation_sequence (const LinearizedComputationalGraph& ourLCG,
 					      const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
@@ -1020,7 +1019,7 @@ void compute_partial_transformation_sequence (const LinearizedComputationalGraph
   delete bestTransformationSequence; 
 
   populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
-} // end compute_partial_transformation_sequence()
+} // end xaifBoosterCrossCountryInterface::compute_partial_transformation_sequence()
 
 void computeEliminationSequenceRandom(const LinearizedComputationalGraph& ourLCG,
                                       JacobianAccumulationExpressionList& jae_list,
@@ -1136,7 +1135,7 @@ void computeEliminationSequenceRandom(const LinearizedComputationalGraph& ourLCG
   cout << "computeEliminationSequenceRandom: cost " << cost_of_elim_seq << endl;
   #endif
   populate_remainderGraph_and_correlationLists (angelLCG_orig, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
-} // end compute_elimination_sequence_random()
+} // end xaifBoosterCrossCountryInterface::compute_elimination_sequence_random()
 
 void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
 				   JacobianAccumulationExpressionList& JAElist,
@@ -1223,7 +1222,7 @@ void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
 #endif
 
   write_graph_xaif_booster (ac, av, ae, JAElist, remainderLCG, v_cor_list, e_cor_list);
-} // end of angel::compute_elimination_sequence()
+} // end xaifBoosterCrossCountryInterface::compute_elimination_sequence()
 
 void compute_elimination_sequence_lsa_face (const LinearizedComputationalGraph& xgraph,
 					    int iterations, 
@@ -1255,7 +1254,7 @@ void compute_elimination_sequence_lsa_face (const LinearizedComputationalGraph& 
 
   write_graph_xaif_booster (ac, av, ae, JAElist, remainderLCG, v_cor_list, e_cor_list);
 
-} // end of angel::compute_elimination_sequence_lsa_face()
+} // end xaifBoosterCrossCountryInterface::compute_elimination_sequence_lsa_face()
 
 void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph& xgraph,
 					      int iterations, 
@@ -1301,11 +1300,7 @@ void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph
   write_graph_xaif_booster (ac, av, ae, JAElist, remainderLCG, v_cor_list, e_cor_list);
 } // end of angel::compute_elimination_sequence_lsa_vertex()
 
-} // end namespace angel
-
-namespace xaifBoosterCrossCountryInterface {
-
-void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
+void Elimination::eliminate() {
 
   try {
     switch (myType) {
@@ -1388,7 +1383,7 @@ void xaifBoosterCrossCountryInterface::Elimination::eliminate() {
     throw EliminationException(std::string("angel exception caught within Elimination::eliminate() : ")+e.what_reason());
   }
 
-} // end of Elimination::eliminate()
+} // end of xaifBoosterCrossCountryInterface::Elimination::eliminate()
 
 } // end namespace xaifBoosterCrossCountryInterface
 

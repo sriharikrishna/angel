@@ -5,9 +5,7 @@
 #include "angel_io.hpp"
 
 #ifdef USEXAIFBOOSTER
-  #include "xaifBooster/algorithms/BasicBlockPreaccumulation/inc/AwarenessLevel.hpp"
-  using namespace xaifBoosterBasicBlockPreaccumulation;
-  using namespace xaifBoosterCrossCountryInterface;
+  #include "xaifBooster/algorithms/CrossCountryInterface/inc/AwarenessLevel.hpp"
   using std::list;
 #endif
 
@@ -754,16 +752,16 @@ EdgeRefType_E getRefType (const c_graph_t::edge_t e,
 			  const c_graph_t& angelLCG,
 			  const list<EdgeRef_t>& edge_ref_list);
 
-const LinearizedComputationalGraphEdge* getLCG_p (const c_graph_t::edge_t e,
-						  const c_graph_t& angelLCG,
-						  const list<EdgeRef_t>& edge_ref_list);
+const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* getLCG_p (const c_graph_t::edge_t e,
+                                                                                    const c_graph_t& angelLCG,
+                                                                                    const list<EdgeRef_t>& edge_ref_list);
 
-JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
-						const c_graph_t& angelLCG,
-						const list<EdgeRef_t>& edge_ref_list);
+xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
+                                                                                  const c_graph_t& angelLCG,
+                                                                                  const list<EdgeRef_t>& edge_ref_list);
 
 void setJaevRef (const c_graph_t::edge_t e,
-		 JacobianAccumulationExpressionVertex& jaev,
+                 xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex& jaev,
 		 const c_graph_t& angelLCG,
 		 const list<EdgeRef_t>& edge_ref_list);
 	
@@ -791,7 +789,7 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 					  const c_graph_t::edge_t e2,
 					  c_graph_t& angelLCG,
 					  list<EdgeRef_t>& edge_ref_list,
-					  JacobianAccumulationExpressionList& jae_list);
+                                          xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& jae_list);
 
 /** Front eliminate an edge from an angel c_graph_t but go directly to a
     xaifBoosterCrossCountryInterface::JacobianAccumulationExpression, rather
@@ -812,7 +810,7 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 					    c_graph_t& angelLCG,
 					    list<EdgeRef_t>& edge_ref_list,
-					    JacobianAccumulationExpressionList& jae_list);
+                                            xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& jae_list);
 
 /** Back eliminate an edge from an angel c_graph_t but go directly to a
     xaifBoosterCrossCountryInterface::JacobianAccumulationExpression, rather
@@ -833,7 +831,7 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 unsigned int back_eliminate_edge_directly (c_graph_t::edge_t e,
 					   c_graph_t& angelLCG,
 					   list<EdgeRef_t>& edge_ref_list,
-					   JacobianAccumulationExpressionList& jae_list);
+                                           xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& jae_list);
 
 unsigned int pair_elim (c_graph_t::edge_t e1,
 			c_graph_t::edge_t e2,
