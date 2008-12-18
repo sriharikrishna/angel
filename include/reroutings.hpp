@@ -4,9 +4,7 @@
 #define 	_reroutings_include_
 
 #include "angel_types.hpp"
-#include "xaifBooster/algorithms/BasicBlockPreaccumulation/inc/AwarenessLevel.hpp"
-using namespace xaifBoosterBasicBlockPreaccumulation;
-using namespace xaifBoosterCrossCountryInterface;
+#include "xaifBooster/algorithms/CrossCountryInterface/inc/AwarenessLevel.hpp"
 
 using std::list;
 using std::vector;
@@ -33,18 +31,18 @@ unsigned int reroutable_edges(c_graph_t& angelLCG,
  */
 int reroute_effect (const edge_reroute_t er,
 		    const c_graph_t& angelLCG,
-		    const AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                    const xaifBoosterCrossCountryInterface::AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
 		    bool& incrementIsTrivial);
 
 unsigned int preroute_edge_directly (edge_reroute_t er,
 				     c_graph_t& angelLCG,
 				     list<EdgeRef_t>& edge_ref_list,
-				     JacobianAccumulationExpressionList& jae_list);
+                                     xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& jae_list);
 
 unsigned int postroute_edge_directly (edge_reroute_t er,
 				      c_graph_t& angelLCG,
 				      list<EdgeRef_t>& edge_ref_list,
-				      JacobianAccumulationExpressionList& jae_list);
+                                      xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& jae_list);
 
 unsigned int prerouteEdge_noJAE (edge_reroute_t er,
                                  c_graph_t& angelLCG);
