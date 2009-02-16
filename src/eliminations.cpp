@@ -241,7 +241,7 @@ int face_elimination (line_graph_t::face_t f, int kr, line_graph_t& lg, accu_gra
   same.resize (max (same_p.size(), same_s.size()));
   vector<edge_t>::iterator se= set_intersection (same_p.begin(), same_p.end(), same_s.begin(),
 						 same_s.end(), same.begin());
-  throw_debug_exception (se-same.begin() >= 2, consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO (se-same.begin() >= 2, consistency_exception,
 			 "More than one mergeable vertex in face elimination"); 
 
   if (kr != -1) {
@@ -259,7 +259,7 @@ int face_elimination (line_graph_t::face_t f, int kr, line_graph_t& lg, accu_gra
   line_graph_t::ed_t   el= get(vertex_degree, lg);  // edge label
   int d= el[i] * el[j];
 
-  throw_debug_exception ((int) ac.exp_nr.size() != lg.v(), consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO ((int) ac.exp_nr.size() != lg.v(), consistency_exception,
 			 "Array exp_nr has wrong size"); 
   edge_t k;
   if (se != same.begin()) { // absorption
@@ -277,7 +277,7 @@ int face_elimination (line_graph_t::face_t f, int kr, line_graph_t& lg, accu_gra
     ac.exp_nr[k]= ac.accu_exp.size()-1;
     line_graph_t::evn_t evn= get(vertex_name, lg);
     // assert (evn[i].second == evn[j].first); // adjacent edges ?
-    throw_debug_exception (evn[i].second != evn[j].first, consistency_exception,
+    THROW_DEBUG_EXCEPT_MACRO (evn[i].second != evn[j].first, consistency_exception,
 			   "Adjacency corrupted in line graph"); 
     evn[k]= make_pair (evn[i].first, evn[j].second);
 
@@ -289,7 +289,7 @@ int face_elimination (line_graph_t::face_t f, int kr, line_graph_t& lg, accu_gra
     el[k]= d;
     lg.cons_ok= false;
   }
-  throw_debug_exception (kr != -1 && edge_t (kr) != k, consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO (kr != -1 && edge_t (kr) != k, consistency_exception,
 			 "Inserted Vertex has wrong number"); 
 
   remove_edge (f, lg);
@@ -297,11 +297,11 @@ int face_elimination (line_graph_t::face_t f, int kr, line_graph_t& lg, accu_gra
   if (remove_irrelevant_edges (i, lg, true) > 0) // i is isolated
     lg.cons_ok= false;
   else {
-    throw_debug_exception (in_degree (i, lg) == 0 || out_degree (i, lg) == 0, consistency_exception,
+    THROW_DEBUG_EXCEPT_MACRO (in_degree (i, lg) == 0 || out_degree (i, lg) == 0, consistency_exception,
 			   "Undetected isolated vertex"); 
     vector<edge_t> same;
     same_neighbors (i, lg, same);
-    throw_debug_exception (same.size() >= 2, consistency_exception,
+    THROW_DEBUG_EXCEPT_MACRO (same.size() >= 2, consistency_exception,
 			   "More than one mergeable vertex in face elimination"); 
     if (same.size() > 0) { // mergeable vertex (edge in c-graph)
       edge_t i2= same[0];
@@ -316,11 +316,11 @@ int face_elimination (line_graph_t::face_t f, int kr, line_graph_t& lg, accu_gra
   if (remove_unreachable_edges (j, lg, true) > 0)  // j is isolated
     lg.cons_ok= false;
   else {
-    throw_debug_exception (in_degree (j, lg) == 0 || out_degree (j, lg) == 0, consistency_exception,
+    THROW_DEBUG_EXCEPT_MACRO (in_degree (j, lg) == 0 || out_degree (j, lg) == 0, consistency_exception,
 			   "Undetected isolated vertex"); 
     vector<edge_t> same;
     same_neighbors (j, lg, same);
-    throw_debug_exception (same.size() >= 2, consistency_exception,
+    THROW_DEBUG_EXCEPT_MACRO (same.size() >= 2, consistency_exception,
 			   "More than one mergeable vertex in face elimination"); 
     if (same.size() > 0) { // mergeable vertex (edge)
       edge_t j2= same[0];
@@ -493,7 +493,7 @@ bool convert_elimination_sequence (const vector<edge_ij_elim_t>& ev,
 #endif
 
     bool found = find_edge (ee.i, ee.j, lgc, lev);
-    throw_exception (!found || lev.empty(), consistency_exception, "LCG edge has no corresponding line graph node");
+    THROW_EXCEPT_MACRO (!found || lev.empty(), consistency_exception, "LCG edge has no corresponding line graph node");
 
     if (lev.size() == 1) { ledge = lev[0]; }
     else { // if lev.size() != 1
@@ -504,8 +504,8 @@ bool convert_elimination_sequence (const vector<edge_ij_elim_t>& ev,
       for (size_t l = 0; l < lev.size(); l++) {
         if (in_degree(lev[l], lgc) > 0 || out_degree(lev[l], lgc) > 0) candidates.push_back(lev[l]);
       }
-      throw_exception (candidates.empty(), consistency_exception, "all corresponding line graph nodes are isolated");
-      throw_exception (candidates.size() > 1, consistency_exception, "multiple non-isolated corresponding line graph nodes");
+      THROW_EXCEPT_MACRO (candidates.empty(), consistency_exception, "all corresponding line graph nodes are isolated");
+      THROW_EXCEPT_MACRO (candidates.size() > 1, consistency_exception, "multiple non-isolated corresponding line graph nodes");
 
       cout << " Unique correlation found!\n";
       ledge = candidates[0];
@@ -542,10 +542,10 @@ EdgeRefType_E getRefType (const c_graph_t::edge_t e, const c_graph_t& angelLCG, 
   for (list<EdgeRef_t>::const_iterator ref_it = edge_ref_list.begin(); ref_it != edge_ref_list.end(); ref_it++)
     if (source (e, angelLCG) == source (ref_it->my_angelLCGedge, angelLCG) &&
 	target (e, angelLCG) == target (ref_it->my_angelLCGedge, angelLCG)) {
-      throw_exception (ref_it->my_type == UNDEFINED, consistency_exception, "requested edge reference type is UNDEFINED");
+      THROW_EXCEPT_MACRO (ref_it->my_type == UNDEFINED, consistency_exception, "requested edge reference type is UNDEFINED");
       return ref_it->my_type;
     }
-  throw_exception (true, consistency_exception, "can't return reference type - no reference entry could be found for edge");
+  THROW_EXCEPT_MACRO (true, consistency_exception, "can't return reference type - no reference entry could be found for edge");
 } // end getRef_type ()
 
 const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* getLCG_p (const c_graph_t::edge_t e,
@@ -555,10 +555,10 @@ const xaifBoosterCrossCountryInterface::LinearizedComputationalGraphEdge* getLCG
   for (list<EdgeRef_t>::const_iterator ref_it = edge_ref_list.begin(); ref_it != edge_ref_list.end(); ref_it++)
     if (source (e, angelLCG) == source (ref_it->my_angelLCGedge, angelLCG) &&
 	target (e, angelLCG) == target (ref_it->my_angelLCGedge, angelLCG)) {
-      throw_exception (ref_it->my_LCG_edge_p == NULL, consistency_exception, "requested LCG edge pointer is NULL");
+      THROW_EXCEPT_MACRO (ref_it->my_LCG_edge_p == NULL, consistency_exception, "requested LCG edge pointer is NULL");
       return ref_it->my_LCG_edge_p;
     }
-  throw_exception (true, consistency_exception, "can't return LCG_p - no reference entry could be found for edge");
+  THROW_EXCEPT_MACRO (true, consistency_exception, "can't return LCG_p - no reference entry could be found for edge");
 } // end getLCG_p ()
 
 xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* getJAE_p (const c_graph_t::edge_t e,
@@ -568,10 +568,10 @@ xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* getJAE_p
   for (list<EdgeRef_t>::const_iterator ref_it = edge_ref_list.begin(); ref_it != edge_ref_list.end(); ref_it++)
     if (source (e, angelLCG) == source (ref_it->my_angelLCGedge, angelLCG) &&
 	target (e, angelLCG) == target (ref_it->my_angelLCGedge, angelLCG)) {
-      throw_exception (ref_it->my_JAE_vertex_p == NULL, consistency_exception, "requested JAE vertex pointer is NULL");
+      THROW_EXCEPT_MACRO (ref_it->my_JAE_vertex_p == NULL, consistency_exception, "requested JAE vertex pointer is NULL");
       return ref_it->my_JAE_vertex_p;
     }
-  throw_exception (true, consistency_exception, "can't return JAE_p - no reference entry could be found for edge");
+  THROW_EXCEPT_MACRO (true, consistency_exception, "can't return JAE_p - no reference entry could be found for edge");
 } // end getJAE_p ()
 
 void setJaevRef (const c_graph_t::edge_t e,
@@ -587,7 +587,7 @@ void setJaevRef (const c_graph_t::edge_t e,
     xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionVertex* JAE_p = getJAE_p (e, angelLCG, edge_ref_list);
     jaev.setInternalReference (*JAE_p);
   }
-  else throw_exception (true, consistency_exception, "cannot set JAE vertex ref because edge reference type is UNDEFINED");
+  else THROW_EXCEPT_MACRO (true, consistency_exception, "cannot set JAE vertex ref because edge reference type is UNDEFINED");
 } // end setJaevRef ()
 
 void removeRef (const c_graph_t::edge_t e,
@@ -599,7 +599,7 @@ void removeRef (const c_graph_t::edge_t e,
       edge_ref_list.erase(ref_it);
       return;
     }
-  throw_exception (true, consistency_exception, "couldn't find edge reference in order to remove it");
+  THROW_EXCEPT_MACRO (true, consistency_exception, "couldn't find edge reference in order to remove it");
 } // end removeRef()
 
 // Creates a new JAE corresponding to multiplying edges e1 and e2

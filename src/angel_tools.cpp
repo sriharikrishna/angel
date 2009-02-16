@@ -63,7 +63,7 @@ c_graph_t::edge_t getEdge(unsigned int i,
   c_graph_t::edge_t e;
   bool found_e;
   tie (e, found_e) = edge(i, j, angelLCG);
-  throw_exception(!found_e, consistency_exception, "getEdge: edge could not be found from src,tgt");
+  THROW_EXCEPT_MACRO(!found_e, consistency_exception, "getEdge: edge could not be found from src,tgt");
   return e;
 } // end getEdge()
 
@@ -227,7 +227,7 @@ void independent_vertices_to_front (const c_graph_t& gin,
 				    const vector<c_graph_t::vertex_t>& indeps,
 				    c_graph_t& gout) {
   typedef c_graph_t::vertex_t vertex_t;
-  throw_exception (gin.x() != int (indeps.size()), consistency_exception, 
+  THROW_EXCEPT_MACRO (gin.x() != int (indeps.size()), consistency_exception, 
 		   "Wrong number of independents");
   vector<vertex_t> counter (gin.v());
 
@@ -263,7 +263,7 @@ void take_over_successors (c_graph_t::vertex_t v1, c_graph_t::vertex_t v2,
   c_graph_t::oei_t oei, oe_end;
   for (tie (oei, oe_end)= out_edges (v1, g1); oei != oe_end; ++oei) {
     int t= int (target (*oei, g1)), it= offset + t;
-    throw_debug_exception (it <= 0 || it >= g2.v(), consistency_exception, 
+    THROW_DEBUG_EXCEPT_MACRO (it <= 0 || it >= g2.v(), consistency_exception, 
 			   "Target out of range");
     c_graph_t::vertex_t vt= vertex (it, g2); // equivalent vertex in g2
     add_edge (v2, vt, edge_number++, g2); 

@@ -124,7 +124,7 @@ int reroute_effect (const edge_reroute_t er,
     for (tie(oei, oe_end) = out_edges(source(pe, angelLCG), angelLCG); oei != oe_end; ++oei) {
       if (*oei == pe) continue; // skip the pivot edge
       tie (decrement_e, found_decrement_e) = edge(source(e, angelLCG), target(*oei, angelLCG), angelLCG);
-      throw_exception (!found_decrement_e, consistency_exception, "Pre-routing passed to filter causes decrement fill-in");	
+      THROW_EXCEPT_MACRO (!found_decrement_e, consistency_exception, "Pre-routing passed to filter causes decrement fill-in");	
       // no awareness: no effect
       // unit awareness:
       if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[decrement_e] == UNIT_EDGE) nontrivial_edge_change++;
@@ -177,7 +177,7 @@ int reroute_effect (const edge_reroute_t er,
     for (tie(iei, ie_end) = in_edges(target(pe, angelLCG), angelLCG); iei != ie_end; ++iei) {
       if (*iei == pe) continue; // skip the pivot edge
       tie (decrement_e, found_decrement_e) = edge (source(*iei, angelLCG), target(e, angelLCG), angelLCG);
-      throw_exception (!found_decrement_e, consistency_exception, "Post-routing passed to filter causes decrement fill-in");	
+      THROW_EXCEPT_MACRO (!found_decrement_e, consistency_exception, "Post-routing passed to filter causes decrement fill-in");	
       // no awareness: no effect
       // unit awareness:
       if (ourAwarenessLevel == AwarenessLevel::UNIT_AWARENESS && eType[decrement_e] == UNIT_EDGE) nontrivial_edge_change++;

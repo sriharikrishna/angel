@@ -218,9 +218,9 @@ int pick_processor_sa (int my_costs, int it, Temp_t temp, const GMPI::Intracomm&
     double sum_probs= psum_probs[size-1], ra= angel::random (sum_probs);
     for (picked= 0; picked < size; picked++)
       if (ra < psum_probs[picked]) break;
-    throw_debug_exception (picked == size, consistency_exception, "No processor picked");
+    THROW_DEBUG_EXCEPT_MACRO (picked == size, consistency_exception, "No processor picked");
 #ifdef WRITE_LOG_FILE
-    throw_debug_exception (!log_file.is_open(), io_exception, "Log file not opened");    
+    THROW_DEBUG_EXCEPT_MACRO (!log_file.is_open(), io_exception, "Log file not opened");    
     log_file << "pick_processor_sa at iteration " << it << endl;
     write_vector (log_file, "Processor's costs: ", all_costs);
     write_vector (log_file, "Accumulated probabilities: ", psum_probs);

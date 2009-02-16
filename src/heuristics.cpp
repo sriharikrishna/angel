@@ -206,7 +206,7 @@ int markowitz_enlargement_front (c_graph_t::edge_t e, const c_graph_t& cg,
 int markowitz_enlargement_front (c_graph_t::edge_t e, c_graph_t::edge_t e2, 
 				 const c_graph_t& cg) {
 
-  throw_debug_exception (target (e, cg) != source (e2, cg), consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO (target (e, cg) != source (e2, cg), consistency_exception,
 			 "e and e2 does not match"); 
 
   c_graph_t::vertex_t j= target (e2, cg), se= source (e, cg), te= target (e, cg);
@@ -248,7 +248,7 @@ int markowitz_enlargement_back (c_graph_t::edge_t e, c_graph_t::edge_t e2,
 				const c_graph_t& cg) {
 
   // assert (source (e, cg) == target (e2, cg));
-  throw_debug_exception (source (e, cg) != target (e2, cg), consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO (source (e, cg) != target (e2, cg), consistency_exception,
 			 "e and e2 does not match"); 
 
   c_graph_t::vertex_t j= source (e2, cg), se= source (e, cg), te= target (e, cg);
@@ -347,7 +347,7 @@ struct momrv_op_t {
               - markowitz_enlargement_all_neighbors (v, cg);
 #ifndef NDEBUG
     c_graph_t         gtmp (cg);  vertex_elimination (v, gtmp);
-    throw_debug_exception (overall_markowitz_degree (cg) - overall_markowitz_degree (gtmp) != momr, 
+    THROW_DEBUG_EXCEPT_MACRO (overall_markowitz_degree (cg) - overall_markowitz_degree (gtmp) != momr, 
 			   consistency_exception, "momr not correct"); 
 #endif
     return momr; }
@@ -373,7 +373,7 @@ inline int oplr_face (c_graph_t::edge_t e1, c_graph_t::edge_t e2,
 		      const c_graph_t& cg) {
 
   // assert (target (e1, cg) == source (e2, cg));
-  throw_debug_exception (target (e1, cg) != source (e2, cg), consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO (target (e1, cg) != source (e2, cg), consistency_exception,
 			 "e1 and e2 does not match"); 
 
   c_graph_t::vertex_t p= source (e1, cg), s= target (e2, cg);
@@ -481,7 +481,7 @@ int forward_mode_edge_t::operator() (const vector<edge_bool_t>& ev1,
   ev2.push_back (ev1[0]);
 
   for (size_t c= 1; c < ev1.size(); c++) {
-//    throw_debug_exception (fme_obj (ev1[c], cg) < fme_obj (ev2[0], cg) != lex_less (ev1[c], ev2[0], cg),
+//    THROW_DEBUG_EXCEPT_MACRO (fme_obj (ev1[c], cg) < fme_obj (ev2[0], cg) != lex_less (ev1[c], ev2[0], cg),
 //			   consistency_exception, "objective function and comparator does not match");
     if (lex_less (ev1[c], ev2[0], cg)) ev2[0]= ev1[c]; }
   set_objective (fme_obj (ev2[0], cg));
@@ -534,7 +534,7 @@ int reverse_mode_edge_t::operator() (const vector<edge_bool_t>& ev1,
   ev2.push_back (ev1[0]);
 
   for (size_t c= 1; c < ev1.size(); c++) {
-//    throw_debug_exception ((rme_obj (ev1[c], cg) > rme_obj (ev2[0], cg)) != lex_greater (ev1[c], ev2[0], cg),
+//    THROW_DEBUG_EXCEPT_MACRO ((rme_obj (ev1[c], cg) > rme_obj (ev2[0], cg)) != lex_greater (ev1[c], ev2[0], cg),
 //			   consistency_exception, "objective function and comparator does not match");
     if (lex_greater (ev1[c], ev2[0], cg)) ev2[0]= ev1[c]; }
     set_objective (rme_obj (ev2[0], cg));
@@ -716,11 +716,11 @@ inline int momr_edge_front (c_graph_t::edge_t e, const c_graph_t& cg) {
     if (source (*ei, gtmp) == s && target (*ei, gtmp) == t) {
       etmp= *ei; break; }
   // assert (ei != e_end); // otherwise edge not found
-  throw_debug_exception (ei == e_end, consistency_exception, "No matching edge found"); 
+  THROW_DEBUG_EXCEPT_MACRO (ei == e_end, consistency_exception, "No matching edge found"); 
 
   front_edge_elimination (etmp, gtmp);
   // assert (overall_markowitz_degree (cg) - overall_markowitz_degree (gtmp) == momr);
-  throw_debug_exception (overall_markowitz_degree (cg) - overall_markowitz_degree (gtmp) != momr, 
+  THROW_DEBUG_EXCEPT_MACRO (overall_markowitz_degree (cg) - overall_markowitz_degree (gtmp) != momr, 
 			 consistency_exception, "momr not correct"); 
 #endif
   return momr;
@@ -743,7 +743,7 @@ inline int momr_edge_back (c_graph_t::edge_t e, const c_graph_t& cg) {
   int momr2= in_degree (source (e, cg), cg) - markowitz_enlargement_back (e, cg)
             - sum_over_all_in_edges (source (e, cg), cg, me);
   // assert (momr == momr2);
-  throw_debug_exception (momr2 != momr, consistency_exception, "momr not correct"); 
+  THROW_DEBUG_EXCEPT_MACRO (momr2 != momr, consistency_exception, "momr not correct"); 
 
   c_graph_t         gtmp (cg);
   c_graph_t::vi_t   vi, v_end;
@@ -759,13 +759,13 @@ inline int momr_edge_back (c_graph_t::edge_t e, const c_graph_t& cg) {
     if (source (*ei, gtmp) == s && target (*ei, gtmp) == t) {
       etmp= *ei; break; }
   // assert (ei != e_end); // otherwise edge not found
-  throw_debug_exception (ei == e_end, consistency_exception, "No matching edge found"); 
+  THROW_DEBUG_EXCEPT_MACRO (ei == e_end, consistency_exception, "No matching edge found"); 
 
   back_edge_elimination (etmp, gtmp);
   for (boost::tie (vi, v_end)= vertices (gtmp); vi != v_end; ++vi)
     new_overall_markowitz+= in_degree (*vi, gtmp) * out_degree (*vi, gtmp);
   // assert (old_overall_markowitz-new_overall_markowitz == momr);
-  throw_debug_exception (old_overall_markowitz-new_overall_markowitz != momr, 
+  THROW_DEBUG_EXCEPT_MACRO (old_overall_markowitz-new_overall_markowitz != momr, 
 			 consistency_exception, "momr not correct"); 
 #endif
   return momr;
@@ -823,7 +823,7 @@ struct diste_op_t {
       predecessor_set (j, cg, nb);
       for (size_t c= 0; c < nb.size(); c++)
 	if (j - nb[c] > dist) dist= j - nb[c]; }
-    throw_debug_exception (dist <= 0, consistency_exception, "Wrong distance in edge elimination");
+    THROW_DEBUG_EXCEPT_MACRO (dist <= 0, consistency_exception, "Wrong distance in edge elimination");
     return dist; }
 };
 
@@ -886,7 +886,7 @@ int forward_mode_face_t::operator() (const vector<line_graph_t::face_t>& fv1,
   fv2.push_back (fv1[0]);
 
   for (size_t c= 1; c < fv1.size(); c++) {
-//    throw_debug_exception (fmf_obj (fv1[c], lg) < fmf_obj (fv2[0], lg) != lex_less_face (fv1[c], fv2[0], lg),
+//    THROW_DEBUG_EXCEPT_MACRO (fmf_obj (fv1[c], lg) < fmf_obj (fv2[0], lg) != lex_less_face (fv1[c], fv2[0], lg),
 //			   consistency_exception, "objective function and comparator does not match");
     if (lex_less_face (fv1[c], fv2[0], lg)) fv2[0]= fv1[c]; }
   set_objective (fmf_obj (fv2[0], lg));
@@ -907,7 +907,7 @@ int reverse_mode_face_t::operator() (const vector<line_graph_t::face_t>& fv1,
   fv2.push_back (fv1[0]);
 
   for (size_t c= 1; c < fv1.size(); c++) {
-//    throw_debug_exception (fmf_obj (fv1[c], lg) < fmf_obj (fv2[0], lg) != lex_less_face (fv1[c], fv2[0], lg),
+//    THROW_DEBUG_EXCEPT_MACRO (fmf_obj (fv1[c], lg) < fmf_obj (fv2[0], lg) != lex_less_face (fv1[c], fv2[0], lg),
 //			   consistency_exception, "objective function and comparator does not match");
     if (!lex_less_face (fv1[c], fv2[0], lg)) fv2[0]= fv1[c]; }
   set_objective (fmf_obj (fv2[0], lg));
@@ -973,7 +973,7 @@ struct lmf_op_t {
     markowitz_on_line_graph (lg, mdegree); }
   int operator() (line_graph_t::face_t f, const line_graph_t& lg) {
     int i, j, k; face_vertex_name (f, lg, i, j, k);
-    throw_debug_exception (mdegree[j] == 0, consistency_exception, "Un-eliminatable face in fv1"); 
+    THROW_DEBUG_EXCEPT_MACRO (mdegree[j] == 0, consistency_exception, "Un-eliminatable face in fv1"); 
     return mdegree[j]; }
 };
 
@@ -1004,7 +1004,7 @@ public:
       int v1, v2;
       edge_vertex_name (target (*ofi, lg), lg, v1, v2); 
       // assert (v1 == i);
-      throw_debug_exception (v1 != i, consistency_exception, "Adjacency corrupted in line graph"); 
+      THROW_DEBUG_EXCEPT_MACRO (v1 != i, consistency_exception, "Adjacency corrupted in line graph"); 
       if (v2 == k) return 0; } // (p,i,k) found
     return 1;
   }
@@ -1030,7 +1030,7 @@ public:
       int v1, v2;
       edge_vertex_name (source (*ifi, lg), lg, v1, v2);
       // assert (v2 == k);
-      throw_debug_exception (v2 != k, consistency_exception, "Adjacency corrupted in line graph"); 
+      THROW_DEBUG_EXCEPT_MACRO (v2 != k, consistency_exception, "Adjacency corrupted in line graph"); 
       if (v1 == i) return 0; } // (i,k,s) found
     return 1;
   }
@@ -1086,7 +1086,7 @@ struct momrf_op_t {
       face_elimination (ftmp, gtmp2);
     }
     // assert (overall_markowitz_degree (lg) - overall_markowitz_degree (gtmp) == momr);
-    throw_debug_exception (overall_markowitz_degree (lg) - overall_markowitz_degree (gtmp) != momr, 
+    THROW_DEBUG_EXCEPT_MACRO (overall_markowitz_degree (lg) - overall_markowitz_degree (gtmp) != momr, 
 			   consistency_exception, "momr not correct"); 
 #endif
     return momr; }

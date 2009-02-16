@@ -39,16 +39,16 @@ namespace angel {
   
 
 #ifndef NDEBUG
-#define throw_debug_exception(Test,Exception,Message) \
+#define THROW_DEBUG_EXCEPT_MACRO(Test,Exception,Message) \
 { \
 if (Test) { \
   throw Exception(__FILE__, __LINE__, Message); }\
 }
 #else
-#define throw_debug_exception(Test,Exception,Message)
+#define THROW_DEBUG_EXCEPT_MACRO(Test,Exception,Message)
 #endif
 
-#define throw_exception(Test,Exception,Message) \
+#define THROW_EXCEPT_MACRO(Test,Exception,Message) \
 { \
 if (Test) { \
   throw Exception(__FILE__, __LINE__, Message); }\

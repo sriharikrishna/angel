@@ -40,13 +40,13 @@ int lowest_markowitz_face_complete_t<Heuristic_t>::operator() (const vector<line
       if (m == minm) fvlm.push_back (f); }
     
     tiebreaker (fvlm, lg, fv2);
-    throw_debug_exception (fv2.size() == 0, consistency_exception, "Tiebreaker returned empty vector");
+    THROW_DEBUG_EXCEPT_MACRO (fv2.size() == 0, consistency_exception, "Tiebreaker returned empty vector");
     lastv= evn[source(fv2[0], lg)].second;
     
     // test if all returned faces belong to the same vertex
 #ifndef NDEBUG
     for (size_t c= 1; c < fv2.size(); c++)
-      throw_exception (lastv != evn[source(fv2[c], lg)].second, consistency_exception, 
+      THROW_EXCEPT_MACRO (lastv != evn[source(fv2[c], lg)].second, consistency_exception, 
 		       "Returned faces does not belong to the same vertex");
 #endif
 
@@ -130,7 +130,7 @@ int bcast_best_t<Comm_t>::operator() (const Vector_t& v1, const Ad_graph_t&, Vec
   int my_pe_size[2], sum_pe_size[2];
   my_pe_size[1]= v1.size(); my_pe_size[0]= v1.size() == 0 ? 0 : comm.Get_rank(); 
   comm.Allreduce (my_pe_size, sum_pe_size, 2, MPI::INT, MPI::SUM);
-  throw_exception (sum_pe_size[1] != 1, consistency_exception, "v1 must contain 1 element overall!");
+  THROW_EXCEPT_MACRO (sum_pe_size[1] != 1, consistency_exception, "v1 must contain 1 element overall!");
   v2= v1;
   GMPI::comm_ref_t<int, Vector_t> comm_ref (v2); // reference used in communication
   comm.Bcast (comm_ref, sum_pe_size[0]);

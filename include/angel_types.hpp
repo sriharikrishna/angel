@@ -125,10 +125,10 @@ public:
     // rem. in basic blocks vertex may be both dependent and independent
     #ifndef NDEBUG
       // assert (X >= 0 && X < V_); // X==0 is usefull in graph construction
-      throw_exception (X < 0 && X > V_, consistency_exception, "X inconsistent");
+      THROW_EXCEPT_MACRO (X < 0 && X > V_, consistency_exception, "X inconsistent");
       for (size_t c= 0; c < dependents.size(); c++)
 	// assert (dependents[c] < (vertex_t) V_);
-	throw_exception (dependents[c] >= (vertex_t) V_, consistency_exception, "dependents inconsistent");
+	THROW_EXCEPT_MACRO (dependents[c] >= (vertex_t) V_, consistency_exception, "dependents inconsistent");
     #endif
   }
 
@@ -312,10 +312,10 @@ public:
     // rem. in basic blocks vertex may be both dependent and independent
     #ifndef NDEBUG
       // assert (X >= 0 && X < V_); // X==0 is usefull in graph construction
-      throw_exception (X < 0 && X > V_, consistency_exception, "X inconsistent");
+      THROW_EXCEPT_MACRO (X < 0 && X > V_, consistency_exception, "X inconsistent");
       for (size_t c= 0; c < dependents.size(); c++)
 	// assert (dependents[c] < (edge_t) V_);
-	throw_exception (dependents[c] >= (edge_t) V_, consistency_exception, "dependents inconsistent");
+	THROW_EXCEPT_MACRO (dependents[c] >= (edge_t) V_, consistency_exception, "dependents inconsistent");
     #endif
   }
 
@@ -418,7 +418,7 @@ inline void face_vertex_name (line_graph_t::face_t f, const line_graph_t& lg,
   line_graph_t::const_evn_t evn= get(boost::vertex_name, lg); 
   line_graph_t::edge_t   ij= source (f, lg), jk= target (f, lg);
   i= evn[ij].first, j= evn[ij].second, k= evn[jk].second;
-  throw_debug_exception (j != evn[jk].first, consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO (j != evn[jk].first, consistency_exception,
 			 "Adjacency corrupted in line graph"); 
 }
 

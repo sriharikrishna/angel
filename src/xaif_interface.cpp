@@ -73,7 +73,7 @@ void read_graph_xaif_booster (const LinearizedComputationalGraph& xg, c_graph_t&
   // test whether indeps in the beginning
   for (size_t c= 0; c < indeps.size(); c++)
     // assert (indeps[c] < indeps.size());
-    throw_exception (indeps[c] >= indeps.size(), consistency_exception,
+    THROW_EXCEPT_MACRO (indeps[c] >= indeps.size(), consistency_exception,
 		     "Independent not at the beginning");
     
   vector<vertex_t> deps;
@@ -172,13 +172,13 @@ void write_graph_xaif_booster (const accu_graph_t& ag,
       if (vc+1 == (size_t) my_exp.v()) exp_output_pr.push_back(&new_vertex);
 
       switch (prop.ref_kind) { 
-      case accu_exp_t::nothing: throw_exception (true, consistency_exception, "Unset vertex"); break;
+      case accu_exp_t::nothing: THROW_EXCEPT_MACRO (true, consistency_exception, "Unset vertex"); break;
       case accu_exp_t::exp:
-	throw_debug_exception (prop.ref.exp_nr >= int (c), consistency_exception, "Expression number too large")
+	THROW_DEBUG_EXCEPT_MACRO (prop.ref.exp_nr >= int (c), consistency_exception, "Expression number too large")
 	new_vertex.setInternalReference (*exp_output_pr[prop.ref.exp_nr]); break;
       case accu_exp_t::lgn: {
 	const LinearizedComputationalGraphEdge* ptr= xaif_edge_pr (prop.ref.node, ag, ae); 
-	throw_debug_exception (ptr == NULL, consistency_exception, "Unset reference");
+	THROW_DEBUG_EXCEPT_MACRO (ptr == NULL, consistency_exception, "Unset reference");
 	new_vertex.setExternalReference (*ptr); } break;
       case accu_exp_t::isop:    
 	new_vertex.setOperation (prop.ref.op == accu_exp_t::add ? JacobianAccumulationExpressionVertex::ADD_OP
@@ -205,7 +205,7 @@ void write_graph_xaif_booster (const accu_graph_t& ag,
 	if (vcori->myOriginalVertex_p == original_src_p)	remainder_src_p = vcori->myRemainderVertex_p;
 	else if (vcori->myOriginalVertex_p == original_tgt_p)	remainder_tgt_p = vcori->myRemainderVertex_p;
       } // end all vertex correlation entries
-      throw_exception (remainder_src_p == NULL || remainder_tgt_p == NULL, consistency_exception, "Vertex in remainder graph could not be found");
+      THROW_EXCEPT_MACRO (remainder_src_p == NULL || remainder_tgt_p == NULL, consistency_exception, "Vertex in remainder graph could not be found");
       LinearizedComputationalGraphEdge& new_remainder_edge = remainderLCG.addEdge(*remainder_src_p, *remainder_tgt_p);
 
       // crate the correlation entry
@@ -304,7 +304,7 @@ void ourLCG_to_angelLCG (const LinearizedComputationalGraph& ourLCG,
 
   // ensure that indeps occur in the beginning
   for (size_t c = 0; c < indeps.size(); c++)
-    throw_exception (indeps[c] >= indeps.size(), consistency_exception, "Independent not at the beginning");
+    THROW_EXCEPT_MACRO (indeps[c] >= indeps.size(), consistency_exception, "Independent not at the beginning");
 
   // COPY EDGES ----------------------------------------------------------------
   int edge_number = 0;
@@ -369,7 +369,7 @@ void populate_remainderGraph_and_correlationLists (const c_graph_t& angelLCG,
       if (vcori->myOriginalVertex_p == original_src_p) remainder_src_p = vcori->myRemainderVertex_p;
       else if (vcori->myOriginalVertex_p == original_tgt_p) remainder_tgt_p = vcori->myRemainderVertex_p;
     } // end all vertex correlation entries
-    throw_exception (remainder_src_p == NULL || remainder_tgt_p == NULL, consistency_exception,
+    THROW_EXCEPT_MACRO (remainder_src_p == NULL || remainder_tgt_p == NULL, consistency_exception,
 					"Vertex in remainder graph could not be correlated");
 
     // create the edge and its correlation entry
@@ -400,7 +400,7 @@ void populate_remainderGraph_and_correlationLists (const c_graph_t& angelLCG,
       new_edge_correlation.myEliminationReference.myJAEVertex_p = getJAE_p (*ei, angelLCG, edge_ref_list);
       new_edge_correlation.myType = EdgeCorrelationEntry::JAE_VERT;
     }
-    else throw_exception (true, consistency_exception, "Edge reference type neither LCG_EDGE nor JAE_VERT");
+    else THROW_EXCEPT_MACRO (true, consistency_exception, "Edge reference type neither LCG_EDGE nor JAE_VERT");
 
     e_cor_list.push_back(new_edge_correlation);
   } // end all edges in angelLCG
@@ -1276,7 +1276,7 @@ void compute_elimination_sequence_lsa_vertex (const LinearizedComputationalGraph
 	   << "Calling LSA for face elimination with same parameters (may take longer)...\n";
       return compute_elimination_sequence_lsa_face (xgraph, iterations, gamma, JAElist, remainderLCG, v_cor_list, e_cor_list);}
     // version 2
-    // throw_exception (out_degree (cg.dependents[i], cg) > 0, consistency_exception, "Vertex elimination not possible with these graph.");
+    // THROW_EXCEPT_MACRO (out_degree (cg.dependents[i], cg) > 0, consistency_exception, "Vertex elimination not possible with these graph.");
       
   vertex_elimination_history_t                         veh (cg);
   SA_elimination_cost_t<reverse_mode_vertex_t>         cost (reverse_mode_vertex);
@@ -1375,7 +1375,7 @@ void Elimination::eliminate() {
                                                        myNumReroutings);
         break;
       default:
-       throw_exception (true, consistency_exception, "Missing or invalid elimination type");
+       THROW_EXCEPT_MACRO (true, consistency_exception, "Missing or invalid elimination type");
         break;
     } // end switch (myType)
   } // end try

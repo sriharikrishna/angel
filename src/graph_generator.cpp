@@ -29,7 +29,7 @@ void random_statement (int inputs, int expr, const vector<double>& p,
   int maxar= int (p.size()); // maximal arity of expressions
 
   // assert (inputs + expr - 1 <= expr * maxar); // all inputs usable
-  throw_debug_exception (inputs + expr - 1 > expr * maxar, consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO (inputs + expr - 1 > expr * maxar, consistency_exception,
 			 "Un-usable inputs");
   
 
@@ -86,13 +86,13 @@ void random_statement (int inputs, int expr, const vector<double>& p,
 void random_statement_vector (int max_expr, double unary, 
 			      std::vector<c_graph_t>& statement_vector) {
   // assert (unary >= 0.0 && unary <= 1.0);
-  throw_debug_exception (unary < 0.0 || unary > 1.0, consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO (unary < 0.0 || unary > 1.0, consistency_exception,
 			 "unary must be between 0 and 1"); 
   std::vector<double> p (2); // probabilities of arities
   p[0]= unary; p[1]= 1.0;
 
   // assert (statement_vector.size() > 0);
-  throw_debug_exception (statement_vector.size() == 0, consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO (statement_vector.size() == 0, consistency_exception,
 			 "statement vector must be non-empty"); 
   for (size_t i= 0; i < statement_vector.size(); i++) {
     int expr= angel::random (1, max_expr); // number of expr.
@@ -114,17 +114,17 @@ void stats2block (int inputs, int outputs, const std::vector<c_graph_t>& stats,
 
   int nstats= int (stats.size());
   // assert (nstats >= outputs); // not more outputs than statements
-  throw_debug_exception (nstats < outputs, consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO (nstats < outputs, consistency_exception,
 			 "More outputs than statements"); 
 
 #ifndef NDEBUG
   for (int i= 0; i < nstats; i++) { // really statements ?
     const c_graph_t& stat= stats[i];
     // assert (stat.dependents.size() == 1);
-    throw_debug_exception (stat.dependents.size() != 1, consistency_exception,
+    THROW_DEBUG_EXCEPT_MACRO (stat.dependents.size() != 1, consistency_exception,
 			   "Statements must have 1 output"); 
     // assert (stat.dependents[0] == vertex (stat.v()-1, stat)); 
-    throw_debug_exception (stat.dependents[0] != vertex (stat.v()-1, stat), consistency_exception,
+    THROW_DEBUG_EXCEPT_MACRO (stat.dependents[0] != vertex (stat.v()-1, stat), consistency_exception,
 			   "Statements output must be last vertex"); }
 #endif
 
@@ -196,7 +196,7 @@ void stats2block (int inputs, int outputs, const std::vector<c_graph_t>& stats,
   // each block input is unified with some free statement input
   for (int i= 0; i < inputs; i++) {
     // assert (sl.size() > 0); // enough free statement inputs ?
-    throw_exception (sl.size() == 0, consistency_exception, "Not enough inputs"); 
+    THROW_EXCEPT_MACRO (sl.size() == 0, consistency_exception, "Not enough inputs"); 
     vertex_t vi= vertex (i, gtmp);
     succ_t succ= sl[angel::random (int (sl.size()))];
     int succs= succ.first, succi= succ.second;

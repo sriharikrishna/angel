@@ -84,7 +84,7 @@ public:
   std::ostream& operator() (std::ostream& stream, line_graph_t::face_t f) {
     line_graph_t::edge_t   ij= source (f, lg), jk= target (f, lg);
     int i= evn[ij].first, j= evn[ij].second, k= evn[jk].second;
-    throw_debug_exception (j != evn[jk].first, consistency_exception, "Adjacency corrupted in line graph"); 
+    THROW_DEBUG_EXCEPT_MACRO (j != evn[jk].first, consistency_exception, "Adjacency corrupted in line graph"); 
     stream << '(' << i << ", " << j << ", " << k << ')';
     return stream;
   }
@@ -538,12 +538,12 @@ inline int random (const std::vector<double>& p) {
 #ifndef NDEBUG
   for (size_t j= 0; j < ps; j++)
     // assert (p[j] > 0.0 && p[j] <= 1.0);
-    throw_exception (p[j] < 0.0 || p[j] > 1.0, consistency_exception, "p[i] not between 0 and 1");
+    THROW_EXCEPT_MACRO (p[j] < 0.0 || p[j] > 1.0, consistency_exception, "p[i] not between 0 and 1");
   for (size_t j= 1; j < ps; j++)
     // assert (p[j-1] <= p[j]);
-    throw_exception (p[j-1] > p[j], consistency_exception, "p[i] > p[i-1]");
+    THROW_EXCEPT_MACRO (p[j-1] > p[j], consistency_exception, "p[i] > p[i-1]");
   // assert (p[ps-1] == 1.0);
-  throw_exception (p[ps-1] != 1.0, consistency_exception, "Last value must be 1");
+  THROW_EXCEPT_MACRO (p[ps-1] != 1.0, consistency_exception, "Last value must be 1");
 #endif
   double r= random (1.0);
   for (size_t j= 0; j < ps; j++)

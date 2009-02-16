@@ -599,7 +599,7 @@ public:
   */
   elimination_history_t (const Ad_graph_t& _cg) : 
     og (_cg), cg (_cg), ccosts (0) {
-    throw_exception (!check (), consistency_exception, "Inconsistent input graph");}
+    THROW_EXCEPT_MACRO (!check (), consistency_exception, "Inconsistent input graph");}
 
   /** \brief Constructor
       \param _og Original line graph
@@ -611,7 +611,7 @@ public:
   elimination_history_t (const Ad_graph_t& _og, const vector<El_spec_t>& _seq,
 			 const Ad_graph_t& _cg, int _ccosts= 0) :
     og (_og), seq (_seq), cg (_cg), ccosts (_ccosts) {
-    throw_exception (!check (), consistency_exception, "Inconsistent input graphs");}
+    THROW_EXCEPT_MACRO (!check (), consistency_exception, "Inconsistent input graphs");}
 
   /** \brief Constructor
       \param _og Original line graph
@@ -621,30 +621,30 @@ public:
   */
   elimination_history_t (const Ad_graph_t& _og, const vector<El_spec_t>& _seq) :
     og (_og), seq (_seq) {
-    throw_exception (!og.check (), consistency_exception, "Inconsistent input graph");
+    THROW_EXCEPT_MACRO (!og.check (), consistency_exception, "Inconsistent input graph");
     bool seq_ok= rebuild_graph (); 
-    throw_exception (!seq_ok, consistency_exception, "Inconsistent elimination sequence");
+    THROW_EXCEPT_MACRO (!seq_ok, consistency_exception, "Inconsistent elimination sequence");
   }
 
   /// Copy constructor
   elimination_history_t (const elimination_history_t& eh) :
     og (eh.og), seq (eh.seq), cg (eh.cg), ccosts (eh.ccosts) {
-    throw_exception (!og.check (), consistency_exception, "Inconsistent start graph");
-    throw_exception (!cg.check (), consistency_exception, "Inconsistent current graph");
-    throw_exception (!check_sequence(), consistency_exception, "Inconsistent elimination sequence");
+    THROW_EXCEPT_MACRO (!og.check (), consistency_exception, "Inconsistent start graph");
+    THROW_EXCEPT_MACRO (!cg.check (), consistency_exception, "Inconsistent current graph");
+    THROW_EXCEPT_MACRO (!check_sequence(), consistency_exception, "Inconsistent elimination sequence");
   }
 
   /// Assign operator 
   elimination_history_t& operator= (const elimination_history_t& eh) {
     (Ad_graph_t&) og= eh.og; seq= eh.seq; cg= eh.cg; ccosts= eh.ccosts; 
-    throw_debug_exception (!check (), consistency_exception, "Inconsistent graphs after assignment");
+    THROW_DEBUG_EXCEPT_MACRO (!check (), consistency_exception, "Inconsistent graphs after assignment");
     return *this; }
 
   /// Swap
   void swap (elimination_history_t& eh) {
     ((Ad_graph_t&) og).swap ((Ad_graph_t&) eh.og); 
     seq.swap (eh.seq); cg.swap (eh.cg); std::swap (ccosts, eh.ccosts); 
-    throw_debug_exception (!check (), consistency_exception, "Inconsistent graphs after swapping");}
+    THROW_DEBUG_EXCEPT_MACRO (!check (), consistency_exception, "Inconsistent graphs after swapping");}
 
   /** \brief Eliminate \p el from cg
       \sa eliminate_object

@@ -264,7 +264,7 @@ public:
   */
   gamma_adaption_max_t (int p_D, double p_scaling= 1.0) : 
     D (p_D), diff (0), max_diff (0), last_min (0), imp (0), scaling (p_scaling) {
-    throw_debug_exception (D <= 0 && scaling <= 0.0, consistency_exception, 
+    THROW_DEBUG_EXCEPT_MACRO (D <= 0 && scaling <= 0.0, consistency_exception, 
 			   "D and scaling must be greater 0"); }
 
   /** \brief Operator, which finally changes \f$\Gamma\f$
@@ -294,7 +294,7 @@ public:
   */
   gamma_adaption_average_t (int p_D, double p_scaling= 1.0) : 
     D (p_D), sum_diff (0), last_min (0), imp (0), scaling (p_scaling) {
-    throw_debug_exception (D <= 0 && scaling <= 0.0, consistency_exception, 
+    THROW_DEBUG_EXCEPT_MACRO (D <= 0 && scaling <= 0.0, consistency_exception, 
 			   "D and scaling must be greater 0"); }
 
   /** \brief Operator, which finally changes \f$\Gamma\f$

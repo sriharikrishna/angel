@@ -28,7 +28,7 @@ int read_graph_eliad (const string& file_name_in, c_graph_t& cg, bool retry) {
 	   << "Please enter other filename (or \"abort\" to abort). \n";
       cin >> file_name; }
     if (!retry || file_name == "abort") 
-      throw_exception (true, io_exception, error_message);
+      THROW_EXCEPT_MACRO (true, io_exception, error_message);
     fin= fopen (file_name.c_str(), "r"); }
 
   char line [80]; 
@@ -38,7 +38,7 @@ int read_graph_eliad (const string& file_name_in, c_graph_t& cg, bool retry) {
   while (!feof (fin) && !strpbrk (line, "0123456789")) fgets (line, 80, fin); // 1st line with numbers 
   char* cp= strpbrk (line, "0123456789"); 
   int nv, read_values= sscanf (cp, "%i", &nv); // number of vertices
-  throw_exception (read_values != 1, io_exception, "Number of vertices expected");
+  THROW_EXCEPT_MACRO (read_values != 1, io_exception, "Number of vertices expected");
   c_graph_t gtmp (0, nv, 0); // all vertices as intermediate for now
 
   fgets (line, 80, fin); // read 'CG = ['
@@ -49,7 +49,7 @@ int read_graph_eliad (const string& file_name_in, c_graph_t& cg, bool retry) {
     if (strchr (line, ']')) break; // end found
     int target, source, triviality; 
     read_values= sscanf (line, "%i %i %i", &target, &source, &triviality);
-    throw_exception (read_values != 3, io_exception, "Three values per line expected");
+    THROW_EXCEPT_MACRO (read_values != 3, io_exception, "Three values per line expected");
     c_graph_t::edge_t edge; bool added; 
     tie (edge, added)= add_edge (source-1, target-1, edge_number++, gtmp); // fortran to c re-numbering
     ew [edge]= triviality;
@@ -60,7 +60,7 @@ int read_graph_eliad (const string& file_name_in, c_graph_t& cg, bool retry) {
   vector<vertex_t> indeps;
   for (boost::tie (vi, v_end)= vertices (gtmp); vi != v_end; ++vi) {
     int ind= in_degree (*vi, gtmp), outd= out_degree (*vi, gtmp);
-    throw_exception (ind == 0 && outd == 0, io_exception, 
+    THROW_EXCEPT_MACRO (ind == 0 && outd == 0, io_exception, 
 		     "Unconnected vertex in input graph");
     if (ind == 0) indeps.push_back (*vi);
     if (outd == 0) gtmp.dependents.push_back (*vi); }
@@ -83,7 +83,7 @@ void write_face (std::ostream& stream,
 
   line_graph_t::const_evn_t evn= get(vertex_name, lg);
   int i= evn[vij].first, j= evn[vij].second, k= evn[vjk].second;
-  throw_debug_exception (j != evn[vjk].first, consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO (j != evn[vjk].first, consistency_exception,
 			 "Adjacency corrupted in line graph"); 
 
   stream << '(' << vij << ", " << vjk

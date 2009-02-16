@@ -17,7 +17,7 @@ void neighbor_swap (const std::vector<int>& old_seq, std::vector<int>& seq) {
   seq= old_seq;
   int size= old_seq.size();
   // assert (size > 1); // otherwise endless loop
-  throw_debug_exception (size <= 1, consistency_exception, "Nothing to swap -> endless loop"); 
+  THROW_DEBUG_EXCEPT_MACRO (size <= 1, consistency_exception, "Nothing to swap -> endless loop"); 
 
   size_t r1= angel::random (size);
   size_t r2= angel::random (size);
@@ -26,6 +26,4 @@ void neighbor_swap (const std::vector<int>& old_seq, std::vector<int>& seq) {
 }
 
 } // namespace angel
-
-
 

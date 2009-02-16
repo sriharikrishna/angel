@@ -34,7 +34,7 @@ public:
   typedef Objective_t    objective_t;
   base_heuristic_t (bool _m) : is_set (false), my_maximize (_m) {}
   Objective_t objective() const {
-    throw_debug_exception (!is_set, consistency_exception, "objective not set"); return my_objective;}
+    THROW_DEBUG_EXCEPT_MACRO (!is_set, consistency_exception, "objective not set"); return my_objective;}
   void set_objective (Objective_t o) {
     is_set= true; my_objective= o; }
   void set_empty_objective () {

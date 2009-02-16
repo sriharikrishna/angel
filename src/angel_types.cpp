@@ -224,7 +224,7 @@ line_graph_t::line_graph_t (const c_graph_t& cg) {
       add_edge (ei1_id+X1, eid1[*ei1i]+X1, *this);
   }
 
-  throw_debug_exception (overall_markowitz_degree (cg) != overall_markowitz_degree (*this), 
+  THROW_DEBUG_EXCEPT_MACRO (overall_markowitz_degree (cg) != overall_markowitz_degree (*this), 
 			       consistency_exception, "Different Markowitz degree in line graph"); 
 }
 
@@ -383,7 +383,7 @@ int markowitz_degree (int j, const line_graph_t& lg) {
   line_graph_t::fi_t fi, f_end;
   for (boost::tie (fi, f_end)= edges (lg); fi != f_end; ++fi) {
     line_graph_t::edge_t   ij= source (*fi, lg), jk= target (*fi, lg);
-    throw_debug_exception (evn[ij].second != evn[jk].first, consistency_exception,
+    THROW_DEBUG_EXCEPT_MACRO (evn[ij].second != evn[jk].first, consistency_exception,
 			   "Adjacency corrupted in line graph"); 
     if (vertex_type (ij, lg) == independent
 	|| vertex_type (jk, lg) == dependent) continue;
@@ -436,10 +436,10 @@ void accu_exp_graph_t::set_graph (line_graph_t::edge_t edge) {
 
 void accu_graph_t::set_jacobi_entries () {
   jacobi_entries.resize (accu_exp.size(), make_pair (0, 0));
-  throw_debug_exception ((int) exp_nr.size() != lg.v(), consistency_exception,
+  THROW_DEBUG_EXCEPT_MACRO ((int) exp_nr.size() != lg.v(), consistency_exception,
 			 "Array exp_nr has wrong size"); 
-  throw_debug_exception (!lg.check(), consistency_exception, "Line graph inconsistent"); 
-  throw_debug_exception (!lg.is_tripartite(), consistency_exception, "Line graph not tripartite"); 
+  THROW_DEBUG_EXCEPT_MACRO (!lg.check(), consistency_exception, "Line graph inconsistent"); 
+  THROW_DEBUG_EXCEPT_MACRO (!lg.is_tripartite(), consistency_exception, "Line graph not tripartite"); 
   line_graph_t::const_evn_t evn= get(vertex_name, lg);
   line_graph_t::ei_t ei, e_end;
   for (tie (ei, e_end)= vertices (lg); ei != e_end; ei++) {
@@ -452,7 +452,7 @@ void accu_graph_t::set_jacobi_entries () {
 	jacobi_entries[exp_nr[*ei]]= evn[*ei]; 
     }
   }
-  throw_debug_exception (accu_exp.size() != jacobi_entries.size(), consistency_exception, 
+  THROW_DEBUG_EXCEPT_MACRO (accu_exp.size() != jacobi_entries.size(), consistency_exception, 
 			 "Wrong number of Jacobi entries");
 }
 
@@ -596,7 +596,7 @@ void accu_graph_t::set_jacobi_entries () {
 		       bool isPre,
 		       const c_graph_t& angelLCG) {
     if (isPre) {
-      throw_exception(target(e, angelLCG) != target(pivot_e, angelLCG),
+      THROW_EXCEPT_MACRO(target(e, angelLCG) != target(pivot_e, angelLCG),
 		      consistency_exception,
 		      "edge_ijk_reroute_t: the edge and the pivot edge must have the same target for a prerouting");
       i = source(e, angelLCG);
@@ -604,7 +604,7 @@ void accu_graph_t::set_jacobi_entries () {
       k = target(e, angelLCG);
     }
     else {
-      throw_exception(source(e, angelLCG) != source(pivot_e, angelLCG),
+      THROW_EXCEPT_MACRO(source(e, angelLCG) != source(pivot_e, angelLCG),
 		      consistency_exception,
 		      "edge_ijk_reroute_t: the edge and the pivot edge must have the same target for a prerouting");
       k = target(e, angelLCG);
