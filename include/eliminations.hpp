@@ -775,7 +775,6 @@ void removeRef (const c_graph_t::edge_t e,
     \param e1 the first edge. 
     \param e2 the second edge (its source is the target of \p e1). 
     \param angelLCG the c_graph_t (passed by reference) that the operation is performed on.
-    \param ourAwarenessLevel whether or not we recognize edges as being constant- or unit-labelled.
     \param edge_ref_list the stl list container that keeps track of the reference
            (LCG pointer or JAE pointer) for each edge in angelLCG.
     \param jae_list the xaifBooster JAE list that we construct incrementally
@@ -797,7 +796,6 @@ unsigned int multiply_edge_pair_directly (const c_graph_t::edge_t e1,
 
     \param e the edge that will be front eliminated. 
     \param angelLCG the c_graph_t (passed by reference) that the elimination is performed on.
-    \param ourAwarenessLevel whether or not we recognize edges as being constant- or unit-labelled.
     \param edge_ref_list the stl list container that keeps track of the reference
            (LCG pointer or JAE pointer) for each edge in angelLCG.
     \param jae_list the xaifBooster JAE list that we construct incrementally
@@ -818,7 +816,6 @@ unsigned int front_eliminate_edge_directly (c_graph_t::edge_t e,
 
     \param e the edge that will be back eliminated.
     \param angelLCG the c_graph_t (passed by reference) that the elimination is performed on.
-    \param ourAwarenessLevel whether or not we recognize edges as being constant- or unit-labelled.
     \param edge_ref_list the stl list container that keeps track of the reference
            (LCG pointer or JAE pointer) for each edge in angelLCG.
     \param jae_list the xaifBooster JAE list that we construct incrementally
