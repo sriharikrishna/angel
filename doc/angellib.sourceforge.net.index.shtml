@@ -90,10 +90,36 @@ Logarithmic simulated annealing</li>
 
 ANGEL
 has been developed as an independent library but is primarily used by
-the <a href="http://www.mcs.anl.gov/openad">OpenAD</a>
-framework for automatic differentiation. <br>
+the <b><a href="http://www.mcs.anl.gov/openad">OpenAD</a>
+framework for automatic differentiation</b>. <br>
 
+Note, that the unixname for this <a href="https://sourceforge.net/projects/angellib/">sourceforge project is <tt>angellib</tt></a>. 
 <h3>Downloads</h3>
+
+Much of the <b>current development work</b> for the core library  with detailed descriptions of  the changes, is kept 
+in a <a href="http://mercurial.mcs.anl.gov/ad/angel">Mercurial repository hosted at Argonne National Laboratory</a>.
+<br/>
+<br/>
+While we find <a href="http://www.selenic.com/mercurial/wiki/">Mercurial</a> to be  much more  convenient than CVS 
+for our development is still is somewhat unknown and therefore 
+we use a <b><a href="http://angellib.cvs.sourceforge.net/viewvc/angellib/angel/">CVS repository hosted at sourcforge</a> for distribution</b>.
+<br/>
+<br/>
+Sourceforge provides <a href="http://sourceforge.net/scm/?type=cvs&group_id=69452">instructions to checkout the sources</a>. Note, 
+that the <i>modulename</i> for the library is <tt>angel</tt>. 
+The other modules in the projract are not used by OpenAD. They have last been updated in 2003 and are compatible with <tt>angel_base</tt> 
+but are not compatible with the current version of <tt>angel</tt>. 
+<ul>
+<li> <tt>angel_base</tt>: a 2003 baseline version of angel</li>
+<li> <tt>angel_paper_programs</tt>: example programs </li>
+<li> <tt>cgraphs</tt>: example graphs</li>
+<li> <tt>lsaface</tt>: draft on randomized face elimination </li>
+<li> <tt>papers</tt>: drafts of randimized edge elimination etc.</li>
+</ul>
+
+The module <tt>programs</tt> has been partially updated in March 2008 for purposes unrelated to OpenAD. 
+The sourceforge CVS repository is frequently synchronized to the latest changes in the Mercurial development repository.
+More infrequently we provide snapshots of the angel library as a <a href="https://sourceforge.net/project/platformdownload.php?group_id=69452">dated release</a>.
 
 Dependencies: 
 <ol>
@@ -113,12 +139,6 @@ and the lines below that one in <br>
     <tt>angel/specs/lib_usage.conf</tt></li>
 
 </ol>
-
-<a href="angel.tgz">Source code tar file</a> as of
-<!--#flastmod file="angel.tgz" -->
-<br/>
-<br/>
-Please also see the <a href="http://sourceforge.net/projects/angellib/">project page at sourceforge</a>.
 <h3>Documentation</h3>
 
 For
