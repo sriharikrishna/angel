@@ -1,5 +1,6 @@
 syntax: glob
 doc/html*
+doc/latex*
 *.swp
 *.o
 *.a
