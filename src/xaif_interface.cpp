@@ -434,6 +434,215 @@ unsigned int replay_transformation_seq(c_graph_t& angelLCG,
   return computationalCost;
 } // end replay_transformation_seq()
 
+bool isTrivialEdge(const c_graph_t::edge_t& e,
+                   c_graph_t& theAngelLCG,
+                   const xaifBoosterCrossCountryInterface::AwarenessLevel::AwarenessLevel_E ourAwarenessLevel) {
+  boost::property_map<c_graph_t,EdgeType>::type eType = get(EdgeType(),theAngelLCG);
+  if (ourAwarenessLevel == xaifBoosterCrossCountryInterface::AwarenessLevel::NO_AWARENESS)
+    return false;
+  else if (ourAwarenessLevel == xaifBoosterCrossCountryInterface::AwarenessLevel::UNIT_AWARENESS)
+    return (eType[e] == UNIT_EDGE);
+  else if (ourAwarenessLevel == xaifBoosterCrossCountryInterface::AwarenessLevel::CONSTANT_AWARENESS)
+    return (eType[e] != VARIABLE_EDGE);
+  else
+    THROW_EXCEPT_MACRO(true, consistency_exception, "isTrivialEdge: unknown AwarenessLevel");
+} // end isTrivialEdge()
+
+void assessPairElim(const c_graph_t::edge_t& e1,
+                    const c_graph_t::edge_t& e2,
+                    c_graph_t& theAngelLCG,
+                    const xaifBoosterCrossCountryInterface::AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                    unsigned int& cost,
+                    int& totalEdgecountChange,
+                    int& nontrivialEdgecountChange) {
+  boost::property_map<c_graph_t,EdgeType>::type eType = get(EdgeType(),theAngelLCG);
+  // determine cost
+  cost = (eType[e1] == UNIT_EDGE || eType[e2] == UNIT_EDGE) ? 0 : 1;
+
+  // determine whether absorption edge is present
+  c_graph_t::edge_t absorb_e;
+  bool found_absorb_e;
+  tie(absorb_e,found_absorb_e) = edge(source(e1,theAngelLCG),
+                                      target(e2,theAngelLCG),
+                                      theAngelLCG);
+  // determine change in total edge count
+  totalEdgecountChange = (found_absorb_e) ? 0 : 1;
+
+  // determine change in nontrivial edge count
+  if (found_absorb_e) { // absorption: nontrivial edge count goes up iff absorb edge goes trivial => nontrivial
+    if (ourAwarenessLevel == xaifBoosterCrossCountryInterface::AwarenessLevel::NO_AWARENESS)
+      nontrivialEdgecountChange = 0;
+    else if (ourAwarenessLevel == xaifBoosterCrossCountryInterface::AwarenessLevel::CONSTANT_AWARENESS) {
+      if (eType[absorb_e] == VARIABLE_EDGE)
+        nontrivialEdgecountChange = 0; // absorb edge is already nontrivial (variable)
+      else
+        nontrivialEdgecountChange = (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE) ? 1 : 0;
+    } // end CONSTANT_AWARENESS
+    else if (ourAwarenessLevel == xaifBoosterCrossCountryInterface::AwarenessLevel::UNIT_AWARENESS) {
+      if (eType[absorb_e] != UNIT_EDGE)
+        nontrivialEdgecountChange = 0; // absorb edge is already nontrivial (nonunit)
+      else
+        nontrivialEdgecountChange = (eType[e1] != UNIT_EDGE || eType[e2] != UNIT_EDGE) ? 1 : 0;
+    } // end UNIT_AWARENESS
+    else
+      THROW_EXCEPT_MACRO(true, consistency_exception, "isTrivialEdge: unknown AwarenessLevel");
+  } // end absorption
+
+  else { // fill-in: nontrivial edge count change iff the fill edge is nontrivial
+    if (ourAwarenessLevel == xaifBoosterCrossCountryInterface::AwarenessLevel::NO_AWARENESS)
+      nontrivialEdgecountChange = 1;
+    else if (ourAwarenessLevel == xaifBoosterCrossCountryInterface::AwarenessLevel::CONSTANT_AWARENESS)
+      // nontrivial edge count goes up iff e1 or e2 is variable
+      nontrivialEdgecountChange = (eType[e1] == VARIABLE_EDGE || eType[e2] == VARIABLE_EDGE) ? 1 : 0;
+    else if (ourAwarenessLevel == xaifBoosterCrossCountryInterface::AwarenessLevel::UNIT_AWARENESS)
+      // nontrivial edge count goes up iff e1 or e2 is nonunit 
+      nontrivialEdgecountChange = (eType[e1] != UNIT_EDGE || eType[e2] != UNIT_EDGE) ? 1 : 0;
+    else
+      THROW_EXCEPT_MACRO(true, consistency_exception, "assessPairElim: unknown AwarenessLevel");
+  } // end fill-in
+} // end assessPairElim()
+
+void assessFrontEdgeElim(const c_graph_t::edge_t& e,
+                         c_graph_t& theAngelLCG,
+                         const xaifBoosterCrossCountryInterface::AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                         unsigned int& cost,
+                         int& totalEdgecountChange,
+                         int& nontrivialEdgecountChange) {
+  boost::property_map<c_graph_t,EdgeType>::type eType = get(EdgeType(),theAngelLCG);
+  bool isIsolated = (in_degree(target(e,theAngelLCG),theAngelLCG) == 1
+                  && vertex_type(target(e,theAngelLCG),theAngelLCG) != dependent);
+  c_graph_t::oei_t oei, oe_end;
+  for (tie(oei,oe_end) = out_edges(target(e,theAngelLCG),theAngelLCG); oei != oe_end; ++oei) {
+    unsigned int pairCost;
+    int pairTotalEdgecountChange, pairNontrivialEdgecountChange;
+    assessPairElim(e,
+                   *oei,
+                   theAngelLCG,
+                   ourAwarenessLevel,
+                   pairCost,
+                   pairTotalEdgecountChange,
+                   pairNontrivialEdgecountChange);
+    cost += pairCost;
+    totalEdgecountChange += pairTotalEdgecountChange;
+    nontrivialEdgecountChange += pairNontrivialEdgecountChange;
+    // determine effect of isolation
+    if (isIsolated) {
+      totalEdgecountChange -= 1;
+      if (!isTrivialEdge(*oei,theAngelLCG,ourAwarenessLevel))
+        nontrivialEdgecountChange -= 1;
+    } // end if isIsolated
+  } // end for all outedges of the target
+} // end assessFrontEdgeElim()
+
+void assessBackEdgeElim(const c_graph_t::edge_t& e,
+                        c_graph_t& theAngelLCG,
+                        const xaifBoosterCrossCountryInterface::AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                        unsigned int& cost,
+                        int& totalEdgecountChange,
+                        int& nontrivialEdgecountChange) {
+  boost::property_map<c_graph_t,EdgeType>::type eType = get(EdgeType(),theAngelLCG);
+  bool isIsolated = (out_degree(source(e,theAngelLCG),theAngelLCG) == 1
+                  && vertex_type(source(e,theAngelLCG),theAngelLCG) != dependent);
+  c_graph_t::iei_t iei, ie_end;
+  for (tie(iei,ie_end) = in_edges(source(e,theAngelLCG),theAngelLCG); iei != ie_end; ++iei) {
+    unsigned int pairCost;
+    int pairTotalEdgecountChange, pairNontrivialEdgecountChange;
+    assessPairElim(*iei,
+                   e,
+                   theAngelLCG,
+                   ourAwarenessLevel,
+                   pairCost,
+                   pairTotalEdgecountChange,
+                   pairNontrivialEdgecountChange);
+    cost += pairCost;
+    totalEdgecountChange += pairTotalEdgecountChange;
+    nontrivialEdgecountChange += pairNontrivialEdgecountChange;
+    // determine effect of isolation
+    if (isIsolated) {
+      totalEdgecountChange -= 1;
+      if (!isTrivialEdge(*iei,theAngelLCG,ourAwarenessLevel))
+        nontrivialEdgecountChange -= 1;
+    } // end if isIsolated
+  } // end for all inedges of the source
+} // end assessBackEdgeElim()
+
+void assessEdgeElim(const EdgeElim& anEdgeElim,
+                    c_graph_t& theAngelLCG,
+                    const xaifBoosterCrossCountryInterface::AwarenessLevel::AwarenessLevel_E ourAwarenessLevel,
+                    unsigned int& cost,
+                    int& totalEdgecountChange,
+                    int& nontrivialEdgecountChange) {
+  cost = 0;
+  // determine the effect of removing e
+  totalEdgecountChange = -1;
+  nontrivialEdgecountChange = isTrivialEdge(anEdgeElim.getE(theAngelLCG),theAngelLCG,ourAwarenessLevel) ? 0 : -1;
+  if (anEdgeElim.isFront())
+    assessFrontEdgeElim(anEdgeElim.getE(theAngelLCG),
+                        theAngelLCG,
+                        ourAwarenessLevel,
+                        cost,
+                        totalEdgecountChange,
+                        nontrivialEdgecountChange);
+  else
+    assessBackEdgeElim(anEdgeElim.getE(theAngelLCG),
+                       theAngelLCG,
+                       ourAwarenessLevel,
+                       cost,
+                       totalEdgecountChange,
+                       nontrivialEdgecountChange);
+} // end assessEdgeElim()
+                             
+void postProcessRemainderGraph(c_graph_t& theAngelLCG,
+                               xaifBoosterCrossCountryInterface::JacobianAccumulationExpressionList& theJAEList,
+                               std::list<EdgeRef_t>& edge_ref_list,
+                               const xaifBoosterCrossCountryInterface::AwarenessLevel::AwarenessLevel_E ourAwarenessLevel) {
+  vector<EdgeElim> allEdgeElimsV;
+  bool done = false;
+  while (!done) {
+    done = true;
+    eliminatable_edges(theAngelLCG,allEdgeElimsV);
+    if (allEdgeElimsV.empty()) break; // no more eliminatable edges
+    for (size_t c = 0; c < allEdgeElimsV.size(); c++) {
+      unsigned int cost;
+      int totalEdgecountChange, nontrivialEdgecountChange;
+      assessEdgeElim(allEdgeElimsV[c],
+                     theAngelLCG,
+                     ourAwarenessLevel,
+                     cost,
+                     totalEdgecountChange,
+                     nontrivialEdgecountChange);
+//    THROW_EXCEPT_MACRO(nontrivialEdgecountChange < 0,consistency_exception,"postProcessRemainderGraph: found reduction in nontrivial edge count in remainder graph produced by scarcity heuristic");
+      // we require the following
+      // (1) no computational cost
+      // (2) some reduction in total edge count
+      // (3) no change in nontrivial edge count (\todo in the future we will allow decreases, though they shouldn't occur at this point)
+      if (cost == 0
+       && totalEdgecountChange < 0
+       && nontrivialEdgecountChange == 0) {
+        #ifndef NDEBUG
+        std::cout << "+++++++++++++++++ GREEDY REDUCTION FOUND: cost=" << cost
+                                                          << ", totalEdgecountChange=" << totalEdgecountChange
+                                                          << ", nontrivialEdgecountChange=" << nontrivialEdgecountChange << "+++++++++++++++++++++++" << std::endl;
+        #endif
+        unsigned int actualCost = allEdgeElimsV[c].isFront()
+	       ?  front_eliminate_edge_directly(allEdgeElimsV[c].getE(theAngelLCG),
+                                                theAngelLCG,
+                                                edge_ref_list,
+                                                theJAEList)
+               : back_eliminate_edge_directly(allEdgeElimsV[c].getE(theAngelLCG),
+                                              theAngelLCG,
+                                              edge_ref_list,
+                                              theJAEList);
+        THROW_EXCEPT_MACRO(cost != actualCost,consistency_exception,"postProcessRemainderGraph: discrepancy in cost between assessEdgeElim and eliminate_edge_directly");
+                          
+        allEdgeElimsV.clear();
+        done = false;
+        break;
+      }
+    } // end for all edge elims
+  } // end while
+} // end postProcessRemainderGraph()
+
 } // end namespace angel
 
 
@@ -534,8 +743,12 @@ void compute_partial_elimination_sequence_random(const LinearizedComputationalGr
   cout << endl << endl << "****** Now re-performing best_edgeElimSeqV until we reach our edge goal of " << bestNumNontrivialEdges << " nontrivial edges" << endl;
   #endif
 
+  // Now replay the elimination sequence until we reach edge count goal.
+  // Additionally, we perform a greedy reduction of the resulting remainder graph,
+  // which may lead to more concise propagation code.
   unsigned int cost_of_elim_seq = 0;
-  if (num_nontrivial_edges (angelLCG, ourAwarenessLevel) == bestNumNontrivialEdges) {
+  if (best_edgeElimSeqV.empty() ||
+      num_nontrivial_edges(angelLCG, ourAwarenessLevel) == bestNumNontrivialEdges) {
     #ifndef NDEBUG
     cout << "No eliminations necessary to reach the desired edge count of " << bestNumNontrivialEdges << endl;
     #endif
@@ -553,6 +766,15 @@ void compute_partial_elimination_sequence_random(const LinearizedComputationalGr
       }
     }
   }
+  // we may want to perform additional no-cost eliminations that don't lead to an increase in nontrivial edges
+  #ifndef NDEBUG
+  cout << "Now greedily reducing the remainder graph..." << endl;
+  #endif
+  postProcessRemainderGraph(angelLCG,
+                            jae_list,
+                            edge_ref_list,
+                            ourAwarenessLevel);
+
 #ifndef NDEBUG
   write_graph ("angelLCG after partial edge elimination sequence (G prime): ", angelLCG);
   writeVertexAndEdgeTypes (cout, angelLCG);
@@ -716,6 +938,16 @@ void compute_partial_elimination_sequence (const LinearizedComputationalGraph& o
   #endif
 
   delete bestEliminationSequence;
+
+  // we may want to perform additional no-cost eliminations that don't lead to an increase in nontrivial edges
+  #ifndef NDEBUG
+  cout << "Now greedily reducing the remainder graph..." << endl;
+  #endif
+  postProcessRemainderGraph(angelLCG,
+                            jae_list,
+                            edge_ref_list,
+                            ourAwarenessLevel);
+
   populate_remainderGraph_and_correlationLists (angelLCG, ourLCG_verts, edge_ref_list, remainderLCG, v_cor_list, e_cor_list);
 } // end xaifBoosterCrossCountryInterface::compute_partial_elimination_sequence()
 
