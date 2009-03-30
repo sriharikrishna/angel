@@ -62,7 +62,7 @@ Maximal overall Markowitz degree reduction</li>
     <li>
 Lowest Markowitz minimal damage</li>
 
-<li> Scarsity-aware edge eliminations </li>
+<li> Scarcity-aware edge eliminations </li>
 
   </ul>
 
@@ -90,11 +90,37 @@ Logarithmic simulated annealing</li>
 
 ANGEL
 has been developed as an independent library but is primarily used by
-the <a href="http://www.mcs.anl.gov/openad">OpenAD</a>
-framework for automatic differentiation. <br>
+the <b><a href="http://www.mcs.anl.gov/openad">OpenAD</a>
+framework for automatic differentiation</b>. <br>
 
+Note, that the Unix name for this <a href="https://sourceforge.net/projects/angellib/">sourceforge project is <tt>angellib</tt></a>. 
 <h3>Downloads</h3>
 
+Much of the <b>current development work</b> for the core library  with detailed descriptions of  the changes, is kept 
+in a <a href="http://mercurial.mcs.anl.gov/ad/angel">Mercurial repository hosted at Argonne National Laboratory</a>.
+<br/>
+<br/>
+While we find <a href="http://www.selenic.com/mercurial/wiki/">Mercurial</a> to be  much more  convenient than CVS 
+for our development is still is somewhat unknown and therefore 
+we use a <b><a href="http://angellib.cvs.sourceforge.net/viewvc/angellib/angel/">CVS repository hosted at sourceforge</a> for distribution</b>.
+<br/>
+<br/>
+Sourceforge provides <a href="http://sourceforge.net/scm/?type=cvs&group_id=69452">instructions to checkout the sources</a>. Note, 
+that the <i>modulename</i> for the library is <tt>angel</tt>. 
+The other modules in the project are not used by OpenAD. They have last been updated in 2003 and are compatible with <tt>angel_base</tt> 
+but are not compatible with the current version of <tt>angel</tt>. 
+<ul>
+<li> <tt>angel_base</tt>: a 2003 baseline version of angel</li>
+<li> <tt>angel_paper_programs</tt>: example programs </li>
+<li> <tt>cgraphs</tt>: example graphs</li>
+<li> <tt>lsaface</tt>: draft on randomized face elimination </li>
+<li> <tt>papers</tt>: drafts of randomized edge elimination etc.</li>
+</ul>
+
+The module <tt>programs</tt> has been partially updated in March 2008 for purposes unrelated to OpenAD. 
+The sourceforge CVS repository is frequently synchronized to the latest changes in the Mercurial development repository.
+More infrequently we provide snapshots of the angel library as a <a href="https://sourceforge.net/project/platformdownload.php?group_id=69452">dated release</a>.
+<br/><br/>
 Dependencies: 
 <ol>
 
@@ -113,12 +139,6 @@ and the lines below that one in <br>
     <tt>angel/specs/lib_usage.conf</tt></li>
 
 </ol>
-
-<a href="angel.tgz">Source code tar file</a> as of
-<!--#flastmod file="angel.tgz" -->
-<br/>
-<br/>
-Please also see the <a href="http://sourceforge.net/projects/angellib/">project page at sourceforge</a>.
 <h3>Documentation</h3>
 
 For
@@ -126,7 +146,7 @@ details on classes and functions
 in ANGEL see
 the reference manual <a href="refman.pdf">PDF</a> or <a href="html/index.html">html pages</a> (last
 generated on  <!--#flastmod file="html/index.html" -->)
-<h3>Author &amp;&nbsp;Acknowledgements</h3>
+<h3>Author &amp;&nbsp;Acknowledgments</h3>
 
 <ul>
 
@@ -136,7 +156,7 @@ generated on  <!--#flastmod file="html/index.html" -->)
 
   <li>the initial development of ANGEL was part of the XCOp
 project and was supported
-by the Engineering and Physikal Sciences Research Council (EPSRC - UK)
+by the Engineering and Physical Sciences Research Council (EPSRC - UK)
 under grant number GR/R/38101/01.</li>
 
   <li>further development was supported under the <a target="_parent" href="http://www.nsf.gov/">NSF</a>'s
@@ -145,7 +165,7 @@ Technology Research (ITR)</a> program under contract OCE-0205590</li>
 
 </ul>
 
-<a href="http://sourceforge.net"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=69452&amp;type=5" width="210" height="62" border="0" alt="SourceForge.net Logo" /></a>
+<a href="http://sourceforge.net/projects/angellib"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=69452&type=12" width="120" height="30" border="0" alt="Get ANGEL at SourceForge.net. Fast, secure and Free Open Source software downloads" /></a>
 
 <br/>
 This page was last updated on <!--#flastmod file="index.shtml" -->.
