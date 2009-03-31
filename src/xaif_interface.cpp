@@ -2,6 +2,7 @@
 #ifdef USEXAIFBOOSTER
 
 #include <set>
+#include <climits>
 
 #include "angel/include/xaif_interface.hpp"
 #include "angel/include/eliminations.hpp"
@@ -1393,34 +1394,28 @@ void compute_elimination_sequence (const LinearizedComputationalGraph& xgraph,
   emulated_vertex_heuristic_t<momr_lm_rm_t>          momr_lm_rm_e (momr_lm_rm_v);
 
   vector<c_graph_t::vertex_t>   vseq;
-  vector<edge_ij_elim_t>        eseq; 
+  vector<edge_ij_elim_t>        eseq,v_eseq; 
+  int vCost=INT_MAX, eCost;
 
   if (vertex_eliminatable (cg)) {
+    vCost = best_heuristic (cg, vseq, forward_mode_vertex, reverse_mode_vertex, 
+			    lm_rm_v, lmmd_rm_v, momr_lm_rm_v);
 #ifndef NDEBUG
-    int costs= best_heuristic (cg, vseq, forward_mode_vertex, reverse_mode_vertex, 
-			       lm_rm_v, lmmd_rm_v, momr_lm_rm_v);
     write_vector("Vertex elimination: sequence",vseq);
-    cout << "Costs are " << costs << '\n';
-#else
-    best_heuristic (cg, vseq, forward_mode_vertex, reverse_mode_vertex, 
-			       lm_rm_v, lmmd_rm_v, momr_lm_rm_v);
+    cout << "Costs are " << vCost << '\n';
 #endif
-
-    convert_elimination_sequence (vseq, cg, eseq);
-
+    convert_elimination_sequence (vseq, cg, v_eseq);
 #ifndef NDEBUG
-    write_vector("Same elimination sequence as edge eliminations", eseq);
-#endif
-
-  } else {
-#ifndef NDEBUG
-    int costs= best_heuristic (cg, eseq, fm_ij, rm_ij, lm_rm_e, lmmd_rm_e, momr_lm_rm_e);
-    write_vector("Edge elimination: sequence",eseq);
-    cout << "Costs are " << costs << '\n'; 
-#else 
-    best_heuristic (cg, eseq, fm_ij, rm_ij, lm_rm_e, lmmd_rm_e, momr_lm_rm_e);
+    write_vector("Same elimination sequence as edge eliminations", v_eseq);
 #endif
   }
+  eCost = best_heuristic (cg, eseq, fm_ij, rm_ij, lm_rm_e, lmmd_rm_e, momr_lm_rm_e);
+#ifndef NDEBUG
+  write_vector("Edge elimination: sequence",eseq);
+  cout << "Costs are " << eCost << '\n'; 
+#endif
+  if (vCost<eCost)
+    eseq=v_eseq;
 
   line_graph_t lg (cg);
   vector<triplet_t>               tv;
