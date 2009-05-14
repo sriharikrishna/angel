@@ -12,9 +12,9 @@
 #include "boost/graph/graph_traits.hpp"
 #include "boost/property_map.hpp"
 
-#ifdef USEXAIFBOOSTER
 #include <map>
 #include <set>
+#ifdef USEXAIFBOOSTER
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/LinearizedComputationalGraph.hpp"
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/JacobianAccumulationExpressionList.hpp"
 #include "xaifBooster/algorithms/CrossCountryInterface/inc/GraphCorrelations.hpp"
@@ -695,6 +695,8 @@ struct EdgeRef_t {
     my_JAE_vertex_p(_JAEvert_p) {}
 };
 
+#endif // USEXAIFBOOSTER
+
 struct edge_reroute_t {
   c_graph_t::edge_t e;
   c_graph_t::edge_t pivot_e;
@@ -894,11 +896,11 @@ struct transformationSeq_cost_t {
 			      revealedNewDependence (false) {}
 };
 
+
 typedef std::pair<unsigned int,unsigned int> 	uint_pair_t;
 typedef std::set<c_graph_t::vertex_t>		vertex_set_t;
 typedef std::map< uint_pair_t, vertex_set_t >	refillDependenceMap_t;
 
-#endif // USEXAIFBOOSTER
 
 } // namespace angel
 
