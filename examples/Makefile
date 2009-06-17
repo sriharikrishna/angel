@@ -1,6 +1,3 @@
-# $Id: Makefile,v 1.4 2009/05/14 16:13:26 jean_utke Exp $
-BOOSTROOT=/usr/include/boost/
-
 ifndef BOOSTROOT
   $(error "BOOSTROOT undefined")
 endif
