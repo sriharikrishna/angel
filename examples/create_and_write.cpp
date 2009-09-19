@@ -1,5 +1,11 @@
 // $Id: create_and_write.cpp,v 1.1 2008/02/28 14:57:32 gottschling Exp $
-// Author: Peter Gottschling
+/*
+#############################################################
+# This file is part of angel released under the BSD license #
+# The full COPYRIGHT notice can be found in the top         #
+# level directory of the angel distribution                 #
+#############################################################
+*/
 
 #include <angel/angel.hpp>
 

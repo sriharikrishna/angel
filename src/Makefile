@@ -1,4 +1,10 @@
 # $Id: Makefile,v 1.22 2008/02/28 14:57:32 gottschling Exp $
+#############################################################
+# This file is part of angel released under the BSD license #
+# The full COPYRIGHT notice can be found in the top         #
+# level directory of the angel distribution                 #
+#############################################################
+
 
 # BOOST_DIR must be defined in the environment !
 

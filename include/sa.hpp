@@ -1,4 +1,12 @@
 // $Id: sa.hpp,v 1.13 2005/04/12 04:22:57 jean_utke Exp $
+/*
+#############################################################
+# This file is part of angel released under the BSD license #
+# The full COPYRIGHT notice can be found in the top         #
+# level directory of the angel distribution                 #
+#############################################################
+*/
+
 
 #ifndef 	_sa_include_
 #define 	_sa_include_

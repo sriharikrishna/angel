@@ -1,4 +1,12 @@
 // $Id: angel_io.cpp,v 1.6 2008/02/28 16:21:06 gottschling Exp $
+/*
+#############################################################
+# This file is part of angel released under the BSD license #
+# The full COPYRIGHT notice can be found in the top         #
+# level directory of the angel distribution                 #
+#############################################################
+*/
+
 
 #include "angel/include/angel_io.hpp"
 

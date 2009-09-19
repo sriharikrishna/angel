@@ -1,4 +1,12 @@
 // $Id: xaif_interface.hpp,v 1.7 2004/10/16 04:18:17 jean_utke Exp $
+/*
+#############################################################
+# This file is part of angel released under the BSD license #
+# The full COPYRIGHT notice can be found in the top         #
+# level directory of the angel distribution                 #
+#############################################################
+*/
+
 
 #ifndef         _xaif_interface_include_
 #define         _xaif_interface_include_

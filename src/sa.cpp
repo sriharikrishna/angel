@@ -1,4 +1,12 @@
 // $Id: sa.cpp,v 1.7 2008/02/28 14:57:33 gottschling Exp $
+/*
+#############################################################
+# This file is part of angel released under the BSD license #
+# The full COPYRIGHT notice can be found in the top         #
+# level directory of the angel distribution                 #
+#############################################################
+*/
+
 
 #include "angel/include/sa.hpp"
 

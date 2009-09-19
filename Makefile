@@ -1,4 +1,9 @@
 # $Id: Makefile,v 1.9 2004/10/16 04:18:17 jean_utke Exp $
+#############################################################
+# This file is part of angel released under the BSD license #
+# The full COPYRIGHT notice can be found in the top         #
+# level directory of the angel distribution                 #
+#############################################################
 
 ifeq "$(strip $(config))" ""
 	angel_config:=gnu

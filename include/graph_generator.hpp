@@ -1,4 +1,12 @@
 // $Id: graph_generator.hpp,v 1.4 2003/03/25 17:42:00 gottschling Exp $
+/*
+#############################################################
+# This file is part of angel released under the BSD license #
+# The full COPYRIGHT notice can be found in the top         #
+# level directory of the angel distribution                 #
+#############################################################
+*/
+
 
 #ifndef 	_graph_generator_include_
 #define 	_graph_generator_include_

@@ -1,3 +1,10 @@
+/*
+#############################################################
+# This file is part of angel released under the BSD license #
+# The full COPYRIGHT notice can be found in the top         #
+# level directory of the angel distribution                 #
+#############################################################
+*/
 #ifdef USEXAIFBOOSTER
 
 #include "angel/include/angel_tools.hpp"

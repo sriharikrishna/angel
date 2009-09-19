@@ -1,4 +1,11 @@
 // $Id: angel_comm.hpp,v 1.10 2004/10/16 04:18:17 jean_utke Exp $
+/*
+#############################################################
+# This file is part of angel released under the BSD license #
+# The full COPYRIGHT notice can be found in the top         #
+# level directory of the angel distribution                 #
+#############################################################
+*/
 
 #ifndef 	_angel_comm_include_
 #define 	_angel_comm_include_

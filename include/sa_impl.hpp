@@ -1,4 +1,12 @@
 // $Id: sa_impl.hpp,v 1.4 2004/04/23 12:59:11 gottschling Exp $
+/*
+#############################################################
+# This file is part of angel released under the BSD license #
+# The full COPYRIGHT notice can be found in the top         #
+# level directory of the angel distribution                 #
+#############################################################
+*/
+
 
 #ifdef USE_MPI
 #include "angel_comm.hpp"
