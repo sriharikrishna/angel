@@ -96,18 +96,27 @@ framework for automatic differentiation</b>. <br>
 Note, that the Unix name for this <a href="https://sourceforge.net/projects/angellib/">sourceforge project is <tt>angellib</tt></a>. 
 <h3>Downloads</h3>
 
-Much of the <b>current development work</b> for the core library  with detailed descriptions of  the changes, is kept 
+All of the <b>current development work</b> for the core library  with detailed descriptions of  the changes, is kept 
 in a <a href="http://mercurial.mcs.anl.gov/ad/angel">Mercurial repository hosted at Argonne National Laboratory</a>.
 <br/>
 <br/>
-While we find <a href="http://www.selenic.com/mercurial/wiki/">Mercurial</a> to be  much more  convenient than CVS 
+While we find <a href="http://www.selenic.com/mercurial/wiki/">Mercurial</a> to be  much more  convenient than subversion 
 for our development is still is somewhat unknown and therefore 
-we use a <b><a href="http://angellib.cvs.sourceforge.net/viewvc/angellib/angel/">CVS repository hosted at sourceforge</a> for distribution</b>.
+we use a <b><a href="http://angellib.svn.sourceforge.net/viewvc/angellib/trunk/">SVN repository hosted at sourceforge</a> for distribution</b>.
 <br/>
 <br/>
-Sourceforge provides <a href="http://sourceforge.net/scm/?type=cvs&group_id=69452">instructions to checkout the sources</a>. Note, 
-that the <i>modulename</i> for the library is <tt>angel</tt>. 
-The other modules in the project are not used by OpenAD. They have last been updated in 2003 and are compatible with <tt>angel_base</tt> 
+To checkout the sources execute: <br/>
+<span style="font-family: courier new,courier,monospace; color: rgb(255, 0, 0);">svn co https://angellib.svn.sourceforge.net/svnroot/angellib/trunk angel</span>
+<br/>
+The SVN repository is updated whenever a set of changes has passed regression testing.   
+More infrequently we provide snapshots of the angel library as a <a href="https://sourceforge.net/project/platformdownload.php?group_id=69452">dated release</a>.
+
+<br/><br/>
+Prior to  Feb/09/2010 the library source was distributed via a CVS repository with the module name <tt>angel</tt>.
+The CVS source code repository is no longer updated but still available together with other unmaintained modules. 
+Sourceforge provides <a href="http://sourceforge.net/projects/angellib/develop">instructions to checkout sources from SVN and the obsoleted CVS repositories</a>.
+None of the CVS repositories are used by OpenAD. 
+The repositories listed below  have last been updated in 2003 and are compatible with <tt>angel_base</tt> 
 but are not compatible with the current version of <tt>angel</tt>. 
 <ul>
 <li> <tt>angel_base</tt>: a 2003 baseline version of angel</li>
@@ -119,7 +128,6 @@ but are not compatible with the current version of <tt>angel</tt>.
 
 The module <tt>programs</tt> has been partially updated in March 2008 for purposes unrelated to OpenAD. 
 The sourceforge CVS repository is frequently synchronized to the latest changes in the Mercurial development repository.
-More infrequently we provide snapshots of the angel library as a <a href="https://sourceforge.net/project/platformdownload.php?group_id=69452">dated release</a>.
 <br/><br/>
 Dependencies: 
 <ol>
