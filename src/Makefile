@@ -18,70 +18,52 @@ CXXFLAGS+= -DNDEBUG
 #CPPFLAGS+= -DWRITE_COSTS # write costs for instance in LSA.hpp
 #CPPFLAGS+= -DSAME_RANDOM_VALUES # pseudo random values identical in each run, for debugging
 
-OBJECTS	= heuristics.o sa.o angel_comm.o angel_types.o angel_tools.o angel_io.o eliminations.o \
-			reroutings.o graph_generator.o xaif_interface.o 
+FLIST=$(basename $(wildcard *.cpp))
+OBJECTS=$(addsuffix .o, $(FLIST))
+
+# include the dependency information 
+DEPINCL = $(addsuffix .d, $(FLIST))
+
 IDIR	= ../include
 CXXFLAGS+= -c
 
 ANGEL_ROOT = ../..
 CXXFLAGS+= -I$(ANGEL_ROOT) 
 
+# compile the objects
+# as part of this we create dependency information 
+# Remove old dependencies
+# invoke compiler to create raw dependencies with processId attached
+# appending to the dependencies:
+#   all lines with the original targets removed
+#   the line continuation removed
+#   all empty lines removed
+#   the remaining lines ended with ':'
+# in order to represent all prerequisites as targets to deal with 
+# removed prerequisites
+%.o: %.cpp
+	@set -e; rm -f $*.d; \
+	   $(CXX) -M $(CPPFLAGS) $< > $*.d.$$$$; \
+           sed -e 's,^[^:]*: *,,' \
+	       -e 's, *\\$$,,' \
+	       -e '/^$$/ d' \
+	       -e 's,$$, :,' < $*.d.$$$$ >> $*.d; \
+	   rm -f $*.d.$$$$
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
+
+-include $(DEPINCL)
+
 it:	all
 
 all:	$(OBJECTS)
 
 clean: 
-	$(RM) $(RMFLAGS) *.o *~ 
+	$(RM) $(RMFLAGS) *.o *~ *.d *.d.*
 
 echo:
 	echo "$(CPPFLAGS) : $(angel_config)"
 
 .PHONY: it all clean echo
-
-angel_types.o: angel_types.cpp $(IDIR)/angel_types.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ angel_types.cpp
-
-angel_tools.o: angel_tools.cpp $(IDIR)/angel_tools.hpp \
-		 $(IDIR)/angel_types.hpp \
-		$(IDIR)/angel_io.hpp $(IDIR)/eliminations.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ angel_tools.cpp
-
-angel_io.o: angel_io.cpp $(IDIR)/angel_io.hpp $(IDIR)/angel_types.hpp \
-		$(IDIR)/angel_tools.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ angel_io.cpp
-
-eliminations.o: eliminations.cpp $(IDIR)/eliminations.hpp $(IDIR)/angel_types.hpp \
-		$(IDIR)/angel_tools.hpp $(IDIR)/angel_io.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ eliminations.cpp
-
-reroutings.o: reroutings.cpp $(IDIR)/reroutings.hpp $(IDIR)/angel_types.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ reroutings.cpp
-
-heuristics.o: heuristics.cpp $(IDIR)/heuristics.hpp $(IDIR)/angel_types.hpp \
-		$(IDIR)/angel_tools.hpp \
-		 $(IDIR)/angel_io.hpp $(IDIR)/eliminations.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ heuristics.cpp
-
-graph_generator.o: graph_generator.cpp $(IDIR)/graph_generator.hpp $(IDIR)/angel_types.hpp \
-		 $(IDIR)/angel_tools.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ graph_generator.cpp
-
-sa.o: sa.cpp $(IDIR)/sa.hpp $(IDIR)/sa_impl.hpp $(IDIR)/angel_types.hpp \
-		 $(IDIR)/angel_tools.hpp \
-		 $(IDIR)/angel_io.hpp \
-		 $(IDIR)/eliminations.hpp $(IDIR)/heuristics.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ sa.cpp
-
-angel_comm.o: angel_comm.cpp $(IDIR)/angel_comm.hpp $(IDIR)/angel_comm_impl.hpp \
-		$(IDIR)/angel_types.hpp \
-		$(IDIR)/gmpi.hpp $(IDIR)/gmpi_impl.hpp 
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ angel_comm.cpp
-
-xaif_interface.o: xaif_interface.cpp $(IDIR)/xaif_interface.hpp $(IDIR)/angel_types.hpp \
-		 $(IDIR)/eliminations.hpp $(IDIR)/heuristics.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ xaif_interface.cpp
-
-
 
 
 
