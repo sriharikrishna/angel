@@ -5,3 +5,4 @@ doc/latex*
 *.o
 *.a
 *~
+*.d
